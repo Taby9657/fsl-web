@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FSL Web — fslleague.cz
 
-## Getting Started
+Webová aplikace Floorball Stars Ligy. Plná funkční parita s mobilní aplikací
+(`fsl-mobile`) + veřejná SEO část pro fanoušky. Komunikuje se stejným backendem
+(`fsl-backhand`) jako mobilní aplikace.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript
+- **Tailwind CSS v4** — design tokeny převzaté z mobilní aplikace
+- **TanStack Query** — server state, polling živých zápasů
+- **Zustand** — auth store
+- **axios** — API klient s českými chybovými hláškami
+- **Google Identity Services** — přihlášení
+
+## Rychlý start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local     # vyplň API URL a Google Client ID
+npm run dev                    # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Vývoj bez produkčního backendu
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+V repozitáři je jednoduchý mock API server s testovacími daty (týmy, hráči,
+zápasy, statistiky, draft, platby, administrace):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd mock-api && npm install && node server.js   # http://localhost:4000/api
+```
 
-## Learn More
+a v `.env.local` nastav `NEXT_PUBLIC_API_URL=http://localhost:4000/api`.
+Volitelně `NEXT_PUBLIC_DEV_LOGIN=1` zobrazí na přihlašovací stránce tlačítko
+„Testovací přihlášení".
 
-To learn more about Next.js, take a look at the following resources:
+## Proměnné prostředí
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Proměnná | Popis |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL backendu včetně `/api` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth **Web** Client ID (musí být povolený i na backendu jako `GOOGLE_WEB_CLIENT_ID`) |
+| `NEXT_PUBLIC_DEV_LOGIN` | `1` = zobrazí testovací přihlášení (jen pro lokální vývoj) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Struktura
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── (veřejné)     tabulka, zapasy, statistiky, tymy, hraci, rozhodci,
+│   │                 pavouk, porovnani, hledat, aktuality, aplikace, právní
+│   ├── prihlaseni    Google Sign-In
+│   ├── registrace    onboarding (hráč / vedoucí / rozhodčí)
+│   ├── muj-ucet      rozcestník podle rolí
+│   ├── muj-profil, nastaveni, oznameni, platby, zadost
+│   ├── draft         draft pool, karta hráče, vlastní profil
+│   ├── tym/          soupiska, pozvánka, sestava, po-zápasový formulář
+│   ├── zapasy/[id]/skore   live scoring pro rozhodčí
+│   └── admin/        dashboard, týmy, zápasy, rozlosování, rozhodčí,
+│                     platby, aktuality, žádosti
+├── components/       UI knihovna (karty, chipy, modály, skeletony, toasty)
+├── hooks/            divize, sezóny, stav v URL
+├── lib/              API klient, typy, formátování, validace
+└── store/            auth (role hráč / vedoucí / rozhodčí / supervisor)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Přehled rolí
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Role | Odvození | Přístup |
+|---|---|---|
+| Host | nepřihlášen | veřejná část |
+| Hráč | `user.player` | profil, platby, draft, oznámení |
+| Vedoucí | `user.manager.length > 0` | soupiska, pozvánka, sestavy, po-zápas |
+| Rozhodčí | `user.referee` | nasazení, profil, live scoring |
+| Supervisor | `user.player.isSupervisor` | celá administrace |
+
+Role jsou aditivní — jeden účet může mít všechny současně. Klientské kontroly
+jsou jen UX vrstva, oprávnění vynucuje backend.
+
+## Nasazení
+
+Viz [DEPLOY.md](./DEPLOY.md).

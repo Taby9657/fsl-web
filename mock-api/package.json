@@ -1,0 +1,9 @@
+{
+  "name": "fsl-mock-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mock FSL API pro lokální vývoj webu",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "cors": "^2.8.5", "express": "^4.19.2" }
+}
