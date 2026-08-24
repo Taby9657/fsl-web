@@ -226,7 +226,11 @@ export const paymentsApi = {
   playerLicense: () => api.post<{ url: string }>("/payments/player-license"),
   superLicense: () => api.post<{ url: string }>("/payments/super-license"),
   homeFee: (matchId: string) => api.post<{ url: string }>("/payments/home-fee", { matchId }),
-  qr: (type: string, id: string) => api.get<{ spayd: string }>(`/payments/qr/${type}/${id}`),
+  /** type: player-license | super-license | team-reg | home-fee */
+  qr: (type: string, id: string) =>
+    api.get<{ spayd: string; vs: string; amount: number; iban: string; message: string }>(
+      `/payments/qr/${type}/${id}`,
+    ),
   vsPlayer: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/player/${id}`),
   vsTeam: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/team/${id}`),
 };

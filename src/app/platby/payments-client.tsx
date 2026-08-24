@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
+  Banknote,
   CheckCircle2,
   Clock,
   Copy,
@@ -12,20 +13,29 @@ import {
   Star,
   Trophy,
 } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import { errMsg, matchesApi, paymentsApi } from "@/lib/api";
 import { czk, fmtDate, PAYMENT_STATUS_COLOR, PAYMENT_STATUS_LABEL } from "@/lib/format";
 import type { PaymentStatus, TeamPayment } from "@/lib/types";
 import { useAuthStore, useIsManager } from "@/store/auth";
 import { Page } from "@/components/layout/container";
-import { Button, Card, EmptyState, PageTitle, SectionTitle } from "@/components/ui/primitives";
+import {
+  Button,
+  Card,
+  EmptyState,
+  PageTitle,
+  SectionTitle,
+} from "@/components/ui/primitives";
 import { SkeletonCards } from "@/components/ui/feedback";
 import { TeamBadge } from "@/components/ui/data";
+import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
 
+/** Záložní hodnoty, pokud backend nevrátí QR data. */
 const BANK_IBAN = "CZ6508000000192000145399";
 const BANK_BIC = "GIBACZPX";
+
+type QrType = "player-license" | "super-license" | "team-reg" | "home-fee";
 
 const STATUS_ICON: Record<PaymentStatus, React.ReactNode> = {
   PENDING: <Clock size={15} />,
@@ -39,6 +49,7 @@ export function PaymentsClient() {
   const isManager = useIsManager();
   const teamId = user?.manager?.[0]?.teamId;
   const [paying, setPaying] = useState<string | null>(null);
+  const [openTransfer, setOpenTransfer] = useState<string | null>(null);
 
   const payments = useQuery({
     queryKey: ["payments", "me"],
@@ -58,6 +69,8 @@ export function PaymentsClient() {
     : payments.data?.teamPayment
       ? [payments.data.teamPayment as TeamPayment]
       : [];
+
+  const playerId = pp?.playerId ?? user?.player?.id;
 
   async function pay(kind: "player-license" | "super-license" | string, matchId?: string) {
     setPaying(matchId ?? kind);
@@ -92,7 +105,7 @@ export function PaymentsClient() {
     <Page size="narrow">
       <PageTitle
         title="Platby"
-        subtitle="Licence, registrace týmu a poplatky za domácí zápasy"
+        subtitle="Licence, registrace týmu a poplatky za domácí zápasy — kartou i převodem"
       />
 
       {nothing ? (
@@ -113,12 +126,15 @@ export function PaymentsClient() {
             status={pp.licStatus}
             rows={[
               ["Výše poplatku", czk(pp.licFee)],
-              ...(pp.licPaidAt ? [["Datum platby", fmtDate(pp.licPaidAt)] as [string, string]] : []),
+              ...(pp.licPaidAt ? ([["Datum platby", fmtDate(pp.licPaidAt)]] as [string, string][]) : []),
               ...(pp.licMethod
-                ? [["Metoda", pp.licMethod === "stripe" ? "Karta online" : "Bankovní převod"] as [string, string]]
+                ? ([["Metoda", pp.licMethod === "stripe" ? "Karta online" : "Bankovní převod"]] as [
+                    string,
+                    string,
+                  ][])
                 : []),
             ]}
-            action={
+            payAction={
               pp.licStatus === "PENDING" || pp.licStatus === "OVERDUE" ? (
                 <Button
                   className="w-full"
@@ -130,10 +146,19 @@ export function PaymentsClient() {
               ) : null
             }
             transfer={
-              (pp.licStatus === "PENDING" || pp.licStatus === "OVERDUE") && pp.variableSymbol
-                ? { vs: pp.variableSymbol, amount: pp.licFee, msg: "FSL hracska licence" }
+              (pp.licStatus === "PENDING" || pp.licStatus === "OVERDUE") && playerId
+                ? {
+                    id: "lic",
+                    type: "player-license",
+                    entityId: playerId,
+                    fallbackVs: pp.variableSymbol,
+                    fallbackAmount: pp.licFee,
+                    fallbackMsg: "FSL hracska licence",
+                  }
                 : null
             }
+            open={openTransfer}
+            onToggle={setOpenTransfer}
           />
         ) : null}
 
@@ -146,9 +171,11 @@ export function PaymentsClient() {
             status={pp.superStatus}
             rows={[
               ["Výše poplatku", czk(pp.superFee)],
-              ...(pp.superPaidAt ? [["Datum platby", fmtDate(pp.superPaidAt)] as [string, string]] : []),
+              ...(pp.superPaidAt
+                ? ([["Datum platby", fmtDate(pp.superPaidAt)]] as [string, string][])
+                : []),
             ]}
-            action={
+            payAction={
               pp.superStatus === "PENDING" ? (
                 <Button
                   variant="purple"
@@ -156,11 +183,24 @@ export function PaymentsClient() {
                   loading={paying === "super-license"}
                   onClick={() => pay("super-license")}
                 >
-                  Pořídit super licenci
+                  Pořídit super licenci kartou
                 </Button>
               ) : null
             }
-            transfer={null}
+            transfer={
+              pp.superStatus === "PENDING" && playerId
+                ? {
+                    id: "super",
+                    type: "super-license",
+                    entityId: playerId,
+                    fallbackVs: pp.variableSymbol,
+                    fallbackAmount: pp.superFee,
+                    fallbackMsg: "FSL superlicence",
+                  }
+                : null
+            }
+            open={openTransfer}
+            onToggle={setOpenTransfer}
           />
         ) : null}
 
@@ -174,14 +214,24 @@ export function PaymentsClient() {
             status={tp.status}
             rows={[
               ["Výše poplatku", czk(tp.amount)],
-              ...(tp.paidAt ? [["Datum platby", fmtDate(tp.paidAt)] as [string, string]] : []),
+              ...(tp.paidAt ? ([["Datum platby", fmtDate(tp.paidAt)]] as [string, string][]) : []),
             ]}
-            action={null}
+            payAction={null}
             transfer={
-              tp.status !== "PAID" && tp.variableSymbol
-                ? { vs: tp.variableSymbol, amount: tp.amount, msg: "FSL registrace tymu" }
+              tp.status !== "PAID" && (tp.teamId ?? teamId)
+                ? {
+                    id: `team-${tp.id}`,
+                    type: "team-reg",
+                    entityId: (tp.teamId ?? teamId)!,
+                    fallbackVs: tp.variableSymbol,
+                    fallbackAmount: tp.amount,
+                    fallbackMsg: "FSL registrace tymu",
+                    defaultOpen: true,
+                  }
                 : null
             }
+            open={openTransfer}
+            onToggle={setOpenTransfer}
           />
         ))}
 
@@ -204,34 +254,46 @@ export function PaymentsClient() {
                 </p>
               ) : (
                 homeMatches.data.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-3 rounded-xl border border-bd bg-c2/50 p-3"
-                  >
-                    <TeamBadge abbr={m.awayTeam?.abbr} color={m.awayTeam?.color} size={34} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-medium text-wh">
-                        vs {m.awayTeam?.name}
+                  <div key={m.id} className="rounded-xl border border-bd bg-c2/50 p-3">
+                    <div className="flex items-center gap-3">
+                      <TeamBadge abbr={m.awayTeam?.abbr} color={m.awayTeam?.color} size={34} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-medium text-wh">
+                          vs {m.awayTeam?.name}
+                        </span>
+                        <span className="block text-[12px] text-mu">
+                          {fmtDate(m.date)}
+                          {m.venue ? ` · ${m.venue}` : ""}
+                        </span>
                       </span>
-                      <span className="block text-[12px] text-mu">
-                        {fmtDate(m.date)}
-                        {m.venue ? ` · ${m.venue}` : ""}
-                      </span>
-                    </span>
-                    {m.homeFeePaid ? (
-                      <span className="rounded-full bg-green/15 px-2.5 py-1 text-[11px] font-bold text-green">
-                        Zaplaceno
-                      </span>
-                    ) : (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        loading={paying === m.id}
-                        onClick={() => pay("home-fee", m.id)}
-                      >
-                        Zaplatit
-                      </Button>
-                    )}
+                      {m.homeFeePaid ? (
+                        <span className="rounded-full bg-green/15 px-2.5 py-1 text-[11px] font-bold text-green">
+                          Zaplaceno
+                        </span>
+                      ) : (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          loading={paying === m.id}
+                          onClick={() => pay("home-fee", m.id)}
+                        >
+                          Kartou
+                        </Button>
+                      )}
+                    </div>
+
+                    {!m.homeFeePaid && teamId ? (
+                      <TransferSection
+                        id={`home-${m.id}`}
+                        type="home-fee"
+                        entityId={teamId}
+                        fallbackVs={null}
+                        fallbackAmount={2200}
+                        fallbackMsg="FSL domaci zapas"
+                        open={openTransfer}
+                        onToggle={setOpenTransfer}
+                      />
+                    ) : null}
                   </div>
                 ))
               )}
@@ -243,6 +305,18 @@ export function PaymentsClient() {
   );
 }
 
+/* ---------------- Karta platby ---------------- */
+
+type TransferProps = {
+  id: string;
+  type: QrType;
+  entityId: string;
+  fallbackVs?: string | null;
+  fallbackAmount: number;
+  fallbackMsg: string;
+  defaultOpen?: boolean;
+};
+
 function PaymentCard({
   icon,
   color,
@@ -250,8 +324,10 @@ function PaymentCard({
   subtitle,
   status,
   rows,
-  action,
+  payAction,
   transfer,
+  open,
+  onToggle,
 }: {
   icon: React.ReactNode;
   color: string;
@@ -259,8 +335,10 @@ function PaymentCard({
   subtitle: string;
   status: PaymentStatus;
   rows: [string, string][];
-  action: React.ReactNode;
-  transfer: { vs: string; amount: number; msg: string } | null;
+  payAction: React.ReactNode;
+  transfer: TransferProps | null;
+  open: string | null;
+  onToggle: (id: string | null) => void;
 }) {
   return (
     <Card className="p-5">
@@ -297,45 +375,111 @@ function PaymentCard({
         ))}
       </dl>
 
-      {action ? <div className="mt-4">{action}</div> : null}
-      {transfer ? <TransferBox {...transfer} /> : null}
+      {payAction ? <div className="mt-4">{payAction}</div> : null}
+      {transfer ? <TransferSection {...transfer} open={open} onToggle={onToggle} /> : null}
     </Card>
   );
 }
 
-function TransferBox({ vs, amount, msg }: { vs: string; amount: number; msg: string }) {
-  const spayd = `SPD*1.0*ACC:${BANK_IBAN}+${BANK_BIC}*AM:${amount}.00*CC:CZK*X-VS:${vs}*MSG:${msg}`;
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    spayd,
-  )}&bgcolor=0d0120&color=c9a140&qzone=1&format=png`;
+/* ---------------- Bankovní převod + QR ---------------- */
+
+function TransferSection({
+  id,
+  type,
+  entityId,
+  fallbackVs,
+  fallbackAmount,
+  fallbackMsg,
+  defaultOpen,
+  open,
+  onToggle,
+}: TransferProps & { open: string | null; onToggle: (id: string | null) => void }) {
+  const isOpen = open === id || (open === null && defaultOpen === true);
+
+  const qr = useQuery({
+    queryKey: ["payment-qr", type, entityId],
+    enabled: isOpen,
+    staleTime: 5 * 60_000,
+    retry: false,
+    queryFn: async () => (await paymentsApi.qr(type, entityId)).data,
+  });
+
+  const vs = qr.data?.vs ?? fallbackVs ?? null;
+  const amount = qr.data?.amount ?? fallbackAmount;
+  const iban = qr.data?.iban ?? BANK_IBAN;
+  const message = qr.data?.message ?? fallbackMsg;
+  const spayd =
+    qr.data?.spayd ??
+    (vs
+      ? `SPD*1.0*ACC:${iban}+${BANK_BIC}*AM:${amount}.00*CC:CZK*X-VS:${vs}*MSG:${message}`
+      : null);
 
   const copy = (v: string, label: string) => {
     void navigator.clipboard.writeText(v);
     toast.success(`${label} zkopírován`);
   };
 
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => onToggle(id)}
+        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-bd-strong px-4 py-2.5 text-[13px] font-semibold text-go transition-colors hover:bg-go-soft"
+      >
+        <Banknote size={15} />
+        Zaplatit převodem (QR kód)
+      </button>
+    );
+  }
+
   return (
     <div className="mt-4 rounded-xl border border-bd bg-c2/60 p-4">
-      <SectionTitle className="mb-3">Nebo bankovním převodem</SectionTitle>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1 space-y-2">
-          <Row label="IBAN" value={BANK_IBAN} onCopy={() => copy(BANK_IBAN, "IBAN")} />
-          <Row label="BIC/SWIFT" value={BANK_BIC} onCopy={() => copy(BANK_BIC, "BIC")} />
-          <Row label="Variabilní symbol" value={vs} onCopy={() => copy(vs, "Variabilní symbol")} />
-          <Row label="Částka" value={czk(amount)} />
+      <SectionTitle
+        className="mb-3"
+        action={
+          <button
+            onClick={() => onToggle(defaultOpen ? "" : null)}
+            className="cursor-pointer text-[12px] font-semibold text-mu hover:text-wh"
+          >
+            Skrýt
+          </button>
+        }
+      >
+        Bankovní převod
+      </SectionTitle>
+
+      {qr.isLoading ? (
+        <p className="py-6 text-center text-[13px] text-mu">Načítám platební údaje…</p>
+      ) : !vs ? (
+        <p className="text-[13px] leading-6 text-amber">
+          Variabilní symbol zatím nebyl přidělen. Zkus to za chvíli znovu, nebo zaplať kartou —
+          bez VS by nešlo platbu spárovat.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1 space-y-2">
+            <Row label="IBAN" value={iban} onCopy={() => copy(iban, "IBAN")} />
+            <Row label="BIC/SWIFT" value={BANK_BIC} onCopy={() => copy(BANK_BIC, "BIC")} />
+            <Row
+              label="Variabilní symbol"
+              value={vs}
+              onCopy={() => copy(vs, "Variabilní symbol")}
+              highlight
+            />
+            <Row label="Částka" value={czk(amount)} />
+            <Row label="Zpráva pro příjemce" value={message} />
+          </div>
+          {spayd ? (
+            <div className="shrink-0 self-center text-center">
+              <QrCode value={spayd} size={200} alt="QR platba" className="rounded-lg" />
+              <p className="mt-1.5 text-[11px] text-di">Naskenuj v bankovní aplikaci</p>
+            </div>
+          ) : null}
         </div>
-        <div className="shrink-0 self-center">
-          <Image
-            src={qr}
-            alt="QR platba"
-            width={220}
-            height={220}
-            unoptimized
-            className="rounded-lg"
-          />
-          <p className="mt-1.5 text-center text-[11px] text-di">Naskenuj v bankovní aplikaci</p>
-        </div>
-      </div>
+      )}
+
+      <p className="mt-3 text-[12px] leading-5 text-di">
+        Platba se páruje automaticky podle variabilního symbolu — obvykle do druhého dne.
+      </p>
     </div>
   );
 }
@@ -344,21 +488,31 @@ function Row({
   label,
   value,
   onCopy,
+  highlight,
 }: {
   label: string;
   value: string;
   onCopy?: () => void;
+  highlight?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-[12px] text-mu">{label}</span>
-      <span className="flex items-center gap-1.5">
-        <span className="select-all text-[13px] font-medium text-wh">{value}</span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        <span
+          className={
+            highlight
+              ? "tabular select-all truncate text-[14px] font-bold text-go"
+              : "select-all truncate text-[13px] font-medium text-wh"
+          }
+        >
+          {value}
+        </span>
         {onCopy ? (
           <button
             onClick={onCopy}
             aria-label={`Kopírovat ${label}`}
-            className="cursor-pointer text-di transition-colors hover:text-go"
+            className="shrink-0 cursor-pointer text-di transition-colors hover:text-go"
           >
             <Copy size={13} />
           </button>

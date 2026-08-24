@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Stripe se vrací na /payments (cancel_url v backendu)
+      { source: "/payments", destination: "/platby", permanent: false },
       { source: "/matches", destination: "/zapasy", permanent: true },
       { source: "/table", destination: "/tabulka", permanent: true },
       { source: "/stats", destination: "/statistiky", permanent: true },

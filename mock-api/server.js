@@ -342,12 +342,25 @@ api.put("/notifications/:id/read", needAuth, (req, res) => {
 api.get("/payments/me", needAuth, (req, res) =>
   res.json({
     playerPayment: {
-      id: "pp-me", season: D.SEASON, licFee: 300, licStatus: "PENDING", licPaidAt: null, licMethod: null,
+      id: "pp-me", playerId: ME_PLAYER.id, season: D.SEASON, licFee: 300, licStatus: "PENDING", licPaidAt: null, licMethod: null,
       superLic: false, superFee: 300, superStatus: "PENDING", superPaidAt: null, variableSymbol: "1000042",
     },
-    teamPayment: [{ id: "tp-t1", season: D.SEASON, amount: 10000, status: "PENDING", paidAt: null, variableSymbol: "3000001", team: D.teamLite("t1") }],
+    teamPayment: [{ id: "tp-t1", teamId: "t1", season: D.SEASON, amount: 10000, status: "PENDING", paidAt: null, variableSymbol: "3000001", team: D.teamLite("t1") }],
   }),
 );
+api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
+  const IBAN = "CZ6508000000192000145399";
+  const BIC = "GIBACZPX";
+  const cfg = {
+    "player-license": { vs: "1000042", amount: 300, message: "FSL licence Tomas Novak" },
+    "super-license": { vs: "2000042", amount: 300, message: "FSL superlicence Tomas Novak" },
+    "team-reg": { vs: "3000001", amount: 10000, message: "FSL registrace Benavidez Eagles" },
+    "home-fee": { vs: "4000001", amount: 2200, message: "FSL domaci zapas Benavidez Eagles" },
+  }[req.params.type];
+  if (!cfg) return res.status(400).json({ error: "Neznámý typ platby" });
+  const spayd = `SPD*1.0*ACC:${IBAN}+${BIC}*AM:${cfg.amount}.00*CC:CZK*X-VS:${cfg.vs}*MSG:${cfg.message}`;
+  res.json({ spayd, vs: cfg.vs, amount: cfg.amount, iban: IBAN, message: cfg.message });
+});
 api.post("/payments/player-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/super-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/home-fee", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));

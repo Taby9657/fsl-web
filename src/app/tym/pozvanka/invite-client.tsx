@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Copy, Share2 } from "lucide-react";
-import Image from "next/image";
 import { teamsApi } from "@/lib/api";
+import { QrCode } from "@/components/ui/qr";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
 import { Button, Card, EmptyState, PageTitle, Spinner } from "@/components/ui/primitives";
@@ -22,11 +22,6 @@ export function InviteClient() {
   });
 
   const code = q.data?.code;
-  const qr = code
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-        code,
-      )}&bgcolor=0d0120&color=c9a140&qzone=2&format=png`
-    : null;
 
   const shareText = `Připoj se k týmu ${teamName} ve Floorball Stars Lize! 🏑\n\nPozvánkový kód: ${code}\n\nZaregistruj se na https://fslleague.cz/registrace`;
 
@@ -59,16 +54,7 @@ export function InviteClient() {
         <EmptyState title="Kód není dostupný" description="Zkus to prosím znovu později." />
       ) : (
         <Card className="p-8 text-center">
-          {qr ? (
-            <Image
-              src={qr}
-              alt="QR kód pozvánky"
-              width={240}
-              height={240}
-              unoptimized
-              className="mx-auto rounded-xl"
-            />
-          ) : null}
+          <QrCode value={code} size={240} alt="QR kód pozvánky" className="mx-auto rounded-xl" />
           <p className="mt-6 text-[11px] font-semibold label-caps uppercase text-mu">
             Pozvánkový kód
           </p>
