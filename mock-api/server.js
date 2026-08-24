@@ -351,12 +351,24 @@ api.get("/payments/me", needAuth, (req, res) =>
 api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
   const IBAN = "CZ6508000000192000145399";
   const BIC = "GIBACZPX";
-  const cfg = {
-    "player-license": { vs: "1000042", amount: 300, message: "FSL licence Tomas Novak" },
-    "super-license": { vs: "2000042", amount: 300, message: "FSL superlicence Tomas Novak" },
-    "team-reg": { vs: "3000001", amount: 10000, message: "FSL registrace Benavidez Eagles" },
-    "home-fee": { vs: "4000001", amount: 2200, message: "FSL domaci zapas Benavidez Eagles" },
-  }[req.params.type];
+  let cfg;
+  if (req.params.type === "player-license") {
+    cfg = { vs: "1000042", amount: 300, message: "FSL licence Tomas Novak" };
+  } else if (req.params.type === "super-license") {
+    cfg = { vs: "2000042", amount: 300, message: "FSL superlicence Tomas Novak" };
+  } else if (req.params.type === "team-reg") {
+    cfg = { vs: "3000001", amount: 10000, message: "FSL registrace Benavidez Eagles" };
+  } else if (req.params.type === "home-fee") {
+    // id = matchId, každý zápas má vlastní VS s prefixem 4
+    const m = D.MATCHES.find((x) => x.id === req.params.id);
+    if (!m) return res.status(404).json({ error: "Zápas nenalezen" });
+    const seq = String(D.MATCHES.indexOf(m) + 1).padStart(7, "0");
+    cfg = {
+      vs: `4${seq}`,
+      amount: 2200,
+      message: `FSL domaci zapas ${new Date(m.date).toLocaleDateString("cs-CZ")} ${m.homeTeam.name}`,
+    };
+  }
   if (!cfg) return res.status(400).json({ error: "Neznámý typ platby" });
   const spayd = `SPD*1.0*ACC:${IBAN}+${BIC}*AM:${cfg.amount}.00*CC:CZK*X-VS:${cfg.vs}*MSG:${cfg.message}`;
   res.json({ spayd, vs: cfg.vs, amount: cfg.amount, iban: IBAN, message: cfg.message });

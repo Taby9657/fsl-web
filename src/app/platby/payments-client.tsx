@@ -193,7 +193,7 @@ export function PaymentsClient() {
                     id: "super",
                     type: "super-license",
                     entityId: playerId,
-                    fallbackVs: pp.variableSymbol,
+                    fallbackVs: pp.superVariableSymbol,
                     fallbackAmount: pp.superFee,
                     fallbackMsg: "FSL superlicence",
                   }
@@ -282,11 +282,11 @@ export function PaymentsClient() {
                       )}
                     </div>
 
-                    {!m.homeFeePaid && teamId ? (
+                    {!m.homeFeePaid ? (
                       <TransferSection
                         id={`home-${m.id}`}
                         type="home-fee"
-                        entityId={teamId}
+                        entityId={m.id}
                         fallbackVs={null}
                         fallbackAmount={2200}
                         fallbackMsg="FSL domaci zapas"

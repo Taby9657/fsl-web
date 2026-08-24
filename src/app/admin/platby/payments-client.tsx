@@ -183,6 +183,9 @@ export function AdminPaymentsClient() {
                       <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-mu">
                         Licence {czk(p.licFee)}
                         {p.variableSymbol ? <span>· VS {p.variableSymbol}</span> : null}
+                        {p.superVariableSymbol ? (
+                          <span>· super VS {p.superVariableSymbol}</span>
+                        ) : null}
                         {p.licPaidAt ? <span>· {fmtDate(p.licPaidAt)}</span> : null}
                       </p>
                     </div>

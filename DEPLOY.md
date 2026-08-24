@@ -122,7 +122,7 @@ Bez toho se tlačítko „Přihlásit se přes Google" nezobrazí.
 | Hráčská licence 300 Kč | ✅ | ✅ |
 | Super licence 300 Kč | ✅ | ✅ |
 | Registrace týmu 10 000 Kč | — (backend nemá endpoint) | ✅ |
-| Domácí zápas 2 200 Kč | ✅ | ✅ (viz upozornění níže) |
+| Domácí zápas 2 200 Kč | ✅ | ✅ |
 
 QR kódy se generují **přímo v prohlížeči** (knihovna `qrcode`), formát SPAYD, takže web
 nezávisí na žádné externí QR službě. Platební údaje (IBAN, variabilní symbol, částka,
@@ -132,25 +132,42 @@ variabilní symbol přidělí, pokud ho platba ještě nemá.
 Web má stránku `/payment-success` (kam se Stripe vrací po zaplacení) a `/payments`
 přesměrovává na `/platby` (tam Stripe míří při zrušení platby).
 
-### ⚠️ Dvě slabá místa v párování plateb na backendu
+### Oprava variabilních symbolů v backendu (nutná migrace)
 
-Při procházení `fsl-backhand` jsem narazil na dvě věci, které stojí za opravu — týkají se
-**jen párování příchozích převodů**, kartou vše funguje:
+Původně sdílela superlicence variabilní symbol s hráčskou licencí a poplatek za domácí
+zápas s registrací týmu, takže příchozí převod nešlo spolehlivě spárovat. To je opravené
+v repozitáři `fsl-backhand` — **je k tomu potřeba spustit migraci databáze.**
 
-1. **Super licence sdílí variabilní symbol s běžnou licencí.** `PlayerPayment` má jediný
-   sloupec `variableSymbol`. Když už má hráč VS s prefixem `1` (licence), vrátí
-   `ensurePlayerVS(id, 'SUPER_LICENSE')` ten stejný symbol. Funkce `inferPlayerPaymentType`
-   pak podle prefixu `1` platbu započítá jako běžnou licenci, i když jde o super licenci.
+Co se změnilo:
 
-2. **Poplatek za domácí zápas sdílí VS s registrací týmu.** `TeamPayment` má také jediný
-   `variableSymbol` a `matchTransaction()` umí spárovat pouze `TEAM_REG`. Převod na 2 200 Kč
-   se buď zamítne jako „nedostatečná částka" (2 200 < 10 000), nebo — pokud je registrace
-   nezaplacená — nesprávně sníží dluh za registraci.
+| Platba | VS | Kde je uložený |
+|---|---|---|
+| Hráčská licence | prefix `1` | `PlayerPayment.variableSymbol` |
+| Superlicence | prefix `2` | `PlayerPayment.superVariableSymbol` *(nový)* |
+| Registrace týmu | prefix `3` | `TeamPayment.variableSymbol` |
+| Domácí zápas | prefix `4` | `Match.homeFeeVS` *(nový, na každý zápas zvlášť)* |
 
-**Doporučená oprava:** přidat do `PlayerPayment` samostatný `superVariableSymbol` a do
-`TeamPayment` `homeFeeVariableSymbol` (obojí `@unique`), generovat je s prefixy `2` a `4`
-a v `matchTransaction()` je hledat zvlášť. Do té doby doporuč hráčům platit super licenci
-a domácí zápasy **kartou**, kde je přiřazení jednoznačné přes Stripe metadata.
+Poplatek za domácí zápas má nově VS na úrovni **zápasu**, ne týmu — jeden tým hraje doma
+vícekrát za sezónu a každá platba musí jít spárovat se svým utkáním. Proto endpoint
+`/payments/qr/home-fee/:id` bere `matchId` (dřív `teamId`).
+
+Migrace navíc přesune historická data: pokud má hráč VS začínající dvojkou (vyžádal si
+jako první QR na superlicenci), symbol se přesune do `superVariableSymbol`.
+
+**Nasazení na Railway:** start command už obsahuje `npm run db:migrate && npm start`,
+takže se migrace spustí sama při deployi. Ověřit ji můžeš i ručně:
+
+```bash
+railway run npm run db:migrate
+```
+
+**Test párování** (nepotřebuje databázi, běží proti in-memory náhradě Prismy):
+
+```bash
+npm run test:payments
+```
+
+Pokrývá všechny čtyři typy plateb, nízké částky, duplicitní platbu i neznámý VS.
 
 ---
 

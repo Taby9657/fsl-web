@@ -217,6 +217,7 @@ export interface PlayerPayment {
   superStatus: PaymentStatus;
   superPaidAt?: string | null;
   variableSymbol?: string | null;
+  superVariableSymbol?: string | null;
   player?: Player;
 }
 
