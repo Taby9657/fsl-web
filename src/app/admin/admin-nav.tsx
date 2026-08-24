@@ -30,7 +30,7 @@ export function AdminNav() {
 
   return (
     <nav className="lg:w-56 lg:shrink-0">
-      <p className="mb-3 hidden text-[11px] font-semibold uppercase tracking-[0.1em] text-pu lg:block">
+      <p className="mb-3 hidden text-[11px] font-semibold label-caps uppercase text-pu lg:block">
         Administrace
       </p>
       <div className="no-scrollbar flex gap-1 overflow-x-auto lg:flex-col">

@@ -56,7 +56,7 @@ export function SiteFooter() {
 
           {COLS.map((col) => (
             <div key={col.title}>
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-go">
+              <h3 className="mb-3 text-[11px] font-semibold label-caps uppercase text-go">
                 {col.title}
               </h3>
               <ul className="space-y-2">

@@ -98,7 +98,7 @@ export function ScoreClient({ matchId }: { matchId: string }) {
             <span className="text-[14px] font-semibold text-wh">{match.homeTeam?.name}</span>
           </div>
           <div className="text-center">
-            <span className="tabular block text-4xl font-black text-go">
+            <span className="tabular num-display block text-4xl font-black text-go">
               {match.homeScore}:{match.awayScore}
             </span>
             <span className="mt-2 block">

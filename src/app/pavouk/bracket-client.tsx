@@ -82,7 +82,7 @@ export function BracketClient() {
           <div className="flex gap-4">
             {rounds.map((r) => (
               <div key={r} className="w-64 shrink-0 space-y-3">
-                <h3 className="text-[12px] font-bold uppercase tracking-[0.08em] text-go">
+                <h3 className="text-[12px] font-bold label-caps uppercase text-go">
                   {roundLabel(r, max)}
                 </h3>
                 {(query.data?.[String(r)] ?? []).map((m) => (

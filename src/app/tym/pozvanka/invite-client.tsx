@@ -69,7 +69,7 @@ export function InviteClient() {
               className="mx-auto rounded-xl"
             />
           ) : null}
-          <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.1em] text-mu">
+          <p className="mt-6 text-[11px] font-semibold label-caps uppercase text-mu">
             Pozvánkový kód
           </p>
           <p className="mt-2 select-all text-3xl font-black tracking-[0.2em] text-go">

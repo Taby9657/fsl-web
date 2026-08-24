@@ -681,7 +681,7 @@ function DoneStep({
 
       {inviteCode ? (
         <Card className="mx-auto mt-6 max-w-sm p-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-mu">
+          <p className="text-[11px] font-semibold label-caps uppercase text-mu">
             Pozvánkový kód
           </p>
           <p className="mt-2 select-all text-2xl font-black tracking-[0.2em] text-go">

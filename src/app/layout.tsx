@@ -44,6 +44,16 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="cs">
+      <head>
+        {/* Inter se načítá z Google Fonts za běhu – nezdržuje build a systémové
+            písmo slouží jako okamžitý fallback. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap"
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <Providers>
           <div className="relative z-10 flex min-h-screen flex-col">

@@ -253,7 +253,7 @@ function StatCard({
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="tabular block text-2xl font-black" style={{ color }}>
+        <span className="tabular num-display block text-2xl font-black" style={{ color }}>
           {value}
         </span>
         <span className="block text-[12px] text-mu">{label}</span>

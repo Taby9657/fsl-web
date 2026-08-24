@@ -48,7 +48,7 @@ export default async function HomePage() {
         <Container className="relative py-16 sm:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.1em] text-go">
+              <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold label-caps uppercase text-go">
                 Sezóna {season}
               </span>
               <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-wh sm:text-5xl lg:text-6xl">

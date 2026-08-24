@@ -60,7 +60,7 @@ export function MatchCard({
 
         <div className="shrink-0 text-center">
           {played ? (
-            <span className="tabular text-xl font-black text-go">
+            <span className="tabular num-display text-xl font-black text-go">
               {match.homeScore ?? 0}:{match.awayScore ?? 0}
             </span>
           ) : (

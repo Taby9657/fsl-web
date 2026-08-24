@@ -137,7 +137,7 @@ export function NotificationsClient() {
         <div className="space-y-6">
           {groups.map(([label, items]) => (
             <section key={label}>
-              <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-di">
+              <h2 className="mb-2 text-[11px] font-semibold label-caps uppercase text-di">
                 {label}
               </h2>
               <Card className="overflow-hidden">

@@ -45,7 +45,7 @@ export function SectionTitle({
 }) {
   return (
     <div className={clsx("mb-3 flex items-center justify-between gap-3", className)}>
-      <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-mu">
+      <h2 className="text-[13px] font-semibold label-caps uppercase text-mu">
         {children}
       </h2>
       {action}
@@ -315,7 +315,7 @@ export function Label({
   return (
     <label
       className={clsx(
-        "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-mu",
+        "mb-1.5 block text-[11px] font-semibold label-caps uppercase text-mu",
         className,
       )}
     >

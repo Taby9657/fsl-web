@@ -162,7 +162,7 @@ export function MatchDetail({ initial }: { initial: Match }) {
 
           <div className="text-center">
             {played ? (
-              <span className="tabular block text-4xl font-black text-go sm:text-5xl">
+              <span className="tabular num-display block text-4xl font-black text-go sm:text-5xl">
                 {match.homeScore ?? 0}:{match.awayScore ?? 0}
               </span>
             ) : (

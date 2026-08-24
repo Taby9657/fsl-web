@@ -173,7 +173,7 @@ export function ProfileClient() {
 
       {player.teamId ? (
         <Card className="mt-4 p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-mu">
+          <p className="text-[11px] font-semibold label-caps uppercase text-mu">
             Aktuální tým
           </p>
           <p className="mt-1 text-[15px] font-medium text-wh">{player.team?.name ?? "—"}</p>

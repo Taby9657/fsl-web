@@ -111,7 +111,7 @@ function PlayerPicker({
   if (value) {
     return (
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mu">
+        <p className="mb-1.5 text-[11px] font-semibold label-caps uppercase text-mu">
           {label}
         </p>
         <Card className="flex items-center gap-3 p-3">
@@ -144,7 +144,7 @@ function PlayerPicker({
 
   return (
     <div className="relative">
-      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-mu">
+      <p className="mb-1.5 text-[11px] font-semibold label-caps uppercase text-mu">
         {label}
       </p>
       <SearchInput value={q} onChange={setQ} placeholder="Jméno hráče…" />

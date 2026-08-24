@@ -125,7 +125,7 @@ export function StatBox({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-1 px-2 py-3 text-center">
       {icon ? <span style={{ color }}>{icon}</span> : null}
-      <span className="tabular text-xl font-black" style={{ color }}>
+      <span className="tabular num-display text-xl font-black" style={{ color }}>
         {value}
       </span>
       <span className="text-[11px] font-medium text-mu">{label}</span>

@@ -322,7 +322,7 @@ function MenuSection({
   return (
     <section>
       <h2
-        className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em]"
+        className="mb-3 text-[11px] font-semibold label-caps uppercase"
         style={{ color }}
       >
         {title}

@@ -12,7 +12,7 @@ export function LiveBadge({ size = "sm" }: { size?: "sm" | "md" }) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 rounded-full border border-red/40 bg-red/15 font-bold uppercase tracking-[0.08em] text-red",
+        "inline-flex items-center gap-1.5 rounded-full border border-red/40 bg-red/15 font-bold label-caps uppercase text-red",
         size === "md" ? "px-2.5 py-1 text-[12px]" : "px-2 py-0.5 text-[10px]",
       )}
     >

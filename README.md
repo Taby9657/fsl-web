@@ -42,6 +42,21 @@ Volitelně `NEXT_PUBLIC_DEV_LOGIN=1` zobrazí na přihlašovací stránce tlač�
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth **Web** Client ID (musí být povolený i na backendu jako `GOOGLE_WEB_CLIENT_ID`) |
 | `NEXT_PUBLIC_DEV_LOGIN` | `1` = zobrazí testovací přihlášení (jen pro lokální vývoj) |
 
+## Typografie
+
+Web používá **Inter** (variabilní řez, optical sizing) načítaný z Google Fonts přes
+`<link>` v `layout.tsx`. Systémové písmo slouží jako okamžitý fallback, takže text je
+čitelný i než se Inter stáhne.
+
+Pomocné třídy v `globals.css`:
+
+- `.tabular` — číslice stejné šířky (tabulky, skóre, statistiky)
+- `.num-display` — velká čísla se sevřenějším prostrkáním
+- `.label-caps` — kapitálkové popisky sekcí s volnějším prostrkáním
+
+Pokud bys chtěl nulové externí requesty, dá se Inter self-hostovat přes
+`next/font/local` — stáhnout `.woff2` řezy do `src/app/fonts/` a nahradit `<link>`.
+
 ## Struktura
 
 ```

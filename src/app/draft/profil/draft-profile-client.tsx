@@ -173,7 +173,7 @@ export function DraftProfileClient() {
       </Card>
 
       <Card className="mt-4 p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-mu">
+        <p className="text-[11px] font-semibold label-caps uppercase text-mu">
           Sestřih videí ({videos.length}/{MAX_VIDEOS})
         </p>
         <p className="mt-1.5 text-[12px] leading-5 text-di">

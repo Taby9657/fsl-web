@@ -234,7 +234,7 @@ export function AdminTeamsClient() {
         <div className="space-y-8">
           {grouped.map((g) => (
             <section key={g.status}>
-              <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-mu">
+              <h2 className="mb-3 text-[11px] font-semibold label-caps uppercase text-mu">
                 {g.label} ({g.teams.length})
               </h2>
               <Card className="overflow-hidden">
