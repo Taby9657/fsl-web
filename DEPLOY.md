@@ -72,8 +72,8 @@ Railway → služba `fsl-backhand` → **Variables**:
 ```
 CLIENT_URL=https://fslleague.cz
 GOOGLE_WEB_CLIENT_ID=485204684397-f5paghu6a59s4vq02jpqeil3l1mje677.apps.googleusercontent.com
-BANK_IBAN=CZ6508000000192000145399
-BANK_BIC=GIBACZPX
+BANK_IBAN=<IBAN uctu ligy>
+BANK_BIC=<BIC banky>
 ```
 
 > ⚠️ **`CLIENT_URL` musí být jediná adresa, ne seznam oddělený čárkami.** Backend ji

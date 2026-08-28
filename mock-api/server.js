@@ -349,8 +349,8 @@ api.get("/payments/me", needAuth, (req, res) =>
   }),
 );
 api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
-  const IBAN = "CZ6508000000192000145399";
-  const BIC = "GIBACZPX";
+  const IBAN = "CZ0000000000000000000000"; // mock, zamerne neplatny
+  const BIC = "XXXXCZXX"; // mock
   let cfg;
   if (req.params.type === "player-license") {
     cfg = { vs: "1000042", amount: 300, message: "FSL licence Tomas Novak" };

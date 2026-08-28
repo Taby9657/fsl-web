@@ -31,10 +31,6 @@ import { TeamBadge } from "@/components/ui/data";
 import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
 
-/** Záložní hodnoty, pokud backend nevrátí QR data. */
-const BANK_IBAN = "CZ6508000000192000145399";
-const BANK_BIC = "GIBACZPX";
-
 type QrType = "player-license" | "super-license" | "team-reg" | "home-fee";
 
 const STATUS_ICON: Record<PaymentStatus, React.ReactNode> = {
@@ -421,13 +417,11 @@ function TransferSection({
 
   const vs = qr.data?.vs ?? fallbackVs ?? null;
   const amount = qr.data?.amount ?? fallbackAmount;
-  const iban = qr.data?.iban ?? BANK_IBAN;
+  // Číslo účtu bere web VÝHRADNĚ z backendu (BANK_IBAN / BANK_BIC).
+  // Žádný fallback – radši nezobrazit nic než poslat platbu na cizí účet.
+  const iban = qr.data?.iban ?? null;
   const message = qr.data?.message ?? fallbackMsg;
-  const spayd =
-    qr.data?.spayd ??
-    (vs
-      ? `SPD*1.0*ACC:${iban}+${BANK_BIC}*AM:${amount}.00*CC:CZK*X-VS:${vs}*MSG:${message}`
-      : null);
+  const spayd = qr.data?.spayd ?? null;
 
   const copy = (v: string, label: string) => {
     void navigator.clipboard.writeText(v);
