@@ -72,15 +72,21 @@ export function PaymentsClient() {
 
   const playerId = pp?.playerId ?? user?.player?.id;
 
-  async function pay(kind: "player-license" | "super-license" | string, matchId?: string) {
-    setPaying(matchId ?? kind);
+  async function pay(
+    kind: "player-license" | "super-license" | "team-reg" | string,
+    matchId?: string,
+    teamRegId?: string,
+  ) {
+    setPaying(teamRegId ? `team-${teamRegId}` : (matchId ?? kind));
     try {
       const res =
         kind === "player-license"
           ? await paymentsApi.playerLicense()
           : kind === "super-license"
             ? await paymentsApi.superLicense()
-            : await paymentsApi.homeFee(matchId!);
+            : kind === "team-reg"
+              ? await paymentsApi.teamRegistration(teamRegId!)
+              : await paymentsApi.homeFee(matchId!);
       if (res.data?.url) window.location.assign(res.data.url);
       else toast.error("Chyba platby", "Server nevrátil platební odkaz.");
     } catch (e) {
@@ -105,7 +111,7 @@ export function PaymentsClient() {
     <Page size="narrow">
       <PageTitle
         title="Platby"
-        subtitle="Licence, registrace týmu a poplatky za domácí zápasy — kartou i převodem"
+        subtitle="Licence, registrace týmu a poplatky za domácí zápasy — kartou, Apple Pay / Google Pay i převodem"
       />
 
       {nothing ? (
@@ -216,7 +222,17 @@ export function PaymentsClient() {
               ["Výše poplatku", czk(tp.amount)],
               ...(tp.paidAt ? ([["Datum platby", fmtDate(tp.paidAt)]] as [string, string][]) : []),
             ]}
-            payAction={null}
+            payAction={
+              (tp.status === "PENDING" || tp.status === "OVERDUE") && (tp.teamId ?? teamId) ? (
+                <Button
+                  className="w-full"
+                  loading={paying === `team-${tp.teamId ?? teamId}`}
+                  onClick={() => pay("team-reg", undefined, (tp.teamId ?? teamId)!)}
+                >
+                  Zaplatit kartou online
+                </Button>
+              ) : null
+            }
             transfer={
               tp.status !== "PAID" && (tp.teamId ?? teamId)
                 ? {
@@ -226,7 +242,6 @@ export function PaymentsClient() {
                     fallbackVs: tp.variableSymbol,
                     fallbackAmount: tp.amount,
                     fallbackMsg: "FSL registrace tymu",
-                    defaultOpen: true,
                   }
                 : null
             }
