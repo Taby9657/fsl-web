@@ -420,6 +420,7 @@ function TransferSection({
   // Číslo účtu bere web VÝHRADNĚ z backendu (BANK_IBAN / BANK_BIC).
   // Žádný fallback – radši nezobrazit nic než poslat platbu na cizí účet.
   const iban = qr.data?.iban ?? null;
+  const bic = qr.data?.bic ?? null;
   const message = qr.data?.message ?? fallbackMsg;
   const spayd = qr.data?.spayd ?? null;
 
@@ -458,16 +459,16 @@ function TransferSection({
 
       {qr.isLoading ? (
         <p className="py-6 text-center text-[13px] text-mu">Načítám platební údaje…</p>
-      ) : !vs ? (
+      ) : !vs || !iban ? (
         <p className="text-[13px] leading-6 text-amber">
-          Variabilní symbol zatím nebyl přidělen. Zkus to za chvíli znovu, nebo zaplať kartou —
-          bez VS by nešlo platbu spárovat.
+          Platební údaje se zatím nepodařilo načíst. Zkus to za chvíli znovu, nebo zaplať kartou —
+          bez čísla účtu a variabilního symbolu by nešlo platbu spárovat.
         </p>
       ) : (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1 space-y-2">
             <Row label="IBAN" value={iban} onCopy={() => copy(iban, "IBAN")} />
-            <Row label="BIC/SWIFT" value={BANK_BIC} onCopy={() => copy(BANK_BIC, "BIC")} />
+            {bic ? <Row label="BIC/SWIFT" value={bic} onCopy={() => copy(bic, "BIC")} /> : null}
             <Row
               label="Variabilní symbol"
               value={vs}

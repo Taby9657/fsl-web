@@ -230,7 +230,7 @@ export const paymentsApi = {
     api.post<{ url: string }>("/payments/team-registration", { teamId }),
   /** type: player-license | super-license | team-reg | home-fee */
   qr: (type: string, id: string) =>
-    api.get<{ spayd: string; vs: string; amount: number; iban: string; message: string }>(
+    api.get<{ spayd: string; vs: string; amount: number; iban: string; bic?: string | null; message: string }>(
       `/payments/qr/${type}/${id}`,
     ),
   vsPlayer: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/player/${id}`),
