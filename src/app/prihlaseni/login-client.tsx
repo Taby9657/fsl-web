@@ -11,8 +11,19 @@ import { Container } from "@/components/layout/container";
 import { Button, Card, Field, Input, Spinner } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 
+interface AppleSignInResponse {
+  authorization?: { id_token?: string; code?: string };
+  user?: { name?: { firstName?: string; lastName?: string }; email?: string };
+}
+
 declare global {
   interface Window {
+    AppleID?: {
+      auth: {
+        init: (o: Record<string, unknown>) => void;
+        signIn: () => Promise<AppleSignInResponse>;
+      };
+    };
     google?: {
       accounts: {
         id: {
@@ -27,6 +38,8 @@ declare global {
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "1";
+/** Services ID z Apple Developer (jine nez App ID mobilni aplikace). */
+const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
 
 /** Shodné s backendem (MIN_HESLO v routes/auth.js). */
 const MIN_HESLO = 8;
@@ -60,6 +73,7 @@ export function LoginClient() {
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [gisFailed, setGisFailed] = useState(false);
+  const [appleReady, setAppleReady] = useState(false);
 
   useEffect(() => {
     if (user) router.replace(next);
@@ -89,6 +103,44 @@ export function LoginClient() {
     },
     [setAuth, goAfterAuth],
   );
+
+  /** Apple SDK se inicializuje až po načtení skriptu; redirectURI musí sedět s tím v Apple Developer. */
+  useEffect(() => {
+    if (!appleReady || !APPLE_CLIENT_ID || !window.AppleID) return;
+    window.AppleID.auth.init({
+      clientId: APPLE_CLIENT_ID,
+      scope: "name email",
+      redirectURI: `${window.location.origin}/prihlaseni`,
+      usePopup: true,
+    });
+  }, [appleReady]);
+
+  const handleApple = useCallback(async () => {
+    if (!window.AppleID) return;
+    setBusy(true);
+    try {
+      const r = await window.AppleID.auth.signIn();
+      const idToken = r?.authorization?.id_token;
+      if (!idToken) throw new Error("Apple nevrátil identityToken");
+      // Jméno a e-mail Apple pošle jen při úplně prvním přihlášení – backend
+      // si je proto uloží hned a napříště bere `sub` z tokenu.
+      const res = await authApi.apple(
+        idToken,
+        r?.user?.name?.firstName,
+        r?.user?.name?.lastName,
+        r?.user?.email,
+      );
+      setAuth(res.data.token, res.data.user);
+      goAfterAuth(res.data.user);
+    } catch (e) {
+      // Zavřené okno není chyba, kterou má smysl uživateli hlásit.
+      const code = (e as { error?: string })?.error;
+      if (code === "popup_closed_by_user" || code === "user_cancelled_authorize") return;
+      toast.error("Přihlášení přes Apple selhalo", errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [setAuth, goAfterAuth]);
 
   /**
    * Šířku tlačítka musíme Googlu předat v pixelech a odpovídat skutečnému místu.
@@ -208,6 +260,13 @@ export function LoginClient() {
         strategy="afterInteractive"
         onLoad={() => setGisReady(true)}
       />
+      {APPLE_CLIENT_ID ? (
+        <Script
+          src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+          strategy="afterInteractive"
+          onLoad={() => setAppleReady(true)}
+        />
+      ) : null}
       <Container size="narrow" className="flex min-h-[70vh] items-center justify-center py-12">
         <Card className="w-full max-w-md p-8 text-center">
           <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-go text-[22px] font-black text-go">
@@ -239,6 +298,20 @@ export function LoginClient() {
                 Chybí NEXT_PUBLIC_GOOGLE_CLIENT_ID — přihlášení přes Google není nakonfigurováno.
               </p>
             )}
+
+            {APPLE_CLIENT_ID ? (
+              <button
+                type="button"
+                onClick={handleApple}
+                disabled={busy || !appleReady}
+                className="flex h-11 w-full max-w-[320px] cursor-pointer items-center justify-center gap-2 rounded-full bg-black text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg viewBox="0 0 384 512" width="15" height="15" fill="currentColor" aria-hidden="true">
+                  <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
+                </svg>
+                Přihlásit se přes Apple
+              </button>
+            ) : null}
 
             {DEV_LOGIN ? (
               <Button variant="subtle" onClick={devLogin} disabled={busy} className="w-full">
