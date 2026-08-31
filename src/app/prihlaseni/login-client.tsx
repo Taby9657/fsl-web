@@ -87,15 +87,17 @@ export function LoginClient() {
    */
   useEffect(() => {
     let pokusy = 0;
+    let timer = 0; // musí vzniknout dřív než `zkus`, jinak na něj sáhne v TDZ
+    const hotovo = () => !!window.google?.accounts?.id && !!window.AppleID;
     const zkus = () => {
       if (window.google?.accounts?.id) setGisReady(true);
       if (window.AppleID) setAppleReady(true);
       pokusy += 1;
-      if (pokusy < 20 && !(window.google?.accounts?.id && window.AppleID)) return;
-      window.clearInterval(timer);
+      if (hotovo() || pokusy >= 20) window.clearInterval(timer);
     };
     zkus();
-    const timer = window.setInterval(zkus, 250);
+    // Po klientské navigaci bývají SDK k dispozici hned a opakovat není co.
+    if (!hotovo()) timer = window.setInterval(zkus, 250);
     return () => window.clearInterval(timer);
   }, []);
 
