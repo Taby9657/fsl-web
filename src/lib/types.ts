@@ -335,6 +335,11 @@ export interface Manager {
 export interface AuthUser {
   id: string;
   email: string;
+  /**
+   * Backend ho posílá v kořeni uživatele (`sanitizeUser`), protože supervisora
+   * lze určit i přes SUPERVISOR_USER_IDS — tedy u účtu bez hráčského profilu.
+   */
+  isSupervisor?: boolean;
   player?: Player | null;
   referee?: Referee | null;
   manager?: Manager[];
