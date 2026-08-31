@@ -168,7 +168,7 @@ export function SiteHeader() {
                     onClick={async () => {
                       setMenu(false);
                       await logout();
-                      router.push("/");
+                      router.replace("/");
                     }}
                     className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-left text-[14px] text-red transition-colors hover:bg-c2"
                   >

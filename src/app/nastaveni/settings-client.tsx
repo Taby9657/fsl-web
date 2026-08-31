@@ -160,7 +160,7 @@ export function SettingsClient() {
         className="w-full border-red/50 text-red hover:bg-red/10"
         onClick={async () => {
           await logout();
-          router.push("/");
+          router.replace("/");
         }}
       >
         <LogOut size={16} />

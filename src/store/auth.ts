@@ -25,6 +25,16 @@ interface AuthState {
 
 const GUEST_KEY = "fsl_guest";
 
+/**
+ * Vyhození cache React Query při odhlášení – jinak by novému uživateli chvíli
+ * svítila data toho předchozího, než se stihnou přenačíst.
+ * Registruje se z Providers, aby store nemusel znát QueryClient.
+ */
+let clearQueryCache: (() => void) | null = null;
+export function setQueryCacheCleaner(fn: () => void) {
+  clearQueryCache = fn;
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
@@ -44,11 +54,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      /* offline odhlášení nesmí blokovat */
-    }
+    // Nejdřív uklidíme u sebe, teprve pak informujeme server. Když se čekalo na
+    // odpověď, uživatel po kliknutí na Odhlásit ještě chvíli viděl svůj účet.
     clearToken();
     try {
       window.localStorage.removeItem(GUEST_KEY);
@@ -56,6 +63,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       /* ignore */
     }
     set({ token: null, user: null, isGuest: false, loading: false, hydrated: true });
+    clearQueryCache?.();
+
+    // Na pozadí, výsledek nás nezajímá – lokálně jsme odhlášení tak jako tak.
+    void authApi.logout().catch(() => {
+      /* offline odhlášení nesmí nic blokovat */
+    });
   },
 
   loginAsGuest: () => {
@@ -112,6 +125,7 @@ setUnauthorizedHandler(() => {
     loading: false,
     hydrated: true,
   });
+  clearQueryCache?.();
 });
 
 /* ---------- odvozené role ---------- */
@@ -123,8 +137,15 @@ export const useIsReferee = () => useAuthStore((s) => !!s.user?.referee);
 
 export const useIsPlayer = () => useAuthStore((s) => !!s.user?.player);
 
+/**
+ * Backend posílá `isSupervisor` v kořeni uživatele (`sanitizeUser`), protože
+ * roli lze udělit i přes SUPERVISOR_USER_IDS, tedy bez hráčského profilu.
+ * Web se díval jen do `player`, takže supervisora bez profilu neviděl.
+ */
 export const useIsSupervisor = () =>
-  useAuthStore((s) => s.user?.player?.isSupervisor === true);
+  useAuthStore(
+    (s) => s.user?.isSupervisor === true || s.user?.player?.isSupervisor === true,
+  );
 
 export const useMyTeamId = () =>
   useAuthStore((s) => s.user?.manager?.[0]?.teamId ?? s.user?.player?.teamId ?? null);

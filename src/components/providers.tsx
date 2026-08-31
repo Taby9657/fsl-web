@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { useAuthStore } from "@/store/auth";
+import { setQueryCacheCleaner, useAuthStore } from "@/store/auth";
 import { ToastViewport } from "@/components/ui/toast";
 
 function AuthBootstrap() {
@@ -26,6 +26,10 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   );
+
+  useEffect(() => {
+    setQueryCacheCleaner(() => client.clear());
+  }, [client]);
 
   return (
     <QueryClientProvider client={client}>

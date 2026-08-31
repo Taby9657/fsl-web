@@ -123,7 +123,7 @@ export function AccountClient() {
               size="sm"
               onClick={async () => {
                 await logout();
-                router.push("/");
+                router.replace("/");
               }}
             >
               <LogOut size={15} /> Odhlásit

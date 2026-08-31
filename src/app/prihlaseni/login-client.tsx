@@ -304,7 +304,17 @@ export function LoginClient() {
               </div>
             ) : CLIENT_ID ? (
               <>
-                <div ref={btnRef} className="min-h-11 w-full max-w-[320px]" />
+                {/*
+                  Personalizovanou variantu tlačítka vykresluje Google v iframu,
+                  který si nasazuje `margin: -2px -10px` a přečnívá přes svůj obal
+                  — ten přesah je bílý a kolem tmavé pilulky vypadá jako deska.
+                  Ořez patří na ten vnitřní <div>, který má rozměr přesně jako
+                  tlačítko; na našem obalu by uřízl 2 px z horní hrany.
+                */}
+                <div
+                  ref={btnRef}
+                  className="min-h-11 w-full max-w-[320px] [&>div]:overflow-hidden [&>div]:rounded-full"
+                />
                 {gisFailed ? (
                   <p className="text-[12px] leading-5 text-di">
                     Přihlášení přes Google se tu nenačetlo — prohlížeče uvnitř aplikací
