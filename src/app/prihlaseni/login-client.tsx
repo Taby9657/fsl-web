@@ -147,11 +147,20 @@ export function LoginClient() {
    * S natvrdo zapsanou hodnotou se na úzkých displejích vykreslilo 0 × 0 px,
    * takže na mobilu nebylo vidět vůbec nic. Povolené rozmezí je 200–400 px.
    */
+  const lastWidth = useRef(0);
+
   const renderGoogleButton = useCallback(() => {
     const el = btnRef.current;
     if (!el || !window.google) return;
-    const avail = el.getBoundingClientRect().width;
-    const width = Math.round(Math.min(400, Math.max(200, avail || 300)));
+    const avail = Math.round(el.getBoundingClientRect().width);
+    const width = Math.min(400, Math.max(200, avail || 300));
+
+    // Opakované renderButton() Google po pár voláních tiše ignoruje a zůstane
+    // prázdné místo. Překreslujeme proto jen když se šířka opravdu změnila,
+    // nebo když je obal prázdný.
+    if (width === lastWidth.current && el.childElementCount > 0) return;
+    lastWidth.current = width;
+
     el.innerHTML = "";
     window.google.accounts.id.renderButton(el, {
       theme: "filled_black",
@@ -176,19 +185,29 @@ export function LoginClient() {
     });
     renderGoogleButton();
 
-    const onResize = () => renderGoogleButton();
+    // Resize chodí i při schování adresního řádku na mobilu, proto s odstupem.
+    let resizeTimer = 0;
+    const onResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(renderGoogleButton, 250);
+    };
     window.addEventListener("resize", onResize);
 
-    // Prohlížeče uvnitř aplikací (Messenger, Instagram) Google blokuje – tlačítko
-    // se pak nevykreslí. Radši to řekneme, než abychom nechali prázdné místo.
-    const t = window.setTimeout(() => {
-      const frame = btnRef.current?.querySelector("iframe");
-      if (!frame || frame.getBoundingClientRect().height === 0) setGisFailed(true);
-    }, 2500);
+    // Google tlačítko vykresluje buď jako <div>, nebo (personalizované, se jménem
+    // uživatele) jako <iframe> – hlídáme proto obsah obalu, ne konkrétní prvek.
+    const jePrazdne = () => {
+      const el = btnRef.current;
+      return !el || el.childElementCount === 0 || el.getBoundingClientRect().height < 8;
+    };
+    // Jeden pokus navíc; teprve pak to vzdáme a řekneme to uživateli.
+    const t1 = window.setTimeout(() => { if (jePrazdne()) renderGoogleButton(); }, 2000);
+    const t2 = window.setTimeout(() => { if (jePrazdne()) setGisFailed(true); }, 5000);
 
     return () => {
       window.removeEventListener("resize", onResize);
-      window.clearTimeout(t);
+      window.clearTimeout(resizeTimer);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
     };
   }, [gisReady, handleCredential, renderGoogleButton]);
 
@@ -278,23 +297,14 @@ export function LoginClient() {
             Přihlas se pro přístup ke správě týmu, platbám a draftu.
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-2.5">
+          <div className="mt-8 flex flex-col items-center gap-3">
             {busy ? (
               <div className="flex h-11 items-center gap-2 text-mu">
                 <Spinner size={18} /> Pracuji…
               </div>
             ) : CLIENT_ID ? (
               <>
-                {/*
-                  Google vykresluje tlačítko v iframu, který je o něco širší než
-                  samotné tlačítko — kolem černé pilulky proto zbývá bílý lem.
-                  Obal má přesnou výšku a `overflow-hidden` se zaoblením, takže
-                  se lem ořízne a tlačítko sedí vedle toho od Applu.
-                */}
-                <div
-                  ref={btnRef}
-                  className="flex h-11 w-full max-w-[320px] items-center justify-center overflow-hidden rounded-full bg-black [&>div]:!m-0 [&_iframe]:!m-0"
-                />
+                <div ref={btnRef} className="min-h-11 w-full max-w-[320px]" />
                 {gisFailed ? (
                   <p className="text-[12px] leading-5 text-di">
                     Přihlášení přes Google se tu nenačetlo — prohlížeče uvnitř aplikací
