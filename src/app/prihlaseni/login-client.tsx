@@ -158,6 +158,7 @@ export function LoginClient() {
       size: "large",
       shape: "pill",
       text: "signin_with",
+      logo_alignment: "left",
       locale: "cs",
       width,
     });
@@ -277,14 +278,23 @@ export function LoginClient() {
             Přihlas se pro přístup ke správě týmu, platbám a draftu.
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="mt-8 flex flex-col items-center gap-2.5">
             {busy ? (
               <div className="flex h-11 items-center gap-2 text-mu">
                 <Spinner size={18} /> Pracuji…
               </div>
             ) : CLIENT_ID ? (
               <>
-                <div ref={btnRef} className="min-h-11 w-full max-w-[320px]" />
+                {/*
+                  Google vykresluje tlačítko v iframu, který je o něco širší než
+                  samotné tlačítko — kolem černé pilulky proto zbývá bílý lem.
+                  Obal má přesnou výšku a `overflow-hidden` se zaoblením, takže
+                  se lem ořízne a tlačítko sedí vedle toho od Applu.
+                */}
+                <div
+                  ref={btnRef}
+                  className="flex h-11 w-full max-w-[320px] items-center justify-center overflow-hidden rounded-full bg-black [&>div]:!m-0 [&_iframe]:!m-0"
+                />
                 {gisFailed ? (
                   <p className="text-[12px] leading-5 text-di">
                     Přihlášení přes Google se tu nenačetlo — prohlížeče uvnitř aplikací
