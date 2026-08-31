@@ -59,6 +59,7 @@ export function LoginClient() {
   const [code, setCode] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [gisFailed, setGisFailed] = useState(false);
 
   useEffect(() => {
     if (user) router.replace(next);
@@ -89,6 +90,27 @@ export function LoginClient() {
     [setAuth, goAfterAuth],
   );
 
+  /**
+   * Šířku tlačítka musíme Googlu předat v pixelech a odpovídat skutečnému místu.
+   * S natvrdo zapsanou hodnotou se na úzkých displejích vykreslilo 0 × 0 px,
+   * takže na mobilu nebylo vidět vůbec nic. Povolené rozmezí je 200–400 px.
+   */
+  const renderGoogleButton = useCallback(() => {
+    const el = btnRef.current;
+    if (!el || !window.google) return;
+    const avail = el.getBoundingClientRect().width;
+    const width = Math.round(Math.min(400, Math.max(200, avail || 300)));
+    el.innerHTML = "";
+    window.google.accounts.id.renderButton(el, {
+      theme: "filled_black",
+      size: "large",
+      shape: "pill",
+      text: "signin_with",
+      locale: "cs",
+      width,
+    });
+  }, []);
+
   useEffect(() => {
     if (!gisReady || !CLIENT_ID || !btnRef.current || !window.google) return;
     window.google.accounts.id.initialize({
@@ -99,15 +121,23 @@ export function LoginClient() {
       ux_mode: "popup",
       auto_select: false,
     });
-    window.google.accounts.id.renderButton(btnRef.current, {
-      theme: "filled_black",
-      size: "large",
-      shape: "pill",
-      text: "signin_with",
-      locale: "cs",
-      width: 320,
-    });
-  }, [gisReady, handleCredential]);
+    renderGoogleButton();
+
+    const onResize = () => renderGoogleButton();
+    window.addEventListener("resize", onResize);
+
+    // Prohlížeče uvnitř aplikací (Messenger, Instagram) Google blokuje – tlačítko
+    // se pak nevykreslí. Radši to řekneme, než abychom nechali prázdné místo.
+    const t = window.setTimeout(() => {
+      const frame = btnRef.current?.querySelector("iframe");
+      if (!frame || frame.getBoundingClientRect().height === 0) setGisFailed(true);
+    }, 2500);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(t);
+    };
+  }, [gisReady, handleCredential, renderGoogleButton]);
 
   function switchMode(m: Mode) {
     setMode(m);
@@ -194,7 +224,16 @@ export function LoginClient() {
                 <Spinner size={18} /> Pracuji…
               </div>
             ) : CLIENT_ID ? (
-              <div ref={btnRef} className="min-h-11" />
+              <>
+                <div ref={btnRef} className="min-h-11 w-full max-w-[320px]" />
+                {gisFailed ? (
+                  <p className="text-[12px] leading-5 text-di">
+                    Přihlášení přes Google se tu nenačetlo — prohlížeče uvnitř aplikací
+                    (Messenger, Instagram) ho blokují. Otevři fslleague.cz v Safari nebo
+                    Chromu, nebo se přihlas e-mailem níž.
+                  </p>
+                ) : null}
+              </>
             ) : (
               <p className="text-[13px] text-red">
                 Chybí NEXT_PUBLIC_GOOGLE_CLIENT_ID — přihlášení přes Google není nakonfigurováno.
