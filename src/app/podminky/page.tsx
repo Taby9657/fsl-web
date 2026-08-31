@@ -87,9 +87,14 @@ export default function TermsPage() {
           e-mailem.
         </p>
 
-        <h2>9. Kontakt</h2>
+        <h2>9. Provozovatel a kontakt</h2>
         <p>
-          Jakub Tabášek, <a href="mailto:j.tabasek96@gmail.com">j.tabasek96@gmail.com</a>
+          Provozovatelem Floorball Stars Ligy, webu fslleague.cz i mobilní aplikace FSL je 
+          <strong>Ninety Three Group s.r.o.</strong>, IČO 29933455, se sídlem Roháčova 145/14, Žižkov, 130 00 Praha 3, zapsaná v obchodním
+          rejstříku pod spisovou značkou C 454702 vedená u Městského soudu v Praze.
+        </p>
+        <p>
+          Kontaktní e-mail: <a href="mailto:info@fslleague.cz">info@fslleague.cz</a>
         </p>
       </Prose>
     </Page>

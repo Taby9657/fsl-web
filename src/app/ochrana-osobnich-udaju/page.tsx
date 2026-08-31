@@ -19,8 +19,11 @@ export default function PrivacyPage() {
       <Prose>
         <h2>1. Správce údajů</h2>
         <p>
-          Správcem osobních údajů je Jakub Tabášek, kontaktní e-mail{" "}
-          <a href="mailto:j.tabasek96@gmail.com">j.tabasek96@gmail.com</a>.
+          Správcem osobních údajů je <strong>Ninety Three Group s.r.o.</strong>, IČO 29933455, se sídlem 
+          Roháčova 145/14, Žižkov, 130 00 Praha 3, zapsaná v obchodním rejstříku pod spisovou značkou C 454702 vedená u Městského soudu v Praze.
+        </p>
+        <p>
+          Kontaktní e-mail: <a href="mailto:info@fslleague.cz">info@fslleague.cz</a>.
         </p>
 
         <h2>2. Jaké údaje zpracováváme</h2>
@@ -86,7 +89,7 @@ export default function PrivacyPage() {
         <p>
           Máte právo na přístup ke svým údajům, jejich opravu, výmaz, omezení zpracování a na
           přenositelnost. Žádosti posílejte na{" "}
-          <a href="mailto:j.tabasek96@gmail.com">j.tabasek96@gmail.com</a>. Máte také právo
+          <a href="mailto:info@fslleague.cz">info@fslleague.cz</a>. Máte také právo
           podat stížnost u Úřadu pro ochranu osobních údajů.
         </p>
       </Prose>

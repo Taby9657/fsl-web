@@ -76,8 +76,10 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-bd pt-6 sm:flex-row sm:items-center">
-          <p className="text-[12px] text-di">
+          <p className="text-[12px] leading-5 text-di">
             © {new Date().getFullYear()} Floorball Stars Liga · fslleague.cz
+            <br />
+            Provozovatel: Ninety Three Group s.r.o., IČO 29933455, Roháčova 145/14, Žižkov, 130 00 Praha 3
           </p>
           <p className="text-[12px] text-di">
             Stáhni si aplikaci FSL pro iOS a Android

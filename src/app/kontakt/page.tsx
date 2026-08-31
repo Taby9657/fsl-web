@@ -26,10 +26,10 @@ export default function KontaktPage() {
             Obecné dotazy, registrace týmů, fakturace.
           </p>
           <a
-            href="mailto:j.tabasek96@gmail.com"
+            href="mailto:info@fslleague.cz"
             className="mt-3 inline-block text-[14px] font-semibold text-go hover:underline"
           >
-            j.tabasek96@gmail.com
+            info@fslleague.cz
           </a>
         </Card>
 
@@ -37,9 +37,17 @@ export default function KontaktPage() {
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pu/20 text-pu">
             <Shield size={20} />
           </span>
-          <h2 className="mt-4 text-[16px] font-bold text-wh">Vedení ligy</h2>
-          <p className="mt-1 text-[14px] text-mu">
-            Jakub Tabášek — supervisor Floorball Stars Ligy.
+          <h2 className="mt-4 text-[16px] font-bold text-wh">Provozovatel</h2>
+          <p className="mt-1 text-[14px] leading-6 text-mu">
+            Ninety Three Group s.r.o.
+            <br />
+            IČO 29933455
+            <br />
+            Roháčova 145/14, Žižkov, 130 00 Praha 3
+          </p>
+          <p className="mt-2 text-[13px] text-di">
+            Zapsaná v obchodním rejstříku, spisová značka C 454702 vedená u Městského soudu v Praze. Ligu vede Jakub
+            Tabášek, jednatel společnosti.
           </p>
         </Card>
       </div>
