@@ -4,7 +4,7 @@ import { LoginClient } from "./login-client";
 
 export const metadata: Metadata = {
   title: "Přihlášení",
-  description: "Přihlas se do Floorball Stars Ligy přes Google nebo Apple.",
+  description: "Přihlas se do Floorball Stars Ligy e-mailem nebo přes Google.",
   robots: { index: false, follow: false },
 };
 

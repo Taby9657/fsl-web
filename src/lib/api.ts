@@ -123,6 +123,22 @@ export const authApi = {
       lastName,
       email,
     }),
+  /** Registrace e-mailem a heslem (heslo min. 8 znaků – hlídá i backend). */
+  register: (email: string, password: string) =>
+    api.post<{ token: string; user: AuthUser }>("/auth/register", { email, password }),
+  /** Přihlášení e-mailem a heslem. */
+  login: (email: string, password: string) =>
+    api.post<{ token: string; user: AuthUser }>("/auth/login", { email, password }),
+  /** Vyžádání šestimístného kódu na e-mail. Odpověď je vždy stejná, ať účet existuje nebo ne. */
+  forgotPassword: (email: string) =>
+    api.post<{ ok: true; message: string }>("/auth/forgot-password", { email }),
+  /** Nastavení nového hesla pomocí kódu – rovnou vrací token, uživatel je přihlášený. */
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    api.post<{ token: string; user: AuthUser }>("/auth/reset-password", {
+      email,
+      code,
+      newPassword,
+    }),
   me: () => api.get<{ user: AuthUser }>("/auth/me"),
   logout: () => api.post("/auth/logout"),
 };

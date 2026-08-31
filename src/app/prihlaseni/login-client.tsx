@@ -6,8 +6,9 @@ import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, authApi, errMsg } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import type { AuthUser } from "@/lib/types";
 import { Container } from "@/components/layout/container";
-import { Button, Card, Spinner } from "@/components/ui/primitives";
+import { Button, Card, Field, Input, Spinner } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 
 declare global {
@@ -27,6 +28,18 @@ declare global {
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "1";
 
+/** Shodné s backendem (MIN_HESLO v routes/auth.js). */
+const MIN_HESLO = 8;
+
+type Mode = "login" | "register" | "forgot" | "reset";
+
+const TEXTS: Record<Mode, { title: string; submit: string }> = {
+  login: { title: "Přihlášení e-mailem", submit: "Přihlásit se" },
+  register: { title: "Nový účet", submit: "Vytvořit účet" },
+  forgot: { title: "Zapomenuté heslo", submit: "Poslat kód" },
+  reset: { title: "Nové heslo", submit: "Nastavit heslo a přihlásit" },
+};
+
 export function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
@@ -40,9 +53,25 @@ export function LoginClient() {
   const [gisReady, setGisReady] = useState(false);
   const btnRef = useRef<HTMLDivElement>(null);
 
+  const [mode, setMode] = useState<Mode>("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
   useEffect(() => {
     if (user) router.replace(next);
   }, [user, next, router]);
+
+  /** Po přihlášení: kdo nemá žádný profil, jde nejdřív dodělat registraci. */
+  const goAfterAuth = useCallback(
+    (u: AuthUser) => {
+      const hasProfile = !!u.player || !!u.referee || (u.manager?.length ?? 0) > 0;
+      router.replace(hasProfile ? next : "/registrace");
+    },
+    [router, next],
+  );
 
   const handleCredential = useCallback(
     async (idToken: string) => {
@@ -50,16 +79,14 @@ export function LoginClient() {
       try {
         const res = await authApi.google(idToken);
         setAuth(res.data.token, res.data.user);
-        const u = res.data.user;
-        const hasProfile = !!u.player || !!u.referee || (u.manager?.length ?? 0) > 0;
-        router.replace(hasProfile ? next : "/registrace");
+        goAfterAuth(res.data.user);
       } catch (e) {
         toast.error("Přihlášení selhalo", errMsg(e));
       } finally {
         setBusy(false);
       }
     },
-    [setAuth, router, next],
+    [setAuth, goAfterAuth],
   );
 
   useEffect(() => {
@@ -82,12 +109,57 @@ export function LoginClient() {
     });
   }, [gisReady, handleCredential]);
 
+  function switchMode(m: Mode) {
+    setMode(m);
+    setFormError(null);
+    setNotice(null);
+    if (m === "login" || m === "register") setCode("");
+    if (m !== "reset") setPassword("");
+  }
+
+  async function submitEmailForm(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    setNotice(null);
+
+    const mail = email.trim();
+    if (!mail) return setFormError("Vyplň e-mail.");
+    if (mode !== "forgot" && !password) return setFormError("Vyplň heslo.");
+    if ((mode === "register" || mode === "reset") && password.length < MIN_HESLO) {
+      return setFormError(`Heslo musí mít alespoň ${MIN_HESLO} znaků.`);
+    }
+    if (mode === "reset" && !code.trim()) return setFormError("Vyplň kód z e-mailu.");
+
+    setBusy(true);
+    try {
+      if (mode === "forgot") {
+        const res = await authApi.forgotPassword(mail);
+        setNotice(res.data.message);
+        setMode("reset");
+        setPassword("");
+        return;
+      }
+
+      const res =
+        mode === "login"
+          ? await authApi.login(mail, password)
+          : mode === "register"
+            ? await authApi.register(mail, password)
+            : await authApi.resetPassword(mail, code.trim(), password);
+
+      setAuth(res.data.token, res.data.user);
+      goAfterAuth(res.data.user);
+    } catch (err) {
+      setFormError(errMsg(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function devLogin() {
     setBusy(true);
     try {
-      const res = await api.post<{ token: string; user: import("@/lib/types").AuthUser }>(
-        "/auth/dev-login",
-      );
+      const res = await api.post<{ token: string; user: AuthUser }>("/auth/dev-login");
       setAuth(res.data.token, res.data.user);
       router.replace(next);
     } catch (e) {
@@ -96,6 +168,8 @@ export function LoginClient() {
       setBusy(false);
     }
   }
+
+  const t = TEXTS[mode];
 
   return (
     <>
@@ -117,7 +191,7 @@ export function LoginClient() {
           <div className="mt-8 flex flex-col items-center gap-3">
             {busy ? (
               <div className="flex h-11 items-center gap-2 text-mu">
-                <Spinner size={18} /> Přihlašuji…
+                <Spinner size={18} /> Pracuji…
               </div>
             ) : CLIENT_ID ? (
               <div ref={btnRef} className="min-h-11" />
@@ -131,6 +205,113 @@ export function LoginClient() {
               <Button variant="subtle" onClick={devLogin} disabled={busy} className="w-full">
                 Testovací přihlášení (vývoj)
               </Button>
+            ) : null}
+          </div>
+
+          <div className="my-7 flex items-center gap-3">
+            <span className="h-px flex-1 bg-bd" />
+            <span className="text-[12px] text-di">nebo e-mailem</span>
+            <span className="h-px flex-1 bg-bd" />
+          </div>
+
+          <form onSubmit={submitEmailForm} className="space-y-3 text-left">
+            <p className="text-center text-[13px] font-semibold text-wh">{t.title}</p>
+
+            {mode === "reset" ? (
+              <p className="text-center text-[12px] leading-5 text-mu">
+                Kód platí 30 minut. Nepřišel? Zkontroluj spam, nebo si{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className="cursor-pointer text-go underline"
+                >
+                  vyžádej nový
+                </button>
+                .
+              </p>
+            ) : null}
+
+            <Field label="E-mail" required>
+              <Input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="jmeno@email.cz"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={busy}
+              />
+            </Field>
+
+            {mode === "reset" ? (
+              <Field label="Kód z e-mailu" required>
+                <Input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  placeholder="123456"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                  disabled={busy}
+                />
+              </Field>
+            ) : null}
+
+            {mode !== "forgot" ? (
+              <Field label={mode === "login" ? "Heslo" : "Nové heslo"} required>
+                <Input
+                  type="password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={busy}
+                />
+                {mode !== "login" ? (
+                  <p className="mt-1 text-[12px] text-di">Alespoň {MIN_HESLO} znaků.</p>
+                ) : null}
+              </Field>
+            ) : null}
+
+            {notice ? (
+              <p className="rounded-xl border border-bd bg-c2/60 px-3 py-2 text-[12px] leading-5 text-mu">
+                {notice}
+              </p>
+            ) : null}
+            {formError ? <p className="text-[12px] leading-5 text-red">{formError}</p> : null}
+
+            <Button type="submit" className="w-full" loading={busy} disabled={busy}>
+              {t.submit}
+            </Button>
+          </form>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-mu">
+            {mode !== "login" ? (
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className="cursor-pointer underline hover:text-wh"
+              >
+                Zpět na přihlášení
+              </button>
+            ) : null}
+            {mode === "login" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => switchMode("register")}
+                  className="cursor-pointer underline hover:text-wh"
+                >
+                  Nemám účet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className="cursor-pointer underline hover:text-wh"
+                >
+                  Zapomenuté heslo
+                </button>
+              </>
             ) : null}
           </div>
 
