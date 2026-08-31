@@ -79,6 +79,26 @@ export function LoginClient() {
     if (user) router.replace(next);
   }, [user, next, router]);
 
+  /**
+   * Po klientské navigaci (třeba po odhlášení) jsou skripty od Googlu i Applu
+   * už načtené, takže `onLoad` se podruhé nespustí a tlačítka by zůstala
+   * nevykreslená. Při namontování se proto rovnou podíváme, jestli SDK nejsou
+   * k dispozici; krátce to i zkoušíme dokola pro případ, že se zrovna načítají.
+   */
+  useEffect(() => {
+    let pokusy = 0;
+    const zkus = () => {
+      if (window.google?.accounts?.id) setGisReady(true);
+      if (window.AppleID) setAppleReady(true);
+      pokusy += 1;
+      if (pokusy < 20 && !(window.google?.accounts?.id && window.AppleID)) return;
+      window.clearInterval(timer);
+    };
+    zkus();
+    const timer = window.setInterval(zkus, 250);
+    return () => window.clearInterval(timer);
+  }, []);
+
   /** Po přihlášení: kdo nemá žádný profil, jde nejdřív dodělat registraci. */
   const goAfterAuth = useCallback(
     (u: AuthUser) => {
@@ -279,12 +299,14 @@ export function LoginClient() {
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
         onLoad={() => setGisReady(true)}
+        onReady={() => setGisReady(true)}
       />
       {APPLE_CLIENT_ID ? (
         <Script
           src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
           strategy="afterInteractive"
           onLoad={() => setAppleReady(true)}
+          onReady={() => setAppleReady(true)}
         />
       ) : null}
       <Container size="narrow" className="flex min-h-[70vh] items-center justify-center py-12">
