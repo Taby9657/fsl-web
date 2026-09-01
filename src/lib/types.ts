@@ -340,6 +340,11 @@ export interface AuthUser {
    * lze určit i přes SUPERVISOR_USER_IDS — tedy u účtu bez hráčského profilu.
    */
   isSupervisor?: boolean;
+  /**
+   * Má účet nastavené heslo? Účty založené přes Google nebo Apple ho nemají —
+   * pak se v nastavení neptáme na současné heslo, jen nabídneme jeho vytvoření.
+   */
+  hasPassword?: boolean;
   player?: Player | null;
   referee?: Referee | null;
   manager?: Manager[];

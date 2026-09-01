@@ -139,6 +139,14 @@ export const authApi = {
       code,
       newPassword,
     }),
+  /**
+   * Změna nebo první nastavení hesla přihlášeného uživatele.
+   * `currentPassword` se posílá jen u účtů, které heslo už mají
+   * (`AuthUser.hasPassword`) — u Google/Apple účtů backend nic neověřuje,
+   * vlastnictví účtu je prokázané tím, že je uživatel přihlášený.
+   */
+  changePassword: (newPassword: string, currentPassword?: string) =>
+    api.put<{ ok: true }>("/auth/password", { newPassword, currentPassword }),
   me: () => api.get<{ user: AuthUser }>("/auth/me"),
   logout: () => api.post("/auth/logout"),
 };

@@ -5,11 +5,14 @@ import { LogOut, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { authApi, errMsg } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
 import {
   Button,
   Card,
+  Field,
+  Input,
   PageTitle,
   SectionTitle,
   Switch,
@@ -17,6 +20,9 @@ import {
 import { toast } from "@/components/ui/toast";
 
 const PREFS_KEY = "fsl_notif_prefs";
+
+/** Shodné s backendem (MIN_HESLO v routes/auth.js). */
+const MIN_HESLO = 8;
 
 type Prefs = {
   matchStart: boolean;
@@ -75,6 +81,8 @@ export function SettingsClient() {
           </Link>
         </Card>
       </section>
+
+      <PasswordSection />
 
       <section className="mb-8">
         <SectionTitle>Oznámení</SectionTitle>
@@ -167,5 +175,131 @@ export function SettingsClient() {
         Odhlásit se
       </Button>
     </Page>
+  );
+}
+
+/**
+ * Nastavení nebo změna hesla.
+ *
+ * Účty založené přes Google nebo Apple heslo nemají (`AuthUser.hasPassword`).
+ * Těm se nezobrazuje pole „současné heslo" — backend ho u nich neověřuje,
+ * vlastnictví účtu je prokázané tím, že je uživatel přihlášený. Bez téhle
+ * obrazovky si takový účet heslo nemohl přidat vůbec.
+ */
+function PasswordSection() {
+  const user = useAuthStore((s) => s.user);
+  const refreshUser = useAuthStore((s) => s.refreshUser);
+  const maHeslo = user?.hasPassword === true;
+
+  const [otevreno, setOtevreno] = useState(false);
+  const [soucasne, setSoucasne] = useState("");
+  const [nove, setNove] = useState("");
+  const [znovu, setZnovu] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [chyba, setChyba] = useState<string | null>(null);
+
+  function zavrit() {
+    setOtevreno(false);
+    setSoucasne("");
+    setNove("");
+    setZnovu("");
+    setChyba(null);
+  }
+
+  async function odeslat(e: React.FormEvent) {
+    e.preventDefault();
+    setChyba(null);
+
+    if (maHeslo && !soucasne) return setChyba("Vyplň současné heslo.");
+    if (nove.length < MIN_HESLO) return setChyba(`Nové heslo musí mít alespoň ${MIN_HESLO} znaků.`);
+    if (nove !== znovu) return setChyba("Hesla se neshodují.");
+
+    setBusy(true);
+    try {
+      await authApi.changePassword(nove, maHeslo ? soucasne : undefined);
+      // Aby se u účtu z Google/Apple přepnul hasPassword na true a příště se
+      // ptalo i na současné heslo.
+      await refreshUser();
+      zavrit();
+      toast.success(
+        maHeslo ? "Heslo změněno" : "Heslo nastaveno",
+        "Od teď se můžeš přihlásit e-mailem a heslem.",
+      );
+    } catch (err) {
+      setChyba(errMsg(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mb-8">
+      <SectionTitle>Heslo</SectionTitle>
+      <Card className="p-5">
+        {!otevreno ? (
+          <>
+            <p className="text-[14px] text-wh">
+              {maHeslo ? "Změnit heslo" : "Nastavit heslo"}
+            </p>
+            <p className="mt-0.5 text-[12px] leading-5 text-mu">
+              {maHeslo
+                ? "Přihlašování e-mailem a heslem máš zapnuté."
+                : "Účet je založený přes Google nebo Apple. Když si nastavíš heslo, budeš se moct přihlásit i e-mailem."}
+            </p>
+            <Button variant="subtle" size="sm" className="mt-3" onClick={() => setOtevreno(true)}>
+              {maHeslo ? "Změnit heslo" : "Nastavit heslo"}
+            </Button>
+          </>
+        ) : (
+          <form onSubmit={odeslat} className="space-y-3">
+            {maHeslo ? (
+              <Field label="Současné heslo" required>
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={soucasne}
+                  onChange={(e) => setSoucasne(e.target.value)}
+                  disabled={busy}
+                />
+              </Field>
+            ) : null}
+
+            <Field label="Nové heslo" required error={`Alespoň ${MIN_HESLO} znaků.`}>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={nove}
+                onChange={(e) => setNove(e.target.value)}
+                disabled={busy}
+              />
+            </Field>
+
+            <Field label="Nové heslo znovu" required>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={znovu}
+                onChange={(e) => setZnovu(e.target.value)}
+                disabled={busy}
+              />
+            </Field>
+
+            {chyba ? <p className="text-[12px] leading-5 text-red">{chyba}</p> : null}
+
+            <div className="flex gap-2 pt-1">
+              <Button type="submit" size="sm" loading={busy} disabled={busy}>
+                Uložit
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={zavrit} disabled={busy}>
+                Zrušit
+              </Button>
+            </div>
+          </form>
+        )}
+      </Card>
+    </section>
   );
 }
