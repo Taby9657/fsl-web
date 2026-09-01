@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { publicFetch } from "@/lib/api";
-import type { Highlight, Match, TableRow } from "@/lib/types";
+import type { Highlight, Match, TableRow, TeamLite } from "@/lib/types";
 import { fmtDate } from "@/lib/format";
 import { Container } from "@/components/layout/container";
 import { MatchCard } from "@/components/match-card";
@@ -21,12 +21,13 @@ import { TeamDot } from "@/components/ui/data";
 export const revalidate = 30;
 
 export default async function HomePage() {
-  const [live, upcoming, table, highlights, seasons] = await Promise.all([
+  const [live, upcoming, table, highlights, seasons, teams] = await Promise.all([
     publicFetch<Match[]>("/matches", { status: "LIVE" }, 15),
     publicFetch<Match[]>("/matches", { status: "UPCOMING", limit: 4 }, 60),
     publicFetch<TableRow[]>("/stats/table", { division: "Divize A" }, 60),
     publicFetch<Highlight[]>("/highlights", undefined, 120),
     publicFetch<string[]>("/stats/seasons", undefined, 600),
+    publicFetch<TeamLite[]>("/teams", undefined, 300),
   ]);
 
   const season = seasons?.[0] ?? "2025/26";
@@ -79,7 +80,7 @@ export default async function HomePage() {
               <HeroStat
                 icon={<Trophy size={20} />}
                 label="Týmů v lize"
-                value={table?.length ? String(table.length) : "—"}
+                value={teams?.length ? String(teams.length) : "—"}
               />
               <HeroStat
                 icon={<CalendarDays size={20} />}
