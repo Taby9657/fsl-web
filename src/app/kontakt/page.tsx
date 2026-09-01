@@ -46,8 +46,7 @@ export default function KontaktPage() {
             Roháčova 145/14, Žižkov, 130 00 Praha 3
           </p>
           <p className="mt-2 text-[13px] text-di">
-            Zapsaná v obchodním rejstříku, spisová značka C 454702 vedená u Městského soudu v Praze. Ligu vede Jakub
-            Tabášek, jednatel společnosti.
+            Zapsaná v obchodním rejstříku, spisová značka C 454702 vedená u Městského soudu v Praze. Ligu provozuje společnost Ninety Three Group s.r.o.
           </p>
         </Card>
       </div>
