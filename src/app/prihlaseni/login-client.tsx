@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, authApi, errMsg } from "@/lib/api";
+import { authApi, errMsg } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import type { AuthUser } from "@/lib/types";
 import { Container } from "@/components/layout/container";
@@ -37,7 +37,6 @@ declare global {
 }
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-const DEV_LOGIN = process.env.NEXT_PUBLIC_DEV_LOGIN === "1";
 /** Services ID z Apple Developer (jine nez App ID mobilni aplikace). */
 const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
 
@@ -101,11 +100,24 @@ export function LoginClient() {
     return () => window.clearInterval(timer);
   }, []);
 
-  /** Po přihlášení: kdo nemá žádný profil, jde nejdřív dodělat registraci. */
+  /**
+   * Po přihlášení: kdo nemá žádný profil, jde nejdřív dodělat registraci —
+   * cíl si ale nese s sebou, ať po ní skončí tam, kam původně mířil (typicky
+   * na pozvánku do týmu). Dřív se `next` v tomhle případě ztratilo.
+   */
   const goAfterAuth = useCallback(
     (u: AuthUser) => {
       const hasProfile = !!u.player || !!u.referee || (u.manager?.length ?? 0) > 0;
-      router.replace(hasProfile ? next : "/registrace");
+      if (hasProfile) {
+        router.replace(next);
+        return;
+      }
+      const kod = /^\/pozvanka\/([^/?#]+)/.exec(next)?.[1];
+      const dotazy = [
+        next && next !== "/" ? `next=${encodeURIComponent(next)}` : null,
+        kod ? `kod=${encodeURIComponent(decodeURIComponent(kod))}` : null,
+      ].filter(Boolean);
+      router.replace(dotazy.length ? `/registrace?${dotazy.join("&")}` : "/registrace");
     },
     [router, next],
   );
@@ -280,19 +292,6 @@ export function LoginClient() {
     }
   }
 
-  async function devLogin() {
-    setBusy(true);
-    try {
-      const res = await api.post<{ token: string; user: AuthUser }>("/auth/dev-login");
-      setAuth(res.data.token, res.data.user);
-      router.replace(next);
-    } catch (e) {
-      toast.error("Testovací přihlášení selhalo", errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const t = TEXTS[mode];
 
   return (
@@ -367,11 +366,6 @@ export function LoginClient() {
               </button>
             ) : null}
 
-            {DEV_LOGIN ? (
-              <Button variant="subtle" onClick={devLogin} disabled={busy} className="w-full">
-                Testovací přihlášení (vývoj)
-              </Button>
-            ) : null}
           </div>
 
           <div className="my-7 flex items-center gap-3">
