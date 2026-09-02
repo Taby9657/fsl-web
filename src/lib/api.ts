@@ -167,7 +167,7 @@ export const teamsApi = {
     });
   },
   invite: (id: string) => api.get<{ code: string }>(`/teams/${id}/invite`),
-  join: (code: string) => api.post<{ team: TeamLite }>(`/teams/join/${code}`),
+  join: (code: string) => api.post<{ team: Team }>(`/teams/join/${code}`),
   appeal: (id: string, appeal: string) => api.put<Team>(`/teams/${id}/appeal`, { appeal }),
 };
 
@@ -178,6 +178,9 @@ export const playersApi = {
   create: (data: Record<string, unknown>) => api.post<Player>("/players", data),
   update: (id: string, data: Record<string, unknown>) =>
     api.put<Player>(`/players/${id}`, data),
+  /** Hráč, který tým nemá, se připojí pozvánkovým kódem. */
+  join: (inviteCode: string, jersey?: number) =>
+    api.post<{ player: Player; team: TeamLite }>("/players/join", { inviteCode, jersey }),
   leaveTeam: (id: string) => api.post(`/players/${id}/leave-team`),
   removeFromTeam: (playerId: string, teamId: string) =>
     api.delete(`/players/${playerId}/team/${teamId}`),
@@ -259,6 +262,13 @@ export const paymentsApi = {
     ),
   vsPlayer: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/player/${id}`),
   vsTeam: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/team/${id}`),
+};
+
+/* ==================== SEZÓNY ==================== */
+export const seasonsApi = {
+  /** Aktuální a příští sezóna — tým se může přihlásit do obou. */
+  list: () =>
+    api.get<{ current: string | null; next: string | null; options: string[] }>("/seasons"),
 };
 
 /* ==================== STATISTIKY ==================== */
