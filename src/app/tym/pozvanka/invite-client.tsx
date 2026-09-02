@@ -23,7 +23,9 @@ export function InviteClient() {
 
   const code = q.data?.code;
 
-  const shareText = `Připoj se k týmu ${teamName} ve Floorball Stars Lize! 🏑\n\nPozvánkový kód: ${code}\n\nZaregistruj se na https://fslleague.cz/registrace`;
+  // Odkaz míří na stránku pozvánky, která si s kódem poradí sama — stejný tvar
+  // rozesílá i mobilní aplikace, ať je jedno, odkud pozvánka přišla.
+  const shareText = `Připoj se k týmu ${teamName} ve Floorball Stars Lize! 🏑\n\nPozvánkový kód: ${code}\n\nhttps://fslleague.cz/pozvanka/${code}`;
 
   async function share() {
     if (!code) return;
@@ -54,7 +56,12 @@ export function InviteClient() {
         <EmptyState title="Kód není dostupný" description="Zkus to prosím znovu později." />
       ) : (
         <Card className="p-8 text-center">
-          <QrCode value={code} size={240} alt="QR kód pozvánky" className="mx-auto rounded-xl" />
+          <QrCode
+            value={`https://fslleague.cz/pozvanka/${code}`}
+            size={240}
+            alt="QR kód pozvánky"
+            className="mx-auto rounded-xl"
+          />
           <p className="mt-6 text-[11px] font-semibold label-caps uppercase text-mu">
             Pozvánkový kód
           </p>
