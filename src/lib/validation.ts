@@ -21,7 +21,8 @@ export function validatePhone(v: string) {
 export function validateJersey(v: string) {
   if (!v?.trim()) return null;
   const n = Number(v);
-  return Number.isFinite(n) && n >= 1 && n <= 99 ? null : "Číslo dresu musí být 1–99.";
+  // Nula je platné číslo dresu a backend ji bere — dřív ji web odmítal
+  return Number.isInteger(n) && n >= 0 && n <= 99 ? null : "Číslo dresu musí být 0–99.";
 }
 
 export function validateBirthdate(v: string) {
