@@ -584,26 +584,22 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
     abbr: "",
     color: "#C9A140",
     venue: "",
-    season: "",
   });
-  const [sezony, setSezony] = useState<string[]>([]);
+  const [sezona, setSezona] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Tým se hlásí do konkrétní sezóny — v přechodovém období jde i do příští.
-  // Web ji dřív neuměl zvolit a vždycky spadl do té aktuální (appka to uměla).
+  // Tým se hlásí vždycky do sezóny, která zrovna běží — vybírat nejde nic.
+  // Dřív šlo zvolit i příští ročník a tým pak vznikl v soutěži, která ještě
+  // není otevřená. Sezónu tu proto jen ukazujeme; rozhoduje o ní backend.
   useEffect(() => {
     seasonsApi
       .list()
-      .then((res) => {
-        const dostupne = [res.data.current, res.data.next].filter(Boolean) as string[];
-        setSezony(dostupne);
-        setForm((f) => ({ ...f, season: f.season || dostupne[0] || "" }));
-      })
+      .then((res) => setSezona(res.data.current ?? ""))
       .catch(() => {
-        /* bez seznamu sezónu nevybíráme, backend dosadí aktuální */
+        /* bez odpovědi sezónu neukážeme, tým se stejně založí do aktuální */
       });
   }, []);
 
@@ -623,7 +619,6 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
         abbr: form.abbr.trim().toUpperCase(),
         color: form.color,
         venue: form.venue.trim() || undefined,
-        ...(form.season ? { season: form.season } : {}),
       });
       if (logo && res.data.team?.id) {
         try {
@@ -651,7 +646,7 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
               {form.name || "Název týmu"}
             </p>
             <p className="text-[12px] text-mu">
-              {form.season ? `Sezóna ${form.season}` : "Nový tým"}
+              {sezona ? `Sezóna ${sezona}` : "Nový tým"}
             </p>
           </div>
         </div>
@@ -683,15 +678,14 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
           </Field>
         </div>
 
-        {sezony.length > 1 ? (
-          <Field label="Sezóna" required>
-            <div className="flex flex-wrap gap-2">
-              {sezony.map((s) => (
-                <Chip key={s} active={form.season === s} onClick={() => set("season", s)}>
-                  {s}
-                </Chip>
-              ))}
-            </div>
+        {sezona ? (
+          <Field label="Sezóna">
+            <p className="rounded-lg border border-bd bg-c2/40 px-3 py-2 text-[14px] font-semibold text-wh">
+              {sezona}
+            </p>
+            <p className="mt-1.5 text-[12px] leading-5 text-mu">
+              Tým se přihlašuje do právě probíhající sezóny. Do další se přihlašuje znovu.
+            </p>
           </Field>
         ) : null}
 
