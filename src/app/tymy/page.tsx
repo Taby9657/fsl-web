@@ -34,9 +34,8 @@ export default async function TymyPage() {
         <div className="space-y-10">
           {divisions.map((div) => (
             <section key={div}>
-              <SectionTitle>
-                {div} · {byDivision[div].length}
-              </SectionTitle>
+              {/* Bez počtu týmů — kolik jich v divizi je, veřejně neukazujeme */}
+              <SectionTitle>{div}</SectionTitle>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {byDivision[div]
                   .slice()
