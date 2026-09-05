@@ -21,13 +21,12 @@ import { TeamDot } from "@/components/ui/data";
 export const revalidate = 30;
 
 export default async function HomePage() {
-  const [live, upcoming, table, highlights, seasons, teams] = await Promise.all([
+  const [live, upcoming, table, highlights, seasons] = await Promise.all([
     publicFetch<Match[]>("/matches", { status: "LIVE" }, 15),
     publicFetch<Match[]>("/matches", { status: "UPCOMING", limit: 4 }, 60),
     publicFetch<TableRow[]>("/stats/table", { division: "Divize A" }, 60),
     publicFetch<Highlight[]>("/highlights", undefined, 120),
     publicFetch<string[]>("/stats/seasons", undefined, 600),
-    publicFetch<TeamLite[]>("/teams", undefined, 300),
   ]);
 
   const season = seasons?.[0] ?? "2025/26";
@@ -76,12 +75,9 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <HeroStat
-                icon={<Trophy size={20} />}
-                label="Týmů v lize"
-                value={teams?.length ? String(teams.length) : "—"}
-              />
+            {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to
+                informace pro vedení, ne pro návštěvníky webu. */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <HeroStat
                 icon={<CalendarDays size={20} />}
                 label="Nadcházejících zápasů"
