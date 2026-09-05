@@ -26,10 +26,14 @@ export default async function HomePage() {
     publicFetch<Match[]>("/matches", { status: "UPCOMING", limit: 4 }, 60),
     publicFetch<TableRow[]>("/stats/table", { division: "Divize A" }, 60),
     publicFetch<Highlight[]>("/highlights", undefined, 120),
-    publicFetch<string[]>("/stats/seasons", undefined, 600),
+    // Sezónu bere z nastavení ligy, ne ze seznamu odehraných sezón. Ten se
+    // odvozuje ze zápasů, takže dokud se v nové sezóně nezačalo hrát, hlásil
+    // pořád tu starou — nebo, když zápasy nejsou vůbec, spadl na natvrdo
+    // zapsaný fallback a titulka lhala.
+    publicFetch<{ current: string | null }>("/seasons", undefined, 600),
   ]);
 
-  const season = seasons?.[0] ?? "2025/26";
+  const season = seasons?.current ?? "—";
   const top = (table ?? []).slice(0, 6);
   const news = (highlights ?? []).slice(0, 3);
 
