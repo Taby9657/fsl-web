@@ -31,6 +31,12 @@ export const metadata: Metadata = {
     url: "https://fslleague.cz",
   },
   robots: { index: true, follow: true },
+  // Ověření vlastnictví domény pro Google Search Console. Search Console je
+  // podmínkou ověření firmy v Google Play Console — tag nesmí zmizet ani po
+  // úspěšném ověření, jinak vlastnictví propadne.
+  verification: {
+    google: "9BZk0LQJCJsCgK5k02F1Lzen_fatHvh0T6Thu_4UJzo",
+  },
 };
 
 export const viewport: Viewport = {
