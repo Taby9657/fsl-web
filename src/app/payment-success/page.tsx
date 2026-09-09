@@ -8,10 +8,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Klíče odpovídají `type` z Checkout session (backend: createCheckout).
 const LABELS: Record<string, string> = {
   license: "Hráčská licence je zaplacená.",
   "super-license": "Super licence je zaplacená.",
-  "home-fee": "Poplatek za domácí zápas je uhrazený.",
+  "team-reg": "Registrace týmu je zaplacená.",
+  "match-pack": "Balíček zápasů je zaplacený — starty máš připravené.",
 };
 
 export default async function PaymentSuccessPage({

@@ -274,10 +274,9 @@ export const paymentsApi = {
     }>("/payments/me"),
   playerLicense: () => api.post<{ url: string }>("/payments/player-license"),
   superLicense: () => api.post<{ url: string }>("/payments/super-license"),
-  homeFee: (matchId: string) => api.post<{ url: string }>("/payments/home-fee", { matchId }),
   teamRegistration: (teamId: string) =>
     api.post<{ url: string }>("/payments/team-registration", { teamId }),
-  /** type: player-license | super-license | team-reg | home-fee */
+  /** type: player-license | super-license | team-reg | match-pack */
   qr: (type: string, id: string) =>
     api.get<{ spayd: string; vs: string; amount: number; iban: string; bic?: string | null; message: string }>(
       `/payments/qr/${type}/${id}`,

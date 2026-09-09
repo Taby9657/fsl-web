@@ -213,7 +213,6 @@ export interface Match {
   homeScore: number;
   awayScore: number;
   status: MatchStatus;
-  homeFeePaid?: boolean;
   homeTeam: TeamLite;
   awayTeam: TeamLite;
   referee?: Referee | null;

@@ -8,13 +8,12 @@ import {
   Clock,
   Copy,
   CreditCard,
-  Home,
   ShieldCheck,
   Star,
   Trophy,
 } from "lucide-react";
 import { useState } from "react";
-import { errMsg, matchesApi, paymentsApi } from "@/lib/api";
+import { errMsg, paymentsApi } from "@/lib/api";
 import { czk, fmtDate, PAYMENT_STATUS_COLOR, PAYMENT_STATUS_LABEL } from "@/lib/format";
 import type { PaymentStatus, TeamPayment } from "@/lib/types";
 import { useAuthStore, useIsManager } from "@/store/auth";
@@ -27,12 +26,11 @@ import {
   SectionTitle,
 } from "@/components/ui/primitives";
 import { SkeletonCards } from "@/components/ui/feedback";
-import { TeamBadge } from "@/components/ui/data";
 import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
 import { PacksSection } from "./packs-section";
 
-type QrType = "player-license" | "super-license" | "team-reg" | "home-fee";
+type QrType = "player-license" | "super-license" | "team-reg" | "match-pack";
 
 const STATUS_ICON: Record<PaymentStatus, React.ReactNode> = {
   PENDING: <Clock size={15} />,
@@ -53,13 +51,6 @@ export function PaymentsClient() {
     queryFn: async () => (await paymentsApi.me()).data,
   });
 
-  const homeMatches = useQuery({
-    queryKey: ["payments", "home-matches", teamId],
-    enabled: !!teamId,
-    queryFn: async () =>
-      (await matchesApi.list({ homeTeamId: teamId, status: "UPCOMING", limit: 20 })).data,
-  });
-
   const pp = payments.data?.playerPayment;
   const teamPayments: TeamPayment[] = Array.isArray(payments.data?.teamPayment)
     ? (payments.data?.teamPayment as TeamPayment[])
@@ -70,20 +61,17 @@ export function PaymentsClient() {
   const playerId = pp?.playerId ?? user?.player?.id;
 
   async function pay(
-    kind: "player-license" | "super-license" | "team-reg" | string,
-    matchId?: string,
+    kind: "player-license" | "super-license" | "team-reg",
     teamRegId?: string,
   ) {
-    setPaying(teamRegId ? `team-${teamRegId}` : (matchId ?? kind));
+    setPaying(teamRegId ? `team-${teamRegId}` : kind);
     try {
       const res =
         kind === "player-license"
           ? await paymentsApi.playerLicense()
           : kind === "super-license"
             ? await paymentsApi.superLicense()
-            : kind === "team-reg"
-              ? await paymentsApi.teamRegistration(teamRegId!)
-              : await paymentsApi.homeFee(matchId!);
+            : await paymentsApi.teamRegistration(teamRegId!);
       if (res.data?.url) window.location.assign(res.data.url);
       else toast.error("Chyba platby", "Server nevrátil platební odkaz.");
     } catch (e) {
@@ -228,7 +216,7 @@ export function PaymentsClient() {
                 <Button
                   className="w-full"
                   loading={paying === `team-${tp.teamId ?? teamId}`}
-                  onClick={() => pay("team-reg", undefined, (tp.teamId ?? teamId)!)}
+                  onClick={() => pay("team-reg", (tp.teamId ?? teamId)!)}
                 >
                   Zaplatit kartou online
                 </Button>
@@ -251,71 +239,9 @@ export function PaymentsClient() {
           />
         ))}
 
-        {isManager ? (
-          <Card className="p-5">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red/15 text-red">
-                <Home size={20} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-[16px] font-bold text-wh">Poplatky za domácí zápasy</h3>
-                <p className="text-[12px] text-mu">2 200 Kč / zápas · do 48 h před zápasem</p>
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              {!homeMatches.data?.length ? (
-                <p className="py-4 text-center text-[14px] text-mu">
-                  Žádné nadcházející domácí zápasy
-                </p>
-              ) : (
-                homeMatches.data.map((m) => (
-                  <div key={m.id} className="rounded-xl border border-bd bg-c2/50 p-3">
-                    <div className="flex items-center gap-3">
-                      <TeamBadge abbr={m.awayTeam?.abbr} color={m.awayTeam?.color} size={34} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-medium text-wh">
-                          vs {m.awayTeam?.name}
-                        </span>
-                        <span className="block text-[12px] text-mu">
-                          {fmtDate(m.date)}
-                          {m.venue ? ` · ${m.venue}` : ""}
-                        </span>
-                      </span>
-                      {m.homeFeePaid ? (
-                        <span className="rounded-full bg-green/15 px-2.5 py-1 text-[11px] font-bold text-green">
-                          Zaplaceno
-                        </span>
-                      ) : (
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          loading={paying === m.id}
-                          onClick={() => pay("home-fee", m.id)}
-                        >
-                          Kartou
-                        </Button>
-                      )}
-                    </div>
-
-                    {!m.homeFeePaid ? (
-                      <TransferSection
-                        id={`home-${m.id}`}
-                        type="home-fee"
-                        entityId={m.id}
-                        fallbackVs={null}
-                        fallbackAmount={2200}
-                        fallbackMsg="FSL domaci zapas"
-                        open={openTransfer}
-                        onToggle={setOpenTransfer}
-                      />
-                    ) : null}
-                  </div>
-                ))
-              )}
-            </div>
-          </Card>
-        ) : null}
+        {/* Poplatek 2 200 Kč za domácí zápas skončil 9. 9. 2026. Zápasy si
+            platí hráči sami v balíčku startů — ten je o kus níž v sekci
+            Balíčky zápasů, společné pro klubové i otevřené týmy. */}
       </div>
     </Page>
   );

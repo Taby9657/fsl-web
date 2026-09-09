@@ -237,7 +237,7 @@ export function AccountClient() {
             <MenuRow href="/tym/pozvanka" icon={<QrCode size={17} />} label="Pozvánkový kód" desc="Sdílej s hráči" color="#8B5CF6" />
             <MenuRow href="/tym/sestava" icon={<ClipboardList size={17} />} label="Sestava před zápasem" desc="Odeslání soupisky k zápasu" color="#8B5CF6" />
             <MenuRow href="/tym/po-zapase" icon={<Star size={17} />} label="Po-zápasový formulář" desc="MVP a hodnocení rozhodčího" color="#8B5CF6" />
-            <MenuRow href="/platby" icon={<CreditCard size={17} />} label="Platby týmu" desc="Registrace a domácí zápasy" color="#8B5CF6" />
+            <MenuRow href="/platby" icon={<CreditCard size={17} />} label="Platby" desc="Licence, balíčky zápasů a registrace" color="#8B5CF6" />
           </MenuSection>
         ) : null}
 
