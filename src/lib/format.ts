@@ -113,6 +113,7 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   PAID: "Zaplaceno",
   OVERDUE: "Po splatnosti",
   WAIVED: "Odpuštěno",
+  REFUNDED: "Vráceno",
 };
 
 export const PAYMENT_STATUS_COLOR: Record<PaymentStatus, string> = {
@@ -120,6 +121,7 @@ export const PAYMENT_STATUS_COLOR: Record<PaymentStatus, string> = {
   PAID: "#22C55E",
   OVERDUE: "#EF4444",
   WAIVED: "#9B8BC8",
+  REFUNDED: "#94A3B8",
 };
 
 export const REG_STATUS_LABEL: Record<RegStatus, string> = {

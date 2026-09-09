@@ -6,6 +6,7 @@ import type {
   BankTransaction,
   DivisionRow,
   DraftProfile,
+  Fine,
   FixturePreview,
   Highlight,
   Match,
@@ -232,6 +233,9 @@ export const matchesApi = {
       `/matches/${id}/withdraw`,
     ),
   endMatch: (id: string) => api.post(`/matches/${id}/end`),
+  /** Kontumace (supervisor): 5:0 pro soupeře, starty i pokuta se vyřeší samy. */
+  forfeit: (id: string, teamId: string, reason?: string) =>
+    api.post<{ kontumaciCelkem: number; pokuta: Fine }>(`/matches/${id}/forfeit`, { teamId, reason }),
   lineup: (
     matchId: string,
     teamId: string,
@@ -271,18 +275,22 @@ export const paymentsApi = {
     api.get<{
       playerPayment: PlayerPayment | null;
       teamPayment: TeamPayment | TeamPayment[] | null;
+      fines?: Fine[];
     }>("/payments/me"),
   playerLicense: () => api.post<{ url: string }>("/payments/player-license"),
   superLicense: () => api.post<{ url: string }>("/payments/super-license"),
   teamRegistration: (teamId: string) =>
     api.post<{ url: string }>("/payments/team-registration", { teamId }),
-  /** type: player-license | super-license | team-reg | match-pack */
+  /** Pokuta za kontumaci — platí ji vedoucí potrestaného týmu. */
+  fine: (fineId: string) => api.post<{ url: string }>("/payments/fine", { fineId }),
+  /** type: player-license | super-license | team-reg | match-pack | fine */
   qr: (type: string, id: string) =>
     api.get<{ spayd: string; vs: string; amount: number; iban: string; bic?: string | null; message: string }>(
       `/payments/qr/${type}/${id}`,
     ),
   vsPlayer: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/player/${id}`),
   vsTeam: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/team/${id}`),
+  vsFine: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/fine/${id}`),
   /** Ceník balíčků zápasů, zůstatek a zápasy, na které jsem přihlášený. */
   packs: () => api.get<PacksOverview>("/payments/packs"),
   buyPack: (size: number) =>

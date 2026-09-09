@@ -8,9 +8,11 @@ import {
   Clock,
   Copy,
   CreditCard,
+  Gavel,
   ShieldCheck,
   Star,
   Trophy,
+  Undo2,
 } from "lucide-react";
 import { useState } from "react";
 import { errMsg, paymentsApi } from "@/lib/api";
@@ -30,13 +32,14 @@ import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
 import { PacksSection } from "./packs-section";
 
-type QrType = "player-license" | "super-license" | "team-reg" | "match-pack";
+type QrType = "player-license" | "super-license" | "team-reg" | "match-pack" | "fine";
 
 const STATUS_ICON: Record<PaymentStatus, React.ReactNode> = {
   PENDING: <Clock size={15} />,
   PAID: <CheckCircle2 size={15} />,
   OVERDUE: <AlertCircle size={15} />,
   WAIVED: <ShieldCheck size={15} />,
+  REFUNDED: <Undo2 size={15} />,
 };
 
 export function PaymentsClient() {
@@ -61,17 +64,19 @@ export function PaymentsClient() {
   const playerId = pp?.playerId ?? user?.player?.id;
 
   async function pay(
-    kind: "player-license" | "super-license" | "team-reg",
-    teamRegId?: string,
+    kind: "player-license" | "super-license" | "team-reg" | "fine",
+    entityId?: string,
   ) {
-    setPaying(teamRegId ? `team-${teamRegId}` : kind);
+    setPaying(entityId ? `${kind}-${entityId}` : kind);
     try {
       const res =
         kind === "player-license"
           ? await paymentsApi.playerLicense()
           : kind === "super-license"
             ? await paymentsApi.superLicense()
-            : await paymentsApi.teamRegistration(teamRegId!);
+            : kind === "fine"
+              ? await paymentsApi.fine(entityId!)
+              : await paymentsApi.teamRegistration(entityId!);
       if (res.data?.url) window.location.assign(res.data.url);
       else toast.error("Chyba platby", "Server nevrátil platební odkaz.");
     } catch (e) {
@@ -215,7 +220,7 @@ export function PaymentsClient() {
               (tp.status === "PENDING" || tp.status === "OVERDUE") && (tp.teamId ?? teamId) ? (
                 <Button
                   className="w-full"
-                  loading={paying === `team-${tp.teamId ?? teamId}`}
+                  loading={paying === `team-reg-${tp.teamId ?? teamId}`}
                   onClick={() => pay("team-reg", (tp.teamId ?? teamId)!)}
                 >
                   Zaplatit kartou online
@@ -234,6 +239,47 @@ export function PaymentsClient() {
                   }
                 : null
             }
+            open={openTransfer}
+            onToggle={setOpenTransfer}
+          />
+        ))}
+
+        {/* Pokuty za kontumaci. Jsou úmyslně dole, ale s červenou ikonou —
+            vedoucí je musí najít, protože do zaplacení tým nehraje. */}
+        {(payments.data?.fines ?? []).map((f) => (
+          <PaymentCard
+            key={f.id}
+            icon={<Gavel size={20} />}
+            color="#EF4444"
+            title="Pokuta za kontumaci"
+            subtitle={f.team ? `${f.team.name} · sezóna ${f.season}` : `Sezóna ${f.season}`}
+            status={f.status}
+            rows={[
+              ["Výše pokuty", czk(f.amount)],
+              ...(f.paidAmount > 0
+                ? ([["Zatím uhrazeno", czk(f.paidAmount)]] as [string, string][])
+                : []),
+              ["Důvod", f.reason],
+            ]}
+            note="Dokud není zaplacená, rozhodčí týmu další zápas nespustí."
+            payAction={
+              <Button
+                variant="danger"
+                className="w-full"
+                loading={paying === `fine-${f.id}`}
+                onClick={() => pay("fine", f.id)}
+              >
+                Zaplatit kartou online
+              </Button>
+            }
+            transfer={{
+              id: `fine-${f.id}`,
+              type: "fine",
+              entityId: f.id,
+              fallbackVs: f.variableSymbol,
+              fallbackAmount: f.amount - f.paidAmount,
+              fallbackMsg: "FSL pokuta kontumace",
+            }}
             open={openTransfer}
             onToggle={setOpenTransfer}
           />
@@ -266,6 +312,7 @@ function PaymentCard({
   subtitle,
   status,
   rows,
+  note,
   payAction,
   transfer,
   open,
@@ -277,6 +324,8 @@ function PaymentCard({
   subtitle: string;
   status: PaymentStatus;
   rows: [string, string][];
+  /** Krátká věta pod řádky — proč na té platbě záleží. */
+  note?: string;
   payAction: React.ReactNode;
   transfer: TransferProps | null;
   open: string | null;
@@ -317,6 +366,7 @@ function PaymentCard({
         ))}
       </dl>
 
+      {note ? <p className="mt-3 text-[13px] leading-5 text-mu">{note}</p> : null}
       {payAction ? <div className="mt-4">{payAction}</div> : null}
       {transfer ? <TransferSection {...transfer} open={open} onToggle={onToggle} /> : null}
     </Card>

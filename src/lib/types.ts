@@ -1,7 +1,21 @@
 // Typy odpovídající Prisma schématu backendu (fsl-backhand)
 
 export type MatchStatus = "UPCOMING" | "LIVE" | "DONE" | "CANCELLED";
-export type PaymentStatus = "PENDING" | "PAID" | "OVERDUE" | "WAIVED";
+export type PaymentStatus = "PENDING" | "PAID" | "OVERDUE" | "WAIVED" | "REFUNDED";
+
+/** Pokuta za kontumaci. Dokud visí nezaplacená, tým další zápas nerozehraje. */
+export interface Fine {
+  id: string;
+  teamId: string;
+  matchId: string;
+  season: string;
+  amount: number;
+  paidAmount: number;
+  reason: string;
+  status: PaymentStatus;
+  variableSymbol: string | null;
+  team?: { id: string; name: string; abbr: string };
+}
 export type RefereeLevel = "A" | "B" | "C";
 export type RefereeStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type RegStatus = "PENDING" | "APPROVED" | "REJECTED" | "APPEALING";

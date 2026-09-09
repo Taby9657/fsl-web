@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { CalendarCog, Pencil, Plus, Square, Trash2, UserPlus } from "lucide-react";
+import { CalendarCog, Gavel, Pencil, Plus, Square, Trash2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { errMsg, matchesApi, refereesApi, supervisorApi } from "@/lib/api";
@@ -68,6 +68,8 @@ export function AdminMatchesClient() {
   const [assigning, setAssigning] = useState<Match | null>(null);
   const [deleting, setDeleting] = useState<Match | null>(null);
   const [ending, setEnding] = useState<Match | null>(null);
+  // Kontumace: zápas, u kterého se vybírá, kdo se nedostavil.
+  const [forfeiting, setForfeiting] = useState<Match | null>(null);
   const [busy, setBusy] = useState(false);
 
   const { data: seasons = [] } = useSeasons();
@@ -185,6 +187,27 @@ export function AdminMatchesClient() {
       await q.refetch();
       setEnding(null);
       toast.success("Zápas ukončen");
+    } catch (e) {
+      toast.error("Chyba", errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function forfeit(teamId: string) {
+    if (!forfeiting) return;
+    setBusy(true);
+    try {
+      const res = await matchesApi.forfeit(forfeiting.id, teamId);
+      await q.refetch();
+      setForfeiting(null);
+      toast.success(
+        "Zápas kontumován",
+        `5:0 pro soupeře. Předepsána pokuta ${res.data.pokuta.amount} Kč`
+        + (res.data.kontumaciCelkem >= 3
+          ? ` — pozor, je to už ${res.data.kontumaciCelkem}. kontumace tohohle týmu.`
+          : "."),
+      );
     } catch (e) {
       toast.error("Chyba", errMsg(e));
     } finally {
@@ -313,6 +336,14 @@ export function AdminMatchesClient() {
                     className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-red transition-colors hover:bg-red/10"
                   >
                     <Square size={14} /> Ukončit
+                  </button>
+                ) : null}
+                {m.status === "UPCOMING" || m.status === "LIVE" ? (
+                  <button
+                    onClick={() => setForfeiting(m)}
+                    className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-amber transition-colors hover:bg-amber/10"
+                  >
+                    <Gavel size={14} /> Kontumace
                   </button>
                 ) : null}
                 {m.status === "UPCOMING" ? (
@@ -468,6 +499,37 @@ export function AdminMatchesClient() {
         onConfirm={remove}
         onCancel={() => setDeleting(null)}
       />
+
+      {/* Kontumace potřebuje vědět, KDO se nedostavil — bez toho nejde
+          rozhodnout, komu propadnou starty a kdo platí pokutu. */}
+      <Modal
+        open={!!forfeiting}
+        onClose={() => setForfeiting(null)}
+        title="Kontumace zápasu"
+      >
+        <p className="text-[14px] leading-6 text-mu">
+          Vyber tým, který se nedostavil nebo nesehnal sestavu. Zápas skončí{" "}
+          <strong className="text-wh">5:0</strong> pro soupeře, hráčům viníka propadne
+          start z balíčku, soupeři se vrátí, a tým dostane pokutu{" "}
+          <strong className="text-wh">2 200 Kč</strong>. Dokud ji nezaplatí, další zápas
+          nerozehraje.
+        </p>
+        <div className="mt-5 space-y-2">
+          {[forfeiting?.homeTeam, forfeiting?.awayTeam].map((t) =>
+            t ? (
+              <Button
+                key={t.id}
+                variant="outline"
+                className="w-full justify-start"
+                loading={busy}
+                onClick={() => forfeit(t.id)}
+              >
+                <TeamDot color={t.color} /> Nedostavil se {t.name}
+              </Button>
+            ) : null,
+          )}
+        </div>
+      </Modal>
 
       <ConfirmDialog
         open={!!ending}
