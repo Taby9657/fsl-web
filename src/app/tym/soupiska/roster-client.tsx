@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { QrCode, UserMinus, Users } from "lucide-react";
+import { QrCode, ShieldAlert, UserMinus, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { errMsg, playersApi, teamsApi } from "@/lib/api";
@@ -26,6 +26,7 @@ export function RosterClient() {
   const [q, setQ] = useState("");
   const [removing, setRemoving] = useState<Player | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slotBusy, setSlotBusy] = useState<string | null>(null);
 
   const team = useQuery({
     queryKey: ["team", teamId],
@@ -44,6 +45,11 @@ export function RosterClient() {
     );
   }, [team.data?.players, q]);
 
+  // Brankáři drží první místa ve vlastním bloku. Backend je posílá seřazené,
+  // rozdělení je tady jen kvůli nadpisům a počtům.
+  const goalkeepers = players.filter((p) => p.slot === "GOALKEEPER");
+  const fieldPlayers = players.filter((p) => p.slot !== "GOALKEEPER");
+
   async function remove() {
     if (!removing || !teamId) return;
     setBusy(true);
@@ -57,6 +63,76 @@ export function RosterClient() {
     } finally {
       setBusy(false);
     }
+  }
+
+  /** Přehodí hráče mezi brankářem a polem. */
+  async function toggleSlot(p: Player) {
+    if (!teamId) return;
+    const novy = p.slot === "GOALKEEPER" ? "FIELD" : "GOALKEEPER";
+    setSlotBusy(p.id);
+    try {
+      await teamsApi.setRosterSlot(teamId, p.id, novy);
+      await team.refetch();
+      toast.success(
+        "Hotovo",
+        novy === "GOALKEEPER"
+          ? `${fullName(p)} je označený jako brankář.`
+          : `${fullName(p)} je zpátky hráč do pole.`,
+      );
+    } catch (e) {
+      toast.error("Nepodařilo se změnit", errMsg(e));
+    } finally {
+      setSlotBusy(null);
+    }
+  }
+
+  function radek(p: Player) {
+    const status = p.payment?.licStatus ?? "PENDING";
+    const gk = p.slot === "GOALKEEPER";
+    return (
+      <div key={p.id} className="flex items-center gap-3 px-4 py-3">
+        <span
+          className={
+            gk
+              ? "tabular flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-pu/15 text-[13px] font-bold text-pu"
+              : "tabular flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-c2 text-[13px] font-bold text-go"
+          }
+        >
+          {p.jersey}
+        </span>
+        <Link href={`/hraci/${p.id}`} className="min-w-0 flex-1 hover:underline">
+          <span className="block truncate text-[15px] font-medium text-wh">{fullName(p)}</span>
+          <span className="block text-[12px] text-mu">
+            {gk ? "Brankář" : positionLabel(p.position)}
+            {!isLicensed(status) ? <span className="ml-2 text-amber">⚠️ bez licence</span> : null}
+          </span>
+        </Link>
+        <button
+          onClick={() => toggleSlot(p)}
+          disabled={slotBusy === p.id}
+          title={gk ? "Přesunout mezi hráče do pole" : "Označit jako brankáře"}
+          className={
+            gk
+              ? "shrink-0 cursor-pointer rounded-lg bg-pu px-2.5 py-1 text-[11px] font-bold text-white transition-opacity disabled:opacity-50"
+              : "shrink-0 cursor-pointer rounded-lg bg-c2 px-2.5 py-1 text-[11px] font-bold text-mu transition-colors hover:text-wh disabled:opacity-50"
+          }
+        >
+          GK
+        </button>
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          title={status}
+          style={{ backgroundColor: PAYMENT_STATUS_COLOR[status] }}
+        />
+        <button
+          onClick={() => setRemoving(p)}
+          aria-label="Odebrat z týmu"
+          className="cursor-pointer rounded-lg p-1.5 text-red transition-colors hover:bg-red/10"
+        >
+          <UserMinus size={17} />
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -107,43 +183,33 @@ export function RosterClient() {
           }
         />
       ) : (
-        <Card className="overflow-hidden">
-          <div className="divide-y divide-bd">
-            {players.map((p) => {
-              const status = p.payment?.licStatus ?? "PENDING";
-              return (
-                <div key={p.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="tabular flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-c2 text-[13px] font-bold text-go">
-                    {p.jersey}
-                  </span>
-                  <Link href={`/hraci/${p.id}`} className="min-w-0 flex-1 hover:underline">
-                    <span className="block truncate text-[15px] font-medium text-wh">
-                      {fullName(p)}
-                    </span>
-                    <span className="block text-[12px] text-mu">
-                      {positionLabel(p.position)}
-                      {!isLicensed(status) ? (
-                        <span className="ml-2 text-amber">⚠️ bez licence</span>
-                      ) : null}
-                    </span>
-                  </Link>
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    title={status}
-                    style={{ backgroundColor: PAYMENT_STATUS_COLOR[status] }}
-                  />
-                  <button
-                    onClick={() => setRemoving(p)}
-                    aria-label="Odebrat z týmu"
-                    className="cursor-pointer rounded-lg p-1.5 text-red transition-colors hover:bg-red/10"
-                  >
-                    <UserMinus size={17} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+        <>
+          {/* Brankáři nahoře ve vlastním bloku. Bez brankáře v sestavě
+              rozhodčí zápas nezahájí, takže prázdný blok je varování. */}
+          <p className="mb-2 px-1 text-[11px] font-bold tracking-wider text-mu uppercase">
+            Brankáři · {goalkeepers.length}
+          </p>
+          <Card className="mb-6 overflow-hidden">
+            {goalkeepers.length ? (
+              <div className="divide-y divide-bd">{goalkeepers.map(radek)}</div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-4 text-amber">
+                <ShieldAlert size={18} className="shrink-0" />
+                <span className="text-[13px]">
+                  Tým nemá označeného brankáře. Bez něj nejde zahájit zápas — označ ho
+                  tlačítkem <strong>GK</strong> u hráče.
+                </span>
+              </div>
+            )}
+          </Card>
+
+          <p className="mb-2 px-1 text-[11px] font-bold tracking-wider text-mu uppercase">
+            Hráči do pole · {fieldPlayers.length}
+          </p>
+          <Card className="overflow-hidden">
+            <div className="divide-y divide-bd">{fieldPlayers.map(radek)}</div>
+          </Card>
+        </>
       )}
 
       <ConfirmDialog

@@ -58,6 +58,9 @@ export function LineupClient() {
         if (goalkeeper === p.id) setGoalkeeper(null);
       } else {
         next.add(p.id);
+        // Kdo je na soupisce vedený jako brankář, se rovnou nabídne jako
+        // brankář zápasu — přepnout se to pořád dá tlačítkem GK.
+        if (p.slot === "GOALKEEPER" && !goalkeeper) setGoalkeeper(p.id);
       }
       return next;
     });
@@ -203,6 +206,9 @@ export function LineupClient() {
                         <span className="block truncate text-[15px] font-medium text-wh">
                           {fullName(p)}
                         </span>
+                        {p.slot === "GOALKEEPER" ? (
+                          <span className="block text-[12px] text-pu">Brankář</span>
+                        ) : null}
                         {!lic ? (
                           <span className="block text-[12px] text-red">⚠️ bez licence</span>
                         ) : null}

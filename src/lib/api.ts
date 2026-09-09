@@ -14,6 +14,7 @@ import type {
   PlayerPayment,
   Referee,
   RefereeStatRow,
+  RosterSlot,
   ScorerRow,
   SearchResults,
   SupervisorDashboard,
@@ -169,6 +170,16 @@ export const teamsApi = {
   invite: (id: string) => api.get<{ code: string }>(`/teams/${id}/invite`),
   join: (code: string) => api.post<{ team: Team }>(`/teams/join/${code}`),
   appeal: (id: string, appeal: string) => api.put<Team>(`/teams/${id}/appeal`, { appeal }),
+  roster: (id: string, season?: string) =>
+    api.get<{ season: string; players: Player[]; missingHome: Player[]; goalkeepers: number }>(
+      `/teams/${id}/roster`,
+      { params: season ? { season } : undefined },
+    ),
+  setRosterSlot: (id: string, playerId: string, slot: RosterSlot) =>
+    api.put<{ ok: boolean; playerId: string; slot: RosterSlot }>(
+      `/teams/${id}/roster/${playerId}/slot`,
+      { slot },
+    ),
 };
 
 /* ==================== HRÁČI ==================== */

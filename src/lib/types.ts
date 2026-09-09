@@ -43,6 +43,8 @@ export interface Team extends TeamLite {
   _count?: { players?: number; matches?: number };
 }
 
+export type RosterSlot = "GOALKEEPER" | "FIELD";
+
 export interface Player {
   id: string;
   userId?: string;
@@ -56,6 +58,10 @@ export interface Player {
   photoUrl?: string | null;
   licensed: boolean;
   isSupervisor?: boolean;
+  /** Místo na soupisce — brankář, nebo hráč do pole. Drží se na soupisce
+   *  sezóny (TeamRoster.slot), ne na hráči: tentýž člověk může být jinde
+   *  hráč do pole. `position` je jen volný text a nedá se na něj spolehnout. */
+  slot?: RosterSlot;
   team?: TeamLite | null;
   payment?: PlayerPayment | null;
   goals?: MatchEvent[];
