@@ -13,7 +13,9 @@ import type {
   Player,
   PlayerPayment,
   Referee,
+  PacksOverview,
   RefereeStatRow,
+  ReferralOverview,
   RosterSlot,
   ScorerRow,
   SearchResults,
@@ -192,6 +194,10 @@ export const playersApi = {
   /** Hráč, který tým nemá, se připojí pozvánkovým kódem. */
   join: (inviteCode: string, jersey?: number) =>
     api.post<{ player: Player; team: TeamLite }>("/players/join", { inviteCode, jersey }),
+  /** Můj doporučovací kód a kdo s ním do ligy přišel. */
+  referral: () => api.get<ReferralOverview>("/players/me/referral"),
+  /** Nový hráč zadá kód toho, kdo ho přivedl. */
+  useReferral: (code: string) => api.post<{ ok: boolean; note: string }>("/players/referral", { code }),
   leaveTeam: (id: string) => api.post(`/players/${id}/leave-team`),
   removeFromTeam: (playerId: string, teamId: string) =>
     api.delete(`/players/${playerId}/team/${teamId}`),
@@ -220,6 +226,11 @@ export const matchesApi = {
   deleteEvent: (id: string, eventId: string) =>
     api.delete(`/matches/${id}/events/${eventId}`),
   startMatch: (id: string) => api.post(`/matches/${id}/start`),
+  /** Hráč se odhlásí ze zápasu. Do uzávěrky se mu start vrátí do balíčku. */
+  withdraw: (id: string) =>
+    api.post<{ refunded: boolean; hoursLeft: number; remaining: number; note?: string }>(
+      `/matches/${id}/withdraw`,
+    ),
   endMatch: (id: string) => api.post(`/matches/${id}/end`),
   lineup: (
     matchId: string,
@@ -273,6 +284,10 @@ export const paymentsApi = {
     ),
   vsPlayer: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/player/${id}`),
   vsTeam: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/team/${id}`),
+  /** Ceník balíčků zápasů, zůstatek a zápasy, na které jsem přihlášený. */
+  packs: () => api.get<PacksOverview>("/payments/packs"),
+  buyPack: (size: number) =>
+    api.post<{ url: string; packId: string }>("/payments/pack", { size }),
 };
 
 /* ==================== SEZÓNY ==================== */

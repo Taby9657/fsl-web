@@ -30,6 +30,7 @@ import { SkeletonCards } from "@/components/ui/feedback";
 import { TeamBadge } from "@/components/ui/data";
 import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
+import { PacksSection } from "./packs-section";
 
 type QrType = "player-license" | "super-license" | "team-reg" | "home-fee";
 
@@ -107,8 +108,12 @@ export function PaymentsClient() {
     <Page size="narrow">
       <PageTitle
         title="Platby"
-        subtitle="Licence, registrace týmu a poplatky za domácí zápasy — kartou, Apple Pay / Google Pay i převodem"
+        subtitle="Licence, balíčky zápasů a registrace týmu — kartou, Apple Pay / Google Pay i převodem"
       />
+
+      {/* Balíčky mají přednost: zápasy si platí hráč sám a je to jediná
+          platba, ke které se vrací během celé sezóny. */}
+      <PacksSection />
 
       {nothing ? (
         <EmptyState

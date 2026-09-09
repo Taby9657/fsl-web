@@ -99,9 +99,22 @@ export function LineupClient() {
       const ax = e as AxiosError<{
         code?: string;
         unlicensed?: { id: string; firstName: string; lastName: string; jersey: number }[];
+        blocked?: { id: string; firstName: string; lastName: string; jersey: number }[];
       }>;
-      if (ax.response?.status === 422 && ax.response.data?.code === "UNLICENSED_PLAYERS") {
-        setUnlicensed(ax.response.data.unlicensed ?? []);
+      const kod = ax.response?.data?.code;
+      if (ax.response?.status === 422 && kod === "UNLICENSED_PLAYERS") {
+        setUnlicensed(ax.response.data?.unlicensed ?? []);
+      } else if (ax.response?.status === 422 && kod === "NO_CREDIT") {
+        // Balíček je předplacený, obejít ho nejde — vypíšeme, komu chybí.
+        const jmena = (ax.response.data?.blocked ?? [])
+          .map((p) => `#${p.jersey} ${p.firstName} ${p.lastName}`)
+          .join(", ");
+        toast.error(
+          "Chybí zápas v balíčku",
+          jmena
+            ? `${jmena} — bez volného startu je do sestavy postavit nejde.`
+            : "Někteří hráči nemají volný zápas v balíčku.",
+        );
       } else {
         toast.error("Chyba", errMsg(e));
       }

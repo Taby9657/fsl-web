@@ -45,6 +45,56 @@ export interface Team extends TeamLite {
 
 export type RosterSlot = "GOALKEEPER" | "FIELD";
 
+/** Koupený balíček zápasů. Kredit se vede v startech, ne v korunách. */
+export interface MatchPack {
+  id: string;
+  season: string;
+  size: number;
+  remaining: number;
+  price: number;
+  isReward: boolean;
+  status: PaymentStatus;
+  paidAt?: string | null;
+  method?: string | null;
+  createdAt: string;
+}
+
+/** Zápas, na který je hráč přihlášený. */
+export interface UpcomingEntry {
+  matchId: string;
+  teamId: string;
+  status: "RESERVED" | "SPENT";
+  /** Po uzávěrce odhlášení start nevrátí. */
+  locked: boolean;
+  hoursLeft: number;
+  match: {
+    id: string;
+    date: string;
+    venue?: string | null;
+    status: string;
+    homeTeam: TeamLite;
+    awayTeam: TeamLite;
+  };
+}
+
+export interface PacksOverview {
+  catalog: { size: number; price: number }[];
+  season: string;
+  packs: MatchPack[];
+  remaining: number;
+  spent: number;
+  withdrawalHours: number;
+  upcoming: UpcomingEntry[];
+}
+
+export interface ReferralOverview {
+  code: string;
+  invited: number;
+  rewarded: number;
+  uses: { player: { id: string; firstName: string; lastName: string }; joinedAt: string; rewarded: boolean }[];
+  rule: string;
+}
+
 export interface Player {
   id: string;
   userId?: string;
