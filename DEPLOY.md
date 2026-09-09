@@ -121,8 +121,13 @@ Bez toho se tlačítko „Přihlásit se přes Google" nezobrazí.
 |---|---|---|
 | Hráčská licence 300 Kč | ✅ | ✅ |
 | Super licence 300 Kč | ✅ | ✅ |
-| Registrace týmu 10 000 Kč | — (backend nemá endpoint) | ✅ |
-| Domácí zápas 2 200 Kč | ✅ | ✅ |
+| Registrace týmu 8 000 Kč | ✅ | ✅ |
+| Balíček zápasů 250–4 000 Kč | ✅ | ✅ |
+| Pokuta za kontumaci 2 200 Kč | ✅ | ✅ |
+
+Ceny jsou konečné. **Liga není plátce DPH**, takže se daň nikde neúčtuje ani
+neuvádí. Poplatek za domácí zápas (2 200 Kč) skončil 9. 9. 2026 — zápasy si
+platí hráči v balíčku startů.
 
 QR kódy se generují **přímo v prohlížeči** (knihovna `qrcode`), formát SPAYD, takže web
 nezávisí na žádné externí QR službě. Platební údaje (IBAN, variabilní symbol, částka,
@@ -132,27 +137,21 @@ variabilní symbol přidělí, pokud ho platba ještě nemá.
 Web má stránku `/payment-success` (kam se Stripe vrací po zaplacení) a `/payments`
 přesměrovává na `/platby` (tam Stripe míří při zrušení platby).
 
-### Oprava variabilních symbolů v backendu (nutná migrace)
-
-Původně sdílela superlicence variabilní symbol s hráčskou licencí a poplatek za domácí
-zápas s registrací týmu, takže příchozí převod nešlo spolehlivě spárovat. To je opravené
-v repozitáři `fsl-backhand` — **je k tomu potřeba spustit migraci databáze.**
-
-Co se změnilo:
+### Variabilní symboly
 
 | Platba | VS | Kde je uložený |
 |---|---|---|
 | Hráčská licence | prefix `1` | `PlayerPayment.variableSymbol` |
-| Superlicence | prefix `2` | `PlayerPayment.superVariableSymbol` *(nový)* |
+| Superlicence | prefix `2` | `PlayerPayment.superVariableSymbol` |
 | Registrace týmu | prefix `3` | `TeamPayment.variableSymbol` |
-| Domácí zápas | prefix `4` | `Match.homeFeeVS` *(nový, na každý zápas zvlášť)* |
+| Pokuta za kontumaci | prefix `5` | `Fine.variableSymbol` |
+| Balíček zápasů | prefix `7` | `MatchPack.variableSymbol` |
 
-Poplatek za domácí zápas má nově VS na úrovni **zápasu**, ne týmu — jeden tým hraje doma
-vícekrát za sezónu a každá platba musí jít spárovat se svým utkáním. Proto endpoint
-`/payments/qr/home-fee/:id` bere `matchId` (dřív `teamId`).
+**Prefix 4 patřil poplatku za domácí zápas a nerecykluje se.** Kdyby dorazil starý
+převod, skončí mezi nespárovanými a podívá se na něj supervisor.
 
-Migrace navíc přesune historická data: pokud má hráč VS začínající dvojkou (vyžádal si
-jako první QR na superlicenci), symbol se přesune do `superVariableSymbol`.
+VS je vždycky na úrovni té konkrétní platby, ne plátce — jeden hráč si za sezónu koupí
+víc balíčků a každý převod musí jít spárovat se svým.
 
 **Nasazení na Railway:** start command už obsahuje `npm run db:migrate && npm start`,
 takže se migrace spustí sama při deployi. Ověřit ji můžeš i ručně:

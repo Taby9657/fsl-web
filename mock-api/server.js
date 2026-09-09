@@ -60,7 +60,7 @@ api.get("/teams/:id", (req, res) => {
     ...t,
     players: D.PLAYERS.filter((p) => p.teamId === t.id).sort((a, b) => a.jersey - b.jersey),
     managers: [{ id: "mg1", userId: "me", user: { id: "me", email: "vedouci@fsl.cz" } }],
-    payments: { id: `tp${t.id}`, season: D.SEASON, amount: 10000, status: t.id === "t1" ? "PAID" : "PENDING", variableSymbol: `3000${t.id.slice(1)}` },
+    payments: { id: `tp${t.id}`, season: D.SEASON, amount: 8000, status: t.id === "t1" ? "PAID" : "PENDING", variableSymbol: `3000${t.id.slice(1)}` },
     _count: { players: D.PLAYERS.filter((p) => p.teamId === t.id).length },
   });
 });
@@ -345,7 +345,10 @@ api.get("/payments/me", needAuth, (req, res) =>
       id: "pp-me", playerId: ME_PLAYER.id, season: D.SEASON, licFee: 300, licStatus: "PENDING", licPaidAt: null, licMethod: null,
       superLic: false, superFee: 300, superStatus: "PENDING", superPaidAt: null, variableSymbol: "1000042",
     },
-    teamPayment: [{ id: "tp-t1", teamId: "t1", season: D.SEASON, amount: 10000, status: "PENDING", paidAt: null, variableSymbol: "3000001", team: D.teamLite("t1") }],
+    teamPayment: [{ id: "tp-t1", teamId: "t1", season: D.SEASON, amount: 8000, status: "PENDING", paidAt: null, variableSymbol: "3000001", team: D.teamLite("t1") }],
+    // Pokuty za kontumaci. Prázdné pole je běžný stav — jedna položka se sem
+    // dá dočasně přidat, když se testuje karta pokuty na Platbách.
+    fines: [],
   }),
 );
 api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
@@ -357,17 +360,13 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
   } else if (req.params.type === "super-license") {
     cfg = { vs: "2000042", amount: 300, message: "FSL superlicence Tomas Novak" };
   } else if (req.params.type === "team-reg") {
-    cfg = { vs: "3000001", amount: 10000, message: "FSL registrace Benavidez Eagles" };
-  } else if (req.params.type === "home-fee") {
-    // id = matchId, každý zápas má vlastní VS s prefixem 4
-    const m = D.MATCHES.find((x) => x.id === req.params.id);
-    if (!m) return res.status(404).json({ error: "Zápas nenalezen" });
-    const seq = String(D.MATCHES.indexOf(m) + 1).padStart(7, "0");
-    cfg = {
-      vs: `4${seq}`,
-      amount: 2200,
-      message: `FSL domaci zapas ${new Date(m.date).toLocaleDateString("cs-CZ")} ${m.homeTeam.name}`,
-    };
+    cfg = { vs: "3000001", amount: 8000, message: "FSL registrace Benavidez Eagles" };
+  } else if (req.params.type === "fine") {
+    // id = fineId, prefix 5. Poplatek za domácí zápas (prefix 4) skončil 9. 9. 2026.
+    cfg = { vs: "5000001", amount: 2200, message: "FSL pokuta kontumace Benavidez Eagles" };
+  } else if (req.params.type === "match-pack") {
+    // id = packId, prefix 7
+    cfg = { vs: "7000001", amount: 2700, message: "FSL balicek 12 zapasu Tomas Novak" };
   }
   if (!cfg) return res.status(400).json({ error: "Neznámý typ platby" });
   const spayd = `SPD*1.0*ACC:${IBAN}+${BIC}*AM:${cfg.amount}.00*CC:CZK*X-VS:${cfg.vs}*MSG:${cfg.message}`;
@@ -375,7 +374,11 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
 });
 api.post("/payments/player-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/super-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
-api.post("/payments/home-fee", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
+// Poplatek za domácí zápas skončil 9. 9. 2026 — backend na téhle cestě vrací 410.
+api.post("/payments/home-fee", needAuth, (req, res) =>
+  res.status(410).json({ error: "Poplatek za domácí zápas se už neplatí.", code: "HOME_FEE_REMOVED" }));
+api.post("/payments/fine", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
+api.post("/payments/pack", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock", packId: "mp1" }));
 api.put("/payments/player/:playerId", needAuth, (req, res) => res.json({ ok: true }));
 api.put("/payments/team/:teamId", needAuth, (req, res) => res.json({ ok: true }));
 api.post("/payments/bank-sync", needAuth, (req, res) =>
@@ -384,7 +387,7 @@ api.post("/payments/bank-sync", needAuth, (req, res) =>
 api.get("/payments/bank-transactions", needAuth, (req, res) =>
   res.json([
     { id: "bt1", transactionId: "tx1", amount: 300, variableSymbol: "1000042", senderName: "Tomáš Novák", senderAccount: "123456789/0800", date: D.iso(-2), matched: true },
-    { id: "bt2", transactionId: "tx2", amount: 10000, variableSymbol: "3000001", senderName: "Benavidez Eagles z.s.", senderAccount: "987654321/0100", date: D.iso(-5), matched: false },
+    { id: "bt2", transactionId: "tx2", amount: 8000, variableSymbol: "3000001", senderName: "Benavidez Eagles z.s.", senderAccount: "987654321/0100", date: D.iso(-5), matched: false },
   ]),
 );
 
@@ -466,7 +469,7 @@ api.get("/supervisor/conferences", needAuth, (req, res) =>
 api.get("/supervisor/payments", needAuth, (req, res) =>
   res.json({
     players: D.PLAYERS.filter((p) => p.payment).slice(0, 40).map((p) => ({ ...p.payment, player: D.playerLite(p) })),
-    teams: D.TEAMS.map((t) => ({ id: `tp${t.id}`, season: D.SEASON, amount: 10000, status: t.id === "t1" ? "PAID" : "PENDING", variableSymbol: `3000${t.id.slice(1)}`, team: D.teamLite(t.id) })),
+    teams: D.TEAMS.map((t) => ({ id: `tp${t.id}`, season: D.SEASON, amount: 8000, status: t.id === "t1" ? "PAID" : "PENDING", variableSymbol: `3000${t.id.slice(1)}`, team: D.teamLite(t.id) })),
   }),
 );
 api.get("/supervisor/requests", needAuth, (req, res) =>

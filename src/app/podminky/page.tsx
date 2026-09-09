@@ -51,14 +51,23 @@ export default function TermsPage() {
 
         <h2>4. Poplatky</h2>
         <p>
-          Účast v soutěži je zpoplatněna: hráčská licence, volitelná super licence pro play-off,
-          registrační poplatek týmu a poplatek za pořádání domácího zápasu. Aktuální výše je
-          uvedena v sekci Platby po přihlášení. Platby probíhají kartou přes Stripe nebo
-          bankovním převodem s variabilním symbolem.
+          Účast v soutěži je zpoplatněna: hráčská licence, volitelná super licence pro hraní
+          i za cizí týmy, registrační poplatek týmu a balíček zápasů, ze kterého se každý
+          odehraný start odečítá. Aktuální výše je uvedena v sekci Platby po přihlášení.
+          Uvedené ceny jsou konečné a nic se k nim nepřipočítává. Platby probíhají kartou
+          nebo bankovním převodem s variabilním symbolem; cena je v obou případech stejná.
         </p>
         <p>
-          Zaplacené poplatky se nevracejí, pokud nedojde ke zrušení soutěže ze strany
-          pořadatele.
+          Za nedostavení se k zápasu nebo nesehnání sestavy může pořadatel zápas kontumovat
+          a předepsat týmu pokutu ve výši ušlých nákladů na hřiště a rozhodčího. Do jejího
+          uhrazení nemusí být týmu umožněno nastoupit k dalšímu zápasu.
+        </p>
+        <p>
+          Zaplacené poplatky se nevracejí. <strong>Nevyčerpané starty z balíčku ale
+          nepropadají</strong> — přenášejí se do play-off a do následující sezóny, pokud si
+          v ní hráč zaplatí licenci. Při odstoupení jednotlivce před zařazením do týmu se
+          vrací startovné bez licence; licence se nevrací, protože platí celou sezónu.
+          Zruší-li se zápas, start se nezapočítá a zůstává v balíčku.
         </p>
 
         <h2>5. Pravidla chování</h2>
