@@ -121,8 +121,8 @@ Bez toho se tlačítko „Přihlásit se přes Google" nezobrazí.
 |---|---|---|
 | Hráčská licence 300 Kč | ✅ | ✅ |
 | Super licence 300 Kč | ✅ | ✅ |
-| Registrace týmu 8 000 Kč | ✅ | ✅ |
-| Balíček zápasů 250–4 000 Kč | ✅ | ✅ |
+| Registrace týmu 3 000 Kč | ✅ | ✅ |
+| Balíček zápasů 200–3 000 Kč | ✅ | ✅ |
 | Pokuta za kontumaci 2 200 Kč | ✅ | ✅ |
 
 Ceny jsou konečné. **Liga není plátce DPH**, takže se daň nikde neúčtuje ani
