@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AuthGuard } from "@/components/auth-guard";
 import { DraftDetailClient } from "./draft-detail-client";
 
 export const metadata: Metadata = {
@@ -13,9 +12,7 @@ export default async function DraftDetailPage({
   params: Promise<{ playerId: string }>;
 }) {
   const { playerId } = await params;
-  return (
-    <AuthGuard>
-      <DraftDetailClient playerId={playerId} />
-    </AuthGuard>
-  );
+  // Karta je veřejná stejně jako seznam, ale **neindexuje se** — je to
+  // profil konkrétního člověka. Telefon dostane z API jen vedoucí týmu.
+  return <DraftDetailClient playerId={playerId} />;
 }

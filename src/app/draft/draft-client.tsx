@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Phone, Timer, UserPlus, Users, Video } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { draftApi } from "@/lib/api";
 import { fullName, pluralOffer, positionLabel, timeLeft } from "@/lib/format";
 import { useAuthStore, useIsManager } from "@/store/auth";
@@ -16,7 +17,12 @@ import {
 import { ErrorView, SkeletonCards } from "@/components/ui/feedback";
 import { Avatar } from "@/components/ui/data";
 
-export function DraftClient() {
+/**
+ * `uvod` je vysvětlení pro nepřihlášené — seznam volných hráčů je veřejný,
+ * ale bez kontextu je to pro nováčka jen výčet cizích jmen. Předává ho
+ * `DraftGate`.
+ */
+export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
   const user = useAuthStore((s) => s.user);
   const isManager = useIsManager();
   const canJoin = !!user?.player && !user.player.teamId;
@@ -51,6 +57,8 @@ export function DraftClient() {
         }
       />
 
+      {uvod}
+
       {list.isLoading ? (
         <SkeletonCards count={4} />
       ) : list.isError ? (
@@ -62,7 +70,9 @@ export function DraftClient() {
           description={
             canJoin
               ? "Buď první — přidej svůj draft profil."
-              : "Momentálně žádní volní hráči."
+              : user
+                ? "Momentálně žádní volní hráči."
+                : "Momentálně se v draftu nikdo nenabízí. Můžeš být první."
           }
           action={
             canJoin ? (

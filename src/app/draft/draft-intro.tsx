@@ -1,26 +1,23 @@
 "use client";
 
-import {
-  ClipboardList,
-  Send,
-  Timer,
-  UserPlus,
-  Users,
-  Video,
-} from "lucide-react";
+import { ClipboardList, Send, Timer, UserPlus } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
-import { Card, CardBody, LinkButton, PageTitle, Spinner } from "@/components/ui/primitives";
+import { Card, CardBody, LinkButton, Spinner } from "@/components/ui/primitives";
 import { DraftClient } from "./draft-client";
 
 /**
- * Draft potřebuje přihlášení — v poolu jsou jména a u vedoucích i telefony,
- * takže seznam veřejný být nemůže. Do 10. 9. tu ale místo vysvětlení stála
- * jen `AuthGuard`, která nepřihlášeného mlčky přesměrovala na formulář:
- * kdo o draftu nikdy neslyšel, dostal přihlašovací obrazovku a odešel.
+ * Draft pool je **veřejný** — pro hráče bez týmu je to jediná vstupní brána
+ * do ligy, takže se o něm musí dozvědět i ten, kdo tu nemá účet. Veřejná
+ * je jen soupiska volných hráčů; **kontaktní údaje ne** — telefon se do
+ * odpovědi API vůbec nedostane, pokud volající není vedoucí týmu.
  *
- * Proto tahle mezistránka. Nepřihlášenému vysvětlí, co draft je a proč se
- * mu vyplatí založit účet; přihlášeného pustí rovnou na seznam.
+ * Do 10. 9. tu místo vysvětlení stála `AuthGuard`, která nepřihlášeného
+ * mlčky přesměrovala na přihlašovací formulář: kdo o draftu nikdy neslyšel,
+ * dostal login a odešel.
+ *
+ * Nepřihlášenému proto nad seznam přidáme vysvětlení a výzvu k registraci,
+ * přihlášený vidí seznam samotný.
  */
 
 const KROKY = [
@@ -46,42 +43,22 @@ const KROKY = [
   },
 ];
 
-export function DraftGate() {
-  const user = useAuthStore((s) => s.user);
-  const loading = useAuthStore((s) => s.loading);
-
-  if (loading) {
-    return (
-      <Page>
-        <div className="flex justify-center py-24 text-go">
-          <Spinner size={32} />
-        </div>
-      </Page>
-    );
-  }
-
-  if (user) return <DraftClient />;
-
+function DraftUvod() {
   return (
-    <Page size="narrow">
-      <PageTitle
-        title="Draft"
-        subtitle="Cesta do ligy pro hráče, kteří nemají tým"
-      />
-
+    <div className="mb-8">
       <Card className="border-bd-strong">
         <CardBody className="sm:p-6">
           <p className="text-[15px] leading-7 text-wh">
             <strong className="font-semibold">
               Do FSL se nemusíš hlásit s celým týmem.
             </strong>{" "}
-            Když hráče na deset lidí nedáš, nabídneš se v draftu — vedoucí, kterým
-            chybí do soupisky, si tam volné hráče hledají sami.
+            Když hráče na celou soupisku nedáš, nabídneš se tady — vedoucí,
+            kterým chybí lidi, si volné hráče hledají sami.
           </p>
         </CardBody>
       </Card>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-4 space-y-3">
         {KROKY.map((k, i) => (
           <Card key={k.title}>
             <CardBody className="flex gap-4">
@@ -100,52 +77,54 @@ export function DraftGate() {
         ))}
       </div>
 
-      <Card className="mt-6">
-        <CardBody className="sm:p-6">
-          <div className="flex items-center gap-2 text-go">
-            <Video size={17} />
-            <h3 className="text-[15px] font-semibold text-wh">
-              Sestřih pomůže, ale není povinný
-            </h3>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-mu">
-            K profilu jde přidat až pět videí. Vedoucí se rozhoduje podle toho,
-            co vidí — ale i profil s pozicí a pár větami o sobě je pořád víc než
-            žádný.
-          </p>
-        </CardBody>
-      </Card>
-
-      <div className="mt-8 rounded-xl border border-bd bg-c1/80 p-5 sm:p-6">
-        <div className="flex items-center gap-2">
-          <Users size={17} className="text-go" />
-          <h3 className="text-[15px] font-semibold text-wh">
-            Seznam volných hráčů je za přihlášením
-          </h3>
-        </div>
+      <div className="mt-5 rounded-xl border border-bd bg-c1/80 p-5 sm:p-6">
+        <h3 className="text-[15px] font-semibold text-wh">
+          Chceš se nabídnout taky?
+        </h3>
         <p className="mt-2 text-sm leading-6 text-mu">
-          Jsou v něm jména a kontakty na konkrétní lidi, takže ho veřejně
-          neukazujeme. Účet stačí založit přes Google nebo Apple, zabere to
-          půl minuty.
+          Profil si založíš přes Google nebo Apple, zabere to půl minuty.
+          Nabídnout se nic nestojí — platí se až ve chvíli, kdy máš tým
+          a chystáš se hrát. Kolik, je v{" "}
+          <a href="/cenik" className="text-go hover:underline">
+            ceníku
+          </a>
+          .
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <LinkButton href="/prihlaseni?next=%2Fdraft" size="md">
-            Přihlásit se
+          <LinkButton href="/registrace?next=%2Fdraft" size="md">
+            Nabídnout se v draftu
           </LinkButton>
-          <LinkButton href="/registrace?next=%2Fdraft" size="md" variant="outline">
-            Nemám účet
+          <LinkButton
+            href="/prihlaseni?next=%2Fdraft"
+            size="md"
+            variant="outline"
+          >
+            Už mám účet
           </LinkButton>
         </div>
       </div>
 
-      <p className="mt-6 text-[13px] leading-6 text-di">
-        Kolik stojí licence a balíčky startů, je v{" "}
-        <a href="/cenik" className="text-go hover:underline">
-          ceníku
-        </a>
-        . Do draftu se nabídnout nic nestojí — platí se až ve chvíli, kdy máš
-        tým a chystáš se hrát.
+      <p className="mt-5 text-[13px] leading-6 text-di">
+        U hráčů níž vidíš pozici, popis a sestřihy. Telefon a další kontakty
+        veřejné nejsou — dostane je jen vedoucí týmu, který hráče hledá.
       </p>
-    </Page>
+    </div>
   );
+}
+
+export function DraftGate() {
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+
+  if (loading) {
+    return (
+      <Page>
+        <div className="flex justify-center py-24 text-go">
+          <Spinner size={32} />
+        </div>
+      </Page>
+    );
+  }
+
+  return <DraftClient uvod={user ? undefined : <DraftUvod />} />;
 }
