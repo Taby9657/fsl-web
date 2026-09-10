@@ -259,7 +259,7 @@ export function PacksSection() {
         title="Odhlásit se ze zápasu"
         message={
           leaving?.locked
-            ? `Do výkopu zbývá míň než ${lhuta} h, takže ti tenhle zápas z balíčku propadne. `
+            ? `Do začátku zápasu zbývá míň než ${lhuta} h, takže ti tenhle zápas z balíčku propadne. `
               + "Když se na něj vrátíš, nic dalšího se ti nestrhne."
             : "Start se ti vrátí zpátky do balíčku."
         }
