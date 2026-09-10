@@ -126,8 +126,7 @@ Bez toho se tlačítko „Přihlásit se přes Google" nezobrazí.
 | Pokuta za kontumaci 3 000 Kč | ✅ | ✅ |
 
 Ceny jsou konečné. **Liga není plátce DPH**, takže se daň nikde neúčtuje ani
-neuvádí. Poplatek za domácí zápas (2 200 Kč) skončil 9. 9. 2026 — zápasy si
-platí hráči v balíčku startů.
+neuvádí. Zápasy si platí hráči v balíčku startů.
 
 QR kódy se generují **přímo v prohlížeči** (knihovna `qrcode`), formát SPAYD, takže web
 nezávisí na žádné externí QR službě. Platební údaje (IBAN, variabilní symbol, částka,
@@ -155,8 +154,8 @@ ligu o 13 Kč víc než jedna. Převodem je celý košík zdarma. Mimo košík z
 **pokuta za kontumaci** — dokud visí, tým další zápas nerozehraje, takže čekat,
 až si někdo vybere balíček, nesmí.
 
-**Prefix 4 patřil poplatku za domácí zápas a nerecykluje se.** Kdyby dorazil starý
-převod, skončí mezi nespárovanými a podívá se na něj supervisor.
+**Prefix 4 je vysloužilý a nerecykluje se.** Kdyby dorazil starý převod, skončí
+mezi nespárovanými a podívá se na něj supervisor.
 
 VS je vždycky na úrovni té konkrétní platby, ne plátce — jeden hráč si za sezónu koupí
 víc balíčků a každý převod musí jít spárovat se svým.

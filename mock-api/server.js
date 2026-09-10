@@ -424,7 +424,7 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
     // id = cartId, prefix 8 — celý košík má jeden VS a jednu částku.
     cfg = { vs: "8000001", amount: kosikVen().total, message: "FSL platba" };
   } else if (req.params.type === "fine") {
-    // id = fineId, prefix 5. Poplatek za domácí zápas (prefix 4) skončil 9. 9. 2026.
+    // id = fineId, prefix 5. Prefix 4 je vysloužilý a nerecykluje se.
     cfg = { vs: "5000001", amount: 3000, message: "FSL pokuta kontumace Benavidez Eagles" };
   } else if (req.params.type === "match-pack") {
     // id = packId, prefix 7
@@ -436,9 +436,9 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
 });
 api.post("/payments/player-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/super-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
-// Poplatek za domácí zápas skončil 9. 9. 2026 — backend na téhle cestě vrací 410.
+// Vysloužilá cesta — backend na ní vrací 410. Drží se tu kvůli starším buildům.
 api.post("/payments/home-fee", needAuth, (req, res) =>
-  res.status(410).json({ error: "Poplatek za domácí zápas se už neplatí.", code: "HOME_FEE_REMOVED" }));
+  res.status(410).json({ error: "Tenhle způsob platby se už nepoužívá.", code: "PLATBA_ZRUSENA" }));
 api.post("/payments/fine", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/pack", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock", packId: "mp1" }));
 api.put("/payments/player/:playerId", needAuth, (req, res) => res.json({ ok: true }));

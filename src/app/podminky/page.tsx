@@ -58,9 +58,8 @@ export default function TermsPage() {
           nebo bankovním převodem s variabilním symbolem; cena je v obou případech stejná.
         </p>
         <p>
-          Starty se hradí za každý zápas stejně, doma i venku — pořadatel neúčtuje týmu
-          za domácí zápas žádný samostatný poplatek. Z těchto plateb pořadatel hradí
-          organizaci soutěže.
+          Starty se hradí za každý odehraný zápas stejně. Z těchto plateb pořadatel
+          hradí organizaci soutěže.
         </p>
         <p>
           Za nedostavení se k zápasu nebo nesehnání sestavy může pořadatel zápas kontumovat

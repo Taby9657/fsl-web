@@ -170,8 +170,7 @@ function makeMatch({ home, away, date, status, round, division, homeScore = 0, a
     id, homeTeamId: home, awayTeamId: away, refereeId: refereeId ?? null,
     competition: "FSL Liga", division, season: SEASON, round, date,
     venue: TEAMS.find((t) => t.id === home)?.venue ?? null,
-    // `homeFeePaid` tu bylo do 9. 9. 2026, kdy domácí tým platil za zápas.
-    // Zápasy dnes platí hráči z balíčku startů — na zápase žádný příznak
+    // Zápasy platí hráči z balíčku startů — na zápase žádný příznak
     // zaplacení není.
     homeScore, awayScore, status,
     homeTeam, awayTeam,

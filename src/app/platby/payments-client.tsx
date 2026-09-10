@@ -258,9 +258,8 @@ export function PaymentsClient() {
           />
         ))}
 
-        {/* Poplatek 2 200 Kč za domácí zápas skončil 9. 9. 2026. Zápasy si
-            platí hráči sami v balíčku startů — ten je o kus níž v sekci
-            Balíčky zápasů, společné pro klubové i otevřené týmy. */}
+        {/* Zápasy si platí hráči sami v balíčku startů — sekce Balíčky
+            zápasů o kus níž, společná pro klubové i otevřené týmy. */}
       </div>
     </Page>
   );
