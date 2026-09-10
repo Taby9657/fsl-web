@@ -22,6 +22,7 @@ const COLS = [
   {
     title: "FSL",
     links: [
+      { href: "/cenik", label: "Ceník" },
       { href: "/aktuality", label: "Aktuality" },
       { href: "/aplikace", label: "Mobilní aplikace" },
       { href: "/kontakt", label: "Kontakt" },

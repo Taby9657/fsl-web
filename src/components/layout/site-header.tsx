@@ -27,6 +27,7 @@ const NAV = [
   { href: "/tymy", label: "Týmy" },
   { href: "/draft", label: "Draft" },
   { href: "/aktuality", label: "Aktuality" },
+  { href: "/cenik", label: "Ceník" },
 ];
 
 export function SiteHeader() {

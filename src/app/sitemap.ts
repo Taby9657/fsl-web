@@ -17,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/pavouk",
     "/porovnani",
     "/aktuality",
+    "/cenik",
     "/aplikace",
     "/kontakt",
     "/ochrana-osobnich-udaju",
