@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { errMsg, statsApi, supervisorApi } from "@/lib/api";
+import { fmtDateTime } from "@/lib/format";
 import { validateSeason } from "@/lib/validation";
 import { useSeasons } from "@/hooks/use-league";
 import {
@@ -105,6 +106,36 @@ export function DashboardClient() {
                 </span>
               </Card>
             </Link>
+          ) : null}
+
+          {/* Párování převodů. Tichý výpadek je u peněz horší než hlasitá
+              chyba: když FIO_API_TOKEN chyběl, převody se jedenáct dní
+              nepárovaly a jediná stopa byla řádka v logu Railway. */}
+          {d?.bankSync && !d.bankSync.zdrave ? (
+            <Card className="mb-6 border-red/40 bg-red/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={20} className="mt-0.5 shrink-0 text-red" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] font-bold text-red">
+                    Párování bankovních převodů nefunguje
+                  </p>
+                  <p className="mt-1 text-[13px] leading-6 text-mu">
+                    {d.bankSync.tokenSet
+                      ? "Poslední běh selhal."
+                      : "Backend nemá FIO_API_TOKEN — doplň ho v Railway."}{" "}
+                    Selhalo {d.bankSync.failStreak}× po sobě.{" "}
+                    {d.bankSync.lastOkAt
+                      ? `Naposledy prošlo ${fmtDateTime(d.bankSync.lastOkAt)}.`
+                      : "Neprošlo ani jednou."}{" "}
+                    Do opravy platby dorazí na účet, ale licence a balíčky zůstanou
+                    nezaplacené.
+                  </p>
+                  {d.bankSync.lastError ? (
+                    <p className="mt-2 truncate text-[12px] text-di">{d.bankSync.lastError}</p>
+                  ) : null}
+                </div>
+              </div>
+            </Card>
           ) : null}
 
           <SectionTitle>Celkový přehled</SectionTitle>

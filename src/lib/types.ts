@@ -440,6 +440,15 @@ export interface SupervisorDashboard {
   unpaidLicenses: number;
   pendingTeams: number;
   appealingTeams: number;
+  /** Zdraví párování bankovních převodů. Chybí na starším backendu. */
+  bankSync?: {
+    zdrave: boolean;
+    lastOkAt: string | null;
+    lastErrorAt: string | null;
+    lastError: string | null;
+    failStreak: number;
+    tokenSet: boolean;
+  };
 }
 
 export interface Manager {
