@@ -285,6 +285,10 @@ export const paymentsApi = {
       teamPayment: TeamPayment | TeamPayment[] | null;
       fines?: Fine[];
     }>("/payments/me"),
+  // Platby po jedné. Web je od 10. 9. 2026 **nevolá** — všechno jde přes
+  // košík, aby se ušetřil pevný poplatek brány u každé další položky.
+  // Endpointy na backendu zůstaly kvůli starším verzím aplikace; tady jsou
+  // jen proto, aby bylo vidět, že se na ně vědomě nesahá.
   playerLicense: () => api.post<{ url: string }>("/payments/player-license"),
   superLicense: () => api.post<{ url: string }>("/payments/super-license"),
   teamRegistration: (teamId: string) =>
@@ -301,6 +305,7 @@ export const paymentsApi = {
   vsFine: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/fine/${id}`),
   /** Ceník balíčků zápasů, zůstatek a zápasy, na které jsem přihlášený. */
   packs: () => api.get<PacksOverview>("/payments/packs"),
+  /** Nepoužívá se — balíček jde do košíku. Viz poznámka výš. */
   buyPack: (size: number) =>
     api.post<{ url: string; packId: string }>("/payments/pack", { size }),
 
