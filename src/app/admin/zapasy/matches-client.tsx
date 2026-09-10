@@ -511,7 +511,7 @@ export function AdminMatchesClient() {
           Vyber tým, který se nedostavil nebo nesehnal sestavu. Zápas skončí{" "}
           <strong className="text-wh">5:0</strong> pro soupeře, hráčům viníka propadne
           start z balíčku, soupeři se vrátí, a tým dostane pokutu{" "}
-          <strong className="text-wh">2 200 Kč</strong>. Dokud ji nezaplatí, další zápas
+          <strong className="text-wh">3 000 Kč</strong>. Dokud ji nezaplatí, další zápas
           nerozehraje.
         </p>
         <div className="mt-5 space-y-2">

@@ -123,7 +123,7 @@ Bez toho se tlačítko „Přihlásit se přes Google" nezobrazí.
 | Super licence 300 Kč | ✅ | ✅ |
 | Registrace týmu 3 000 Kč | ✅ | ✅ |
 | Balíček zápasů 200–3 000 Kč | ✅ | ✅ |
-| Pokuta za kontumaci 2 200 Kč | ✅ | ✅ |
+| Pokuta za kontumaci 3 000 Kč | ✅ | ✅ |
 
 Ceny jsou konečné. **Liga není plátce DPH**, takže se daň nikde neúčtuje ani
 neuvádí. Poplatek za domácí zápas (2 200 Kč) skončil 9. 9. 2026 — zápasy si

@@ -425,7 +425,7 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
     cfg = { vs: "8000001", amount: kosikVen().total, message: "FSL platba" };
   } else if (req.params.type === "fine") {
     // id = fineId, prefix 5. Poplatek za domácí zápas (prefix 4) skončil 9. 9. 2026.
-    cfg = { vs: "5000001", amount: 2200, message: "FSL pokuta kontumace Benavidez Eagles" };
+    cfg = { vs: "5000001", amount: 3000, message: "FSL pokuta kontumace Benavidez Eagles" };
   } else if (req.params.type === "match-pack") {
     // id = packId, prefix 7
     cfg = { vs: "7000001", amount: 2000, message: "FSL balicek 12 zapasu Tomas Novak" };
