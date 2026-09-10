@@ -13,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/tabulka",
     "/statistiky",
     "/tymy",
+    "/draft",
     "/rozhodci",
     "/pavouk",
     "/porovnani",

@@ -14,9 +14,7 @@ export const metadata: Metadata = {
    obojí. Odhady níž jsou z těchhle čísel spočítané ručně, ne dotažené
    z API: je to modelový příklad, ne účet konkrétního hráče. */
 
-type Balicek = { zapasu: number; cena: number; zaZapas: number; znacka?: string };
-
-const BALICKY: Balicek[] = [
+const BALICKY = [
   { zapasu: 1, cena: 200, zaZapas: 200 },
   { zapasu: 3, cena: 550, zaZapas: 183 },
   { zapasu: 7, cena: 1200, zaZapas: 171 },
@@ -25,15 +23,7 @@ const BALICKY: Balicek[] = [
   { zapasu: 20, cena: 3000, zaZapas: 150, znacka: "pro superlicenci" },
 ];
 
-type Poplatek = {
-  nazev: string;
-  kdo: string;
-  cena?: number;
-  cenaText?: string;
-  znacka?: string;
-};
-
-const POPLATKY: Poplatek[] = [
+const POPLATKY = [
   {
     nazev: "Registrace týmu",
     kdo: "platí tým, každou sezónu znovu",
@@ -383,7 +373,7 @@ export default function CenikPage() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-wh tabular-nums sm:px-5">
-                      {p.cenaText ?? (p.cena !== undefined ? czk(p.cena) : "—")}
+                      {p.cenaText ?? czk(p.cena!)}
                     </td>
                   </tr>
                 ))}

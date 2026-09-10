@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { AuthGuard } from "@/components/auth-guard";
-import { DraftClient } from "./draft-client";
+import { DraftGate } from "./draft-intro";
 
 export const metadata: Metadata = {
   title: "Draft",
-  description: "Volní hráči hledající tým ve Floorball Stars Lize.",
-  robots: { index: false, follow: false },
+  description:
+    "Nemáš tým? Nabídni se v draftu Floorball Stars Ligy — vedoucí, kterým chybí hráči do soupisky, si tam volné hráče hledají sami.",
+  // Samotný seznam hráčů je za přihlášením a indexovat se nemá; úvodní
+  // vysvětlení naopak ano — je to jediná vstupní brána pro hráče bez týmu.
+  robots: { index: true, follow: true },
 };
 
 export default function DraftPage() {
-  return (
-    <AuthGuard>
-      <DraftClient />
-    </AuthGuard>
-  );
+  return <DraftGate />;
 }
