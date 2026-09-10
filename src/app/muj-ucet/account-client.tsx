@@ -173,6 +173,29 @@ export function AccountClient() {
         </Card>
       ) : null}
 
+      {/* Hráč s profilem, ale bez týmu, měl `hasRole === true`, takže mu tahle
+          stránka nenabízela vůbec nic — přestože je to přesně ten, komu ještě
+          něco chybí. Kartu „Nejsi v žádném týmu" měla jen `/registrace`
+          a nic ho tam neposílalo. */}
+      {player && !player.teamId ? (
+        <Card className="mb-6 border-go/50 p-5">
+          <p className="text-[15px] font-semibold text-wh">Nejsi v žádném týmu</p>
+          <p className="mt-1 text-[13px] leading-6 text-mu">
+            Bez týmu nemůžeš nastoupit k zápasu. Máš pozvánkový kód od vedoucího?
+            Zadej ho a naskočíš na soupisku. Kód nemáš? Nabídni se v draftu —
+            vedoucí, kterým chybí lidi, si tam volné hráče hledají sami.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <LinkButton href="/registrace" size="sm">
+              Mám pozvánkový kód
+            </LinkButton>
+            <LinkButton href="/draft/profil" size="sm" variant="outline">
+              Nabídnout se v draftu
+            </LinkButton>
+          </div>
+        </Card>
+      ) : null}
+
       {/* stav registrace týmu */}
       {isManager && regStatus && regStatus !== "APPROVED" ? (
         <Card

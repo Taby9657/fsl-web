@@ -9,12 +9,12 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { Check, Copy, Gift, LogOut, Ticket } from "lucide-react";
+import { Check, Copy, Gift, LogOut, Sparkles, Ticket } from "lucide-react";
 import { useState } from "react";
 import { errMsg, matchesApi, paymentsApi, playersApi } from "@/lib/api";
 import { czk, fmtDateTime } from "@/lib/format";
 import type { UpcomingEntry } from "@/lib/types";
-import { Button, Card, SectionTitle } from "@/components/ui/primitives";
+import { Button, Card, Field, Input, LinkButton, SectionTitle } from "@/components/ui/primitives";
 import { useCart, useCartActions } from "./cart";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { TeamBadge } from "@/components/ui/data";
@@ -34,6 +34,14 @@ export function PacksSection() {
   const [leaving, setLeaving] = useState<UpcomingEntry | null>(null);
   const [busy, setBusy] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
+  // Zadání cizího kódu. Backend `POST /players/referral` existoval od
+  // začátku a `playersApi.useReferral` taky — ale **nikdo ho nevolal**,
+  // ani web, ani appka. Kdo přišel na doporučení, kód uplatnit nemohl
+  // a okno mu propadlo prvním odehraným zápasem.
+  const [kodOd, setKodOd] = useState("");
+  const [kodChyba, setKodChyba] = useState("");
+  const [kodHotovo, setKodHotovo] = useState<string | null>(null);
+  const [kodBusy, setKodBusy] = useState(false);
 
   const packs = useQuery({
     queryKey: ["payments", "packs"],
@@ -82,6 +90,21 @@ export function PacksSection() {
   // Doporučovací kód se odemyká po prvním odehraném zápase (kontumace se
   // nepočítá). Než ho server pošle, blok se neukazuje — na starším backendu
   // by `canRefer` chybělo a sekce by svítila každému hned po registraci.
+  async function uplatniKod() {
+    const clean = kodOd.trim().toUpperCase();
+    if (!clean) return setKodChyba("Zadej kód, který jsi dostal.");
+    setKodChyba("");
+    setKodBusy(true);
+    try {
+      const res = await playersApi.useReferral(clean);
+      setKodHotovo(res.data.note);
+    } catch (e) {
+      setKodChyba(errMsg(e));
+    } finally {
+      setKodBusy(false);
+    }
+  }
+
   const canRefer = packs.data?.canRefer === true;
   // Účet, který ještě není hráč (jen se zaregistroval, nebo je čistě divák),
   // balíček koupit nemůže — platba visí na hráčském profilu. Dřív mu ceník
@@ -105,9 +128,9 @@ export function PacksSection() {
               rovnou s ním.
             </p>
           </div>
-          <Button size="sm" onClick={() => (window.location.href = "/registrace")}>
+          <LinkButton href="/registrace" size="sm">
             Dokončit registraci
-          </Button>
+          </LinkButton>
         </Card>
       ) : (
       <Card className="mb-4 flex items-center gap-4 p-5">
@@ -183,6 +206,58 @@ export function PacksSection() {
             </div>
           </Card>
         </>
+      ) : null}
+
+      {/* Zadání kódu od toho, kdo tě přivedl. Ukazuje se jen hráči, který
+          ještě nenastoupil — po prvním odehraném zápase ho backend odmítne
+          (`NOT_NEW_PLAYER`), takže nabízet formulář dál by bylo matoucí.
+          Je to zrcadlo karty níž: tahle je pro přivedeného, ta pro toho,
+          kdo přivádí. */}
+      {maProfil && !canRefer && !kodHotovo ? (
+        <Card className="mb-4 p-5">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pu/15 text-pu">
+              <Sparkles size={22} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-wh">Přivedl tě někdo do ligy?</p>
+              <p className="mt-1 text-[13px] leading-6 text-mu">
+                Zadej jeho doporučovací kód. Tobě to nic nepřidá ani neubere —
+                jemu se připíše zápas zdarma, jakmile si koupíš balíček od tří
+                zápasů výš. <strong className="text-wh">Zadat ho jde jen do
+                prvního odehraného zápasu.</strong>
+              </p>
+              <div className="mt-3 flex flex-wrap items-end gap-2">
+                <Field label="Kód" error={kodChyba} className="min-w-[12rem] flex-1">
+                  <Input
+                    value={kodOd}
+                    onChange={(e) => {
+                      setKodOd(e.target.value.toUpperCase());
+                      setKodChyba("");
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && uplatniKod()}
+                    placeholder="FSL-XXXXXX"
+                  />
+                </Field>
+                <Button
+                  size="md"
+                  onClick={uplatniKod}
+                  loading={kodBusy}
+                  disabled={!kodOd.trim()}
+                >
+                  Uplatnit
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
+      {kodHotovo ? (
+        <Card className="mb-4 border-green/40 bg-green/10 p-5">
+          <p className="text-[15px] font-bold text-wh">Kód uplatněn</p>
+          <p className="mt-1 text-[13px] leading-6 text-mu">{kodHotovo}</p>
+        </Card>
       ) : null}
 
       {/* Doporučovací kód. Odemyká se až po prvním odehraném zápase — dřív
