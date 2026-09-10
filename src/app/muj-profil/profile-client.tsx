@@ -8,6 +8,7 @@ import { firstError, validateJersey, validateName, validatePhone } from "@/lib/v
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
 import { Button, Card, Chip, Field, Input, PageTitle } from "@/components/ui/primitives";
+import { BirthdatePicker } from "@/components/ui/birthdate";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { Avatar } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
@@ -158,12 +159,7 @@ export function ProfileClient() {
           </div>
         </Field>
         <Field label="Datum narození">
-          <Input
-            type="date"
-            value={form.birthdate}
-            onChange={(e) => set("birthdate", e.target.value)}
-            max={new Date().toISOString().slice(0, 10)}
-          />
+          <BirthdatePicker value={form.birthdate} onChange={(v) => set("birthdate", v)} />
         </Field>
 
         <Button className="w-full" onClick={save} loading={busy}>

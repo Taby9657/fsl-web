@@ -33,6 +33,7 @@ import {
   LinkButton,
   PageTitle,
 } from "@/components/ui/primitives";
+import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
 
@@ -602,7 +603,7 @@ function PlayerInfoStep({
           </div>
         </Field>
         <Field label="Datum narození">
-          <Input type="date" value={form.birthdate} onChange={(e) => set("birthdate", e.target.value)} max={new Date().toISOString().slice(0, 10)} />
+          <BirthdatePicker value={form.birthdate} onChange={(v) => set("birthdate", v)} />
         </Field>
         <Button className="w-full" onClick={submit} loading={busy}>
           Dokončit registraci
