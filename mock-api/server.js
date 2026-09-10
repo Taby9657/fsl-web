@@ -436,9 +436,6 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
 });
 api.post("/payments/player-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/super-license", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
-// Vysloužilá cesta — backend na ní vrací 410. Drží se tu kvůli starším buildům.
-api.post("/payments/home-fee", needAuth, (req, res) =>
-  res.status(410).json({ error: "Tenhle způsob platby se už nepoužívá.", code: "PLATBA_ZRUSENA" }));
 api.post("/payments/fine", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock" }));
 api.post("/payments/pack", needAuth, (req, res) => res.json({ url: "https://checkout.stripe.com/mock", packId: "mp1" }));
 api.put("/payments/player/:playerId", needAuth, (req, res) => res.json({ ok: true }));
