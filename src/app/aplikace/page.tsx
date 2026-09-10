@@ -15,7 +15,7 @@ import { Card, LinkButton } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Mobilní aplikace FSL",
   description:
-    "Aplikace Floorball Stars Ligy pro iOS a Android — živé skóre, soupisky, licence a balíčky zápasů a draft přímo v telefonu.",
+    "Mobilní aplikace Floorball Stars Ligy pro iOS a Android se připravuje. Do té doby zvládne web všechno, co appka — zápasy, soupisky, sestavy, platby i draft.",
 };
 
 const FEATURES = [
@@ -73,19 +73,29 @@ export default function AplikacePage() {
             <Smartphone size={30} />
           </span>
           <h1 className="mt-6 text-4xl font-black tracking-tight text-wh sm:text-5xl">
-            FSL v mobilu
+            FSL v mobilu se připravuje
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-7 text-mu">
-            Celá liga v kapse — živé výsledky s notifikacemi, soupisky, licence a balíčky
-            zápasů, draft. Aplikace pro iOS a Android.
+            Celá liga v kapse — živé výsledky, soupisky, licence a balíčky startů,
+            draft. Aplikaci pro iOS a Android dokončujeme.
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-[15px] leading-7 text-wh">
+            <strong className="font-semibold">Čekat na ni nemusíš.</strong> Web zvládne
+            všechno, co appka — a funguje i na telefonu.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <LinkButton href="/prihlaseni" size="lg">
+              Přihlásit se na webu
+            </LinkButton>
             <LinkButton href="/zapasy" size="lg" variant="outline">
-              Prohlédnout ligu na webu
+              Prohlédnout ligu
             </LinkButton>
           </div>
+          {/* Žádné datum a žádný odkaz ke stažení, dokud aplikace v obchodě
+              doopravdy není. Slib s datem, který se nedodrží, je horší než
+              žádný. */}
           <p className="mt-6 text-[13px] text-di">
-            Aplikace míří do App Store — odkaz ke stažení doplníme po schválení.
+            Odkaz ke stažení doplníme, jakmile bude aplikace v obchodě.
           </p>
         </Container>
       </section>
@@ -106,9 +116,10 @@ export default function AplikacePage() {
         <Card className="mt-10 p-6 sm:p-8">
           <h2 className="text-[18px] font-bold text-wh">Web i aplikace, stejná data</h2>
           <p className="mt-2 max-w-2xl text-[15px] leading-7 text-mu">
-            Web fslleague.cz a mobilní aplikace sdílejí stejný systém — co zapíše rozhodčí v
-            aplikaci, uvidíš okamžitě na webu. Všechny funkce aplikace jsou dostupné i tady:
-            přihlášení, správa týmu, sestavy, platby, draft i kompletní administrace ligy.
+            Web fslleague.cz a mobilní aplikace budou sdílet stejný systém, takže se
+            nemusíš rozhodovat, kde začít. Všechno jde už teď z webu: přihlášení,
+            registrace týmu, správa soupisky, sestavy na zápas, platby kartou i převodem,
+            draft, zápis průběhu zápasu i celá administrace ligy.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <LinkButton href="/prihlaseni" size="md">

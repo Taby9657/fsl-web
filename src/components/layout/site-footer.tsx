@@ -82,8 +82,12 @@ export function SiteFooter() {
             <br />
             Provozovatel: Ninety Three Group s.r.o., IČO 29933455, Roháčova 145/14, Žižkov, 130 00 Praha 3
           </p>
+          {/* Appka je od 10. 9. 2026 stažená z prodeje, dokud neproběhne
+              převod Apple účtu na společnost. Footer proto nesmí slibovat
+              stažení — odkaz by nikam nevedl a je to první, co cizí člověk
+              na webu vidí. */}
           <p className="text-[12px] text-di">
-            Stáhni si aplikaci FSL pro iOS a Android
+            Mobilní aplikace FSL pro iOS a Android se připravuje
           </p>
         </div>
       </div>
