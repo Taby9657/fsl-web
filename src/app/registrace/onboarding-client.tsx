@@ -585,11 +585,16 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
     color: "#C9A140",
     venue: "",
   });
+  // Vedoucí je zároveň hráč. Profil mu vznikne s týmem, protože licence
+  // i balíčky startů visí na hráči, ne na týmu — bez profilu by po zaplacení
+  // registrace nezaplatil nic dalšího. Jméno je proto povinné, dres ne.
+  const [ja, setJa] = useState({ firstName: "", lastName: "", jersey: "" });
   const [sezona, setSezona] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const setJaPole = (k: keyof typeof ja, v: string) => setJa((j) => ({ ...j, [k]: v }));
 
   // Tým se hlásí vždycky do sezóny, která zrovna běží — vybírat nejde nic.
   // Dřív šlo zvolit i příští ročník a tým pak vznikl v soutěži, která ještě
@@ -604,9 +609,16 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
   }, []);
 
   async function submit() {
+    const dres = ja.jersey.trim() === "" ? undefined : Number(ja.jersey);
     const err = firstError([
       form.name.trim() ? null : "Název týmu je povinný.",
       validateAbbr(form.abbr),
+      ja.firstName.trim() && ja.lastName.trim()
+        ? null
+        : "Vyplň své jméno a příjmení — zakládá se z nich tvůj hráčský profil.",
+      dres !== undefined && (!Number.isInteger(dres) || dres < 0 || dres > 99)
+        ? "Číslo dresu musí být od 0 do 99. Nechat prázdné jde taky."
+        : null,
     ]);
     if (err) {
       toast.error("Vyplň povinné údaje", err);
@@ -619,6 +631,11 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
         abbr: form.abbr.trim().toUpperCase(),
         color: form.color,
         venue: form.venue.trim() || undefined,
+        manager: {
+          firstName: ja.firstName.trim(),
+          lastName: ja.lastName.trim(),
+          jersey: dres,
+        },
       });
       if (logo && res.data.team?.id) {
         try {
@@ -693,6 +710,41 @@ function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
           Divizi a konferenci přiděluje supervisor při rozlosování — proto si ji tady
           nevybíráš.
         </p>
+
+        {/* Vedoucí = hráč. Profil vzniká s týmem, aby šlo hned zaplatit
+            licenci i balíček startů — obojí visí na hráči, ne na týmu. */}
+        <div className="border-t border-bd pt-4">
+          <p className="text-[15px] font-bold text-wh">Tvůj hráčský profil</p>
+          <p className="mt-1 text-[12px] leading-5 text-mu">
+            Jako vedoucí jsi zároveň hráč týmu. Profil ti založíme rovnou, ať můžeš
+            zaplatit registraci i balíček zápasů najednou. Údaje si pak kdykoli upravíš.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Jméno" required>
+            <Input
+              value={ja.firstName}
+              onChange={(e) => setJaPole("firstName", e.target.value)}
+              placeholder="Jakub"
+            />
+          </Field>
+          <Field label="Příjmení" required>
+            <Input
+              value={ja.lastName}
+              onChange={(e) => setJaPole("lastName", e.target.value)}
+              placeholder="Tabášek"
+            />
+          </Field>
+          <Field label="Číslo dresu">
+            <Input
+              value={ja.jersey}
+              onChange={(e) => setJaPole("jersey", e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+              inputMode="numeric"
+              placeholder="volitelné"
+            />
+          </Field>
+        </div>
 
         <Field label="Barva týmu">
           <div className="flex flex-wrap gap-2.5">

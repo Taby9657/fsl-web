@@ -99,7 +99,9 @@ export interface PacksOverview {
   spent: number;
   withdrawalHours: number;
   upcoming: UpcomingEntry[];
-  /** Odehrané zápasy bez kontumací. Chybí u hráče bez profilu. */
+  /** false = účet ještě není hráč, balíček si koupit nemůže. */
+  hasProfile?: boolean;
+  /** Odehrané zápasy bez kontumací. */
   played?: number;
   /** Doporučovací kód se odemyká po prvním odehraném zápase. */
   canRefer?: boolean;

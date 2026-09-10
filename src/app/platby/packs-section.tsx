@@ -82,11 +82,33 @@ export function PacksSection() {
   // nepočítá). Než ho server pošle, blok se neukazuje — na starším backendu
   // by `canRefer` chybělo a sekce by svítila každému hned po registraci.
   const canRefer = packs.data?.canRefer === true;
+  // Účet, který ještě není hráč (jen se zaregistroval, nebo je čistě divák),
+  // balíček koupit nemůže — platba visí na hráčském profilu. Dřív mu ceník
+  // svítil i s tlačítky a klik skončil na „Hráčský profil nenalezen".
+  const maProfil = packs.data?.hasProfile !== false;
 
   return (
     <>
       <SectionTitle className="mt-8">Balíčky zápasů</SectionTitle>
 
+      {!maProfil ? (
+        <Card className="mb-4 flex items-center gap-4 p-5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber/15 text-amber">
+            <Ticket size={22} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-bold text-wh">Zatím nemáš hráčský profil</p>
+            <p className="mt-0.5 text-[12px] leading-5 text-mu">
+              Balíček zápasů se kupuje na hráče, ne na účet. Připoj se k týmu
+              pozvánkovým kódem, nebo si založ vlastní — profil vedoucího vznikne
+              rovnou s ním.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => (window.location.href = "/registrace")}>
+            Dokončit registraci
+          </Button>
+        </Card>
+      ) : (
       <Card className="mb-4 flex items-center gap-4 p-5">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-go/15 text-go">
           <Ticket size={22} />
@@ -100,15 +122,17 @@ export function PacksSection() {
           </p>
         </div>
       </Card>
+      )}
 
-      {/* Ceník. Větší balíček = levnější zápas, proto je cena za zápas vidět. */}
+      {/* Ceník. Větší balíček = levnější zápas, proto je cena za zápas vidět.
+          Bez hráčského profilu zůstane jako ceník, ale koupit z něj nejde. */}
       <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {(packs.data?.catalog ?? []).map((b) => (
           <button
             key={b.size}
             onClick={() => buy(b.size)}
-            disabled={buying !== null}
-            className="cursor-pointer rounded-xl border border-bd bg-c1 p-4 text-left transition-colors hover:border-go hover:bg-c2/60 disabled:opacity-50"
+            disabled={buying !== null || !maProfil}
+            className="cursor-pointer rounded-xl border border-bd bg-c1 p-4 text-left transition-colors hover:border-go hover:bg-c2/60 disabled:cursor-default disabled:opacity-50 disabled:hover:border-bd disabled:hover:bg-c1"
           >
             <span className="block text-[11px] font-bold tracking-wider text-mu uppercase">
               {b.size} {zapasu(b.size)}
