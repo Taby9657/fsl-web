@@ -339,6 +339,65 @@ api.put("/notifications/:id/read", needAuth, (req, res) => {
 });
 
 /* ---------- PLATBY ---------- */
+
+// Košík: víc poplatků, jedna platba. Mock ho drží v paměti procesu, aby se
+// dalo proklikat přidávání i mazání — po restartu je zase prázdný.
+const KOSIK = { id: "cart-mock", season: D.SEASON, status: "PENDING", items: [] };
+let kosikSeq = 0;
+
+const NAZVY = {
+  PLAYER_LICENSE: "Hráčská licence",
+  SUPER_LICENSE:  "Superlicence",
+  TEAM_REG:       "Registrace týmu",
+};
+const CENIK = { 1: 200, 3: 550, 7: 1200, 12: 2000, 16: 2600, 20: 3000 };
+const sklonuj = (n) => (n === 1 ? "zápas" : n < 5 ? "zápasy" : "zápasů");
+const kosikVen = () => ({ ...KOSIK, total: KOSIK.items.reduce((s, i) => s + i.amount, 0) });
+
+api.get("/payments/cart", needAuth, (req, res) => res.json(kosikVen()));
+
+api.post("/payments/cart/items", needAuth, (req, res) => {
+  const { kind, size, teamId } = req.body ?? {};
+  if (kind === "FINE") {
+    return res.status(400).json({
+      error: "Pokuta za kontumaci se do košíku nedává — blokuje týmu další zápas.",
+      code:  "FINE_NOT_IN_CART",
+    });
+  }
+  if (kind === "MATCH_PACK") {
+    const cena = CENIK[Number(size)];
+    if (!cena) return res.status(400).json({ error: "Neznámý balíček", code: "BAD_PACK" });
+    KOSIK.items.push({
+      id: `ci${++kosikSeq}`, kind, label: `Balíček ${size} ${sklonuj(Number(size))}`,
+      amount: cena, packSize: Number(size), season: D.SEASON, player: null, team: null, zaJineho: false,
+    });
+    return res.status(201).json(kosikVen());
+  }
+  if (!NAZVY[kind]) return res.status(400).json({ error: "Neznámý typ položky", code: "BAD_KIND" });
+  if (KOSIK.items.some((i) => i.kind === kind)) {
+    return res.status(409).json({ error: "Tuhle položku už v košíku máš", code: "ALREADY_IN_CART" });
+  }
+  KOSIK.items.push({
+    id: `ci${++kosikSeq}`, kind, label: NAZVY[kind],
+    amount: kind === "TEAM_REG" ? 3000 : 300, season: D.SEASON,
+    player: null, team: kind === "TEAM_REG" ? D.teamLite(teamId ?? "t1") : null, zaJineho: false,
+  });
+  res.status(201).json(kosikVen());
+});
+
+api.delete("/payments/cart/items/:id", needAuth, (req, res) => {
+  const idx = KOSIK.items.findIndex((i) => i.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ error: "Položka nenalezena", code: "NOT_FOUND" });
+  KOSIK.items.splice(idx, 1);
+  res.json(kosikVen());
+});
+
+api.post("/payments/cart/checkout", needAuth, (req, res) =>
+  res.status(503).json({
+    error: "Mock API platby neprovádí. Vyzkoušej to proti ostrému backendu.",
+    code:  "STRIPE_NOT_CONFIGURED",
+  }));
+
 api.get("/payments/me", needAuth, (req, res) =>
   res.json({
     playerPayment: {
@@ -361,6 +420,9 @@ api.get("/payments/qr/:type/:id", needAuth, (req, res) => {
     cfg = { vs: "2000042", amount: 300, message: "FSL superlicence Tomas Novak" };
   } else if (req.params.type === "team-reg") {
     cfg = { vs: "3000001", amount: 3000, message: "FSL registrace Benavidez Eagles" };
+  } else if (req.params.type === "cart") {
+    // id = cartId, prefix 8 — celý košík má jeden VS a jednu částku.
+    cfg = { vs: "8000001", amount: kosikVen().total, message: "FSL platba" };
   } else if (req.params.type === "fine") {
     // id = fineId, prefix 5. Poplatek za domácí zápas (prefix 4) skončil 9. 9. 2026.
     cfg = { vs: "5000001", amount: 2200, message: "FSL pokuta kontumace Benavidez Eagles" };

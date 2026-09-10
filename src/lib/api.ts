@@ -4,6 +4,8 @@ import type {
   AppNotification,
   AuthUser,
   BankTransaction,
+  Cart,
+  CartAdd,
   DivisionRow,
   DraftProfile,
   Fine,
@@ -173,10 +175,16 @@ export const teamsApi = {
   invite: (id: string) => api.get<{ code: string }>(`/teams/${id}/invite`),
   join: (code: string) => api.post<{ team: Team }>(`/teams/join/${code}`),
   appeal: (id: string, appeal: string) => api.put<Team>(`/teams/${id}/appeal`, { appeal }),
-  roster: (id: string, season?: string) =>
+  /**
+   * Soupiska sezóny. S `matchId` navíc počítá u každého hráče `blockers` —
+   * proč ho na TENHLE zápas nejde postavit. Bez zápasu se nulový zůstatek
+   * bere jako blokující vždycky, což u hráče, který na zápas už přihlášený
+   * je, neplatí.
+   */
+  roster: (id: string, opts?: { season?: string; matchId?: string }) =>
     api.get<{ season: string; players: Player[]; missingHome: Player[]; goalkeepers: number }>(
       `/teams/${id}/roster`,
-      { params: season ? { season } : undefined },
+      { params: { ...(opts?.season ? { season: opts.season } : {}), ...(opts?.matchId ? { matchId: opts.matchId } : {}) } },
     ),
   setRosterSlot: (id: string, playerId: string, slot: RosterSlot) =>
     api.put<{ ok: boolean; playerId: string; slot: RosterSlot }>(
@@ -295,6 +303,17 @@ export const paymentsApi = {
   packs: () => api.get<PacksOverview>("/payments/packs"),
   buyPack: (size: number) =>
     api.post<{ url: string; packId: string }>("/payments/pack", { size }),
+
+  // ── Košík ──────────────────────────────────────────────────────────────
+  // Víc poplatků, jedna platba. Stripe si u každé transakce bere pevných
+  // 6,50 Kč navíc k procentům, takže každá položka zaplacená zvlášť stojí
+  // ligu o tuhle částku víc. Převodem je celý košík zdarma.
+  cart: () => api.get<Cart>("/payments/cart"),
+  cartAdd: (item: CartAdd) => api.post<Cart>("/payments/cart/items", item),
+  cartRemove: (itemId: string) => api.delete<Cart>(`/payments/cart/items/${itemId}`),
+  cartCheckout: () =>
+    api.post<{ url: string; cartId: string }>("/payments/cart/checkout"),
+  vsCart: (id: string) => api.get<{ variableSymbol: string }>(`/payments/vs/cart/${id}`),
 };
 
 /* ==================== SEZÓNY ==================== */

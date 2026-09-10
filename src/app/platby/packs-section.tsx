@@ -15,6 +15,7 @@ import { errMsg, matchesApi, paymentsApi, playersApi } from "@/lib/api";
 import { czk, fmtDateTime } from "@/lib/format";
 import type { UpcomingEntry } from "@/lib/types";
 import { Button, Card, SectionTitle } from "@/components/ui/primitives";
+import { useCart, useCartActions } from "./cart";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { TeamBadge } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
@@ -28,6 +29,8 @@ function zapasu(n: number) {
 
 export function PacksSection() {
   const [buying, setBuying] = useState<number | null>(null);
+  const cart = useCart();
+  const { pridat } = useCartActions();
   const [leaving, setLeaving] = useState<UpcomingEntry | null>(null);
   const [busy, setBusy] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
@@ -43,17 +46,15 @@ export function PacksSection() {
     queryFn: async () => (await playersApi.referral()).data,
   });
 
-  async function buy(size: number) {
+  // Balíček se od 10. 9. 2026 nekupuje na jedno kliknutí — jde do košíku
+  // a zaplatí se spolu s licencí. Platební brána si bere pevný poplatek
+  // z každé transakce, takže dvě platby stojí ligu o 6,50 Kč víc než jedna.
+  function buy(size: number) {
     setBuying(size);
-    try {
-      const res = await paymentsApi.buyPack(size);
-      if (res.data?.url) window.location.assign(res.data.url);
-      else toast.error("Chyba platby", "Server nevrátil platební odkaz.");
-    } catch (e) {
-      toast.error("Chyba platby", errMsg(e));
-    } finally {
-      setBuying(null);
-    }
+    pridat.mutate(
+      { kind: "MATCH_PACK", size },
+      { onSettled: () => setBuying(null) },
+    );
   }
 
   async function withdraw() {
@@ -141,6 +142,9 @@ export function PacksSection() {
             <span className="tabular block text-[12px] text-mu">
               {Math.round(b.price / b.size)} Kč / zápas
             </span>
+            {(cart.data?.items ?? []).some((i) => i.packSize === b.size) ? (
+              <span className="mt-1 block text-[11px] font-semibold text-go">v košíku</span>
+            ) : null}
           </button>
         ))}
       </div>

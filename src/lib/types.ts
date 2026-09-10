@@ -91,6 +91,12 @@ export interface UpcomingEntry {
   };
 }
 
+/** Proč hráče nejde postavit do sestavy. Server je počítá stejně jako brána. */
+export interface RosterBlocker {
+  code: "NO_LICENSE" | "NO_CREDIT" | "NOT_ON_ROSTER";
+  text: string;
+}
+
 export interface PacksOverview {
   catalog: { size: number; price: number }[];
   season: string;
@@ -105,6 +111,38 @@ export interface PacksOverview {
   played?: number;
   /** Doporučovací kód se odemyká po prvním odehraném zápase. */
   canRefer?: boolean;
+}
+
+/** Co všechno jde dát do košíku. Pokuta za kontumaci ne — blokuje zápas. */
+export type CartItemKind = "PLAYER_LICENSE" | "SUPER_LICENSE" | "MATCH_PACK" | "TEAM_REG";
+
+export interface CartItem {
+  id: string;
+  kind: CartItemKind;
+  /** Hotový popisek ze serveru, ať se skloňování neřeší na dvou místech. */
+  label: string;
+  amount: number;
+  packSize?: number | null;
+  season?: string | null;
+  player?: { id: string; firstName: string; lastName: string; jersey: number } | null;
+  team?: { id: string; name: string } | null;
+  /** Platím to za někoho jiného (vedoucí za svého hráče). */
+  zaJineho?: boolean;
+}
+
+export interface Cart {
+  id: string | null;
+  season: string;
+  status: string;
+  total: number;
+  items: CartItem[];
+}
+
+export interface CartAdd {
+  kind: CartItemKind;
+  playerId?: string;
+  teamId?: string;
+  size?: number;
 }
 
 export interface ReferralOverview {
@@ -132,6 +170,10 @@ export interface Player {
    *  sezóny (TeamRoster.slot), ne na hráči: tentýž člověk může být jinde
    *  hráč do pole. `position` je jen volný text a nedá se na něj spolehnout. */
   slot?: RosterSlot;
+  /** Kolik startů hráči zbývá v balíčku. Posílá soupiska týmu. */
+  credits?: number;
+  /** Proč ho nejde postavit do sestavy. Prázdné pole = jde. */
+  blockers?: RosterBlocker[];
   team?: TeamLite | null;
   payment?: PlayerPayment | null;
   goals?: MatchEvent[];

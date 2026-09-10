@@ -34,6 +34,9 @@ export function LineupClient() {
   const [unlicensed, setUnlicensed] = useState<
     { id: string; firstName: string; lastName: string; jersey: number }[] | null
   >(null);
+  // Hráč, na kterého vedoucí klepl, ale postavit ho nejde. Ukáže se popup
+  // s důvodem — dřív se to zjistilo až z chyby při odeslání celé sestavy.
+  const [blokovany, setBlokovany] = useState<Player | null>(null);
 
   const matches = useQuery({
     queryKey: ["lineup", "matches", teamId],
@@ -42,15 +45,24 @@ export function LineupClient() {
       (await matchesApi.list({ teamId, status: "UPCOMING", limit: 20 })).data,
   });
 
+  // Soupiska sezóny, ne detail týmu: do sestavy smí jen ten, kdo je na ní,
+  // a jenom tenhle endpoint počítá důvody, proč hráče postavit nejde.
+  // `matchId` je v klíči schválně — kdo na zápas start už má, není blokovaný.
   const team = useQuery({
-    queryKey: ["team", teamId],
+    queryKey: ["roster", teamId, matchId],
     enabled: !!teamId,
-    queryFn: async () => (await teamsApi.get(teamId!)).data,
+    queryFn: async () =>
+      (await teamsApi.roster(teamId!, matchId ? { matchId } : undefined)).data,
   });
 
   const players = team.data?.players ?? [];
 
   function toggle(p: Player) {
+    // Odebrat jde vždycky. Blokuje se jen přidání.
+    if (!picked.has(p.id) && (p.blockers?.length ?? 0) > 0) {
+      setBlokovany(p);
+      return;
+    }
     setPicked((prev) => {
       const next = new Set(prev);
       if (next.has(p.id)) {
@@ -222,7 +234,12 @@ export function LineupClient() {
                         {p.slot === "GOALKEEPER" ? (
                           <span className="block text-[12px] text-pu">Brankář</span>
                         ) : null}
-                        {!lic ? (
+                        {(p.blockers ?? []).map((b) => (
+                          <span key={b.code} className="block text-[12px] text-red">
+                            ⚠️ {b.text}
+                          </span>
+                        ))}
+                        {!lic && (p.blockers?.length ?? 0) === 0 ? (
                           <span className="block text-[12px] text-red">⚠️ bez licence</span>
                         ) : null}
                       </span>
@@ -275,6 +292,31 @@ export function LineupClient() {
         loading={busy}
         onConfirm={() => submit(true)}
         onCancel={() => setUnlicensed(null)}
+      />
+
+      {/* Proč hráče nejde postavit. Obcházet se to nedá — balíček je
+          předplacený a licence taky, takže tady není tlačítko „přesto". */}
+      <ConfirmDialog
+        open={!!blokovany}
+        title={blokovany ? `#${blokovany.jersey} ${fullName(blokovany)} nemůže nastoupit` : ""}
+        message={
+          <>
+            {(blokovany?.blockers ?? []).map((b) => (
+              <span key={b.code} className="block">
+                • {b.text}
+              </span>
+            ))}
+            <span className="mt-3 block text-mu">
+              {(blokovany?.blockers ?? []).some((b) => b.code === "NO_CREDIT")
+                ? "Balíček zápasů si hráč kupuje sám v Platbách. Jako vedoucí mu ho můžeš zaplatit taky — přidej ho v Platbách do košíku."
+                : "Dokud to hráč nevyřeší, do sestavy ho postavit nejde."}
+            </span>
+          </>
+        }
+        confirmLabel="Rozumím"
+        cancelLabel="Zavřít"
+        onConfirm={() => setBlokovany(null)}
+        onCancel={() => setBlokovany(null)}
       />
     </Page>
   );

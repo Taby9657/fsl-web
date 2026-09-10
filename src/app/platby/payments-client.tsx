@@ -10,6 +10,7 @@ import {
   CreditCard,
   Gavel,
   ShieldCheck,
+  ShoppingCart,
   Star,
   Trophy,
   Undo2,
@@ -31,8 +32,16 @@ import { SkeletonCards } from "@/components/ui/feedback";
 import { QrCode } from "@/components/ui/qr";
 import { toast } from "@/components/ui/toast";
 import { PacksSection } from "./packs-section";
+import { CartSection } from "./cart-section";
+import { useCart, useCartActions, vKosiku } from "./cart";
 
-type QrType = "player-license" | "super-license" | "team-reg" | "match-pack" | "fine";
+export type QrType =
+  | "player-license"
+  | "super-license"
+  | "team-reg"
+  | "match-pack"
+  | "fine"
+  | "cart";
 
 const STATUS_ICON: Record<PaymentStatus, React.ReactNode> = {
   PENDING: <Clock size={15} />,
@@ -48,6 +57,11 @@ export function PaymentsClient() {
   const teamId = user?.manager?.[0]?.teamId;
   const [paying, setPaying] = useState<string | null>(null);
   const [openTransfer, setOpenTransfer] = useState<string | null>(null);
+  // Licence, superlicence a registrace se od 10. 9. 2026 neplatí po jedné —
+  // dávají se do košíku a platí najednou. Pokuta za kontumaci ne: blokuje
+  // týmu další zápas, takže se platí hned a zvlášť.
+  const cart = useCart();
+  const { pridat } = useCartActions();
 
   const payments = useQuery({
     queryKey: ["payments", "me"],
@@ -63,20 +77,15 @@ export function PaymentsClient() {
 
   const playerId = pp?.playerId ?? user?.player?.id;
 
-  async function pay(
-    kind: "player-license" | "super-license" | "team-reg" | "fine",
-    entityId?: string,
-  ) {
-    setPaying(entityId ? `${kind}-${entityId}` : kind);
+  /**
+   * Jediná platba, která jde pořád mimo košík: pokuta za kontumaci.
+   * Dokud visí, tým další zápas nerozehraje — čekat, až si někdo vybere
+   * balíček, by ligu stálo zápas.
+   */
+  async function zaplatPokutu(fineId: string) {
+    setPaying(`fine-${fineId}`);
     try {
-      const res =
-        kind === "player-license"
-          ? await paymentsApi.playerLicense()
-          : kind === "super-license"
-            ? await paymentsApi.superLicense()
-            : kind === "fine"
-              ? await paymentsApi.fine(entityId!)
-              : await paymentsApi.teamRegistration(entityId!);
+      const res = await paymentsApi.fine(fineId);
       if (res.data?.url) window.location.assign(res.data.url);
       else toast.error("Chyba platby", "Server nevrátil platební odkaz.");
     } catch (e) {
@@ -103,6 +112,9 @@ export function PaymentsClient() {
         title="Platby"
         subtitle="Licence, balíčky zápasů a registrace týmu — kartou, Apple Pay / Google Pay i převodem"
       />
+
+      {/* Košík nahoře — je to jediné místo, odkud se doopravdy platí. */}
+      <CartSection />
 
       {/* Balíčky mají přednost: zápasy si platí hráč sám a je to jediná
           platba, ke které se vrací během celé sezóny. */}
@@ -136,27 +148,14 @@ export function PaymentsClient() {
             ]}
             payAction={
               pp.licStatus === "PENDING" || pp.licStatus === "OVERDUE" ? (
-                <Button
-                  className="w-full"
-                  loading={paying === "player-license"}
-                  onClick={() => pay("player-license")}
-                >
-                  Zaplatit kartou online
-                </Button>
+                <DoKosiku
+                  jeUvnitr={vKosiku(cart.data, "PLAYER_LICENSE", playerId)}
+                  busy={pridat.isPending}
+                  onAdd={() => pridat.mutate({ kind: "PLAYER_LICENSE" })}
+                />
               ) : null
             }
-            transfer={
-              (pp.licStatus === "PENDING" || pp.licStatus === "OVERDUE") && playerId
-                ? {
-                    id: "lic",
-                    type: "player-license",
-                    entityId: playerId,
-                    fallbackVs: pp.variableSymbol,
-                    fallbackAmount: pp.licFee,
-                    fallbackMsg: "FSL hracska licence",
-                  }
-                : null
-            }
+            transfer={null}
             open={openTransfer}
             onToggle={setOpenTransfer}
           />
@@ -177,28 +176,15 @@ export function PaymentsClient() {
             ]}
             payAction={
               pp.superStatus === "PENDING" ? (
-                <Button
+                <DoKosiku
+                  jeUvnitr={vKosiku(cart.data, "SUPER_LICENSE", playerId)}
+                  busy={pridat.isPending}
                   variant="purple"
-                  className="w-full"
-                  loading={paying === "super-license"}
-                  onClick={() => pay("super-license")}
-                >
-                  Pořídit super licenci kartou
-                </Button>
+                  onAdd={() => pridat.mutate({ kind: "SUPER_LICENSE" })}
+                />
               ) : null
             }
-            transfer={
-              pp.superStatus === "PENDING" && playerId
-                ? {
-                    id: "super",
-                    type: "super-license",
-                    entityId: playerId,
-                    fallbackVs: pp.superVariableSymbol,
-                    fallbackAmount: pp.superFee,
-                    fallbackMsg: "FSL superlicence",
-                  }
-                : null
-            }
+            transfer={null}
             open={openTransfer}
             onToggle={setOpenTransfer}
           />
@@ -218,27 +204,14 @@ export function PaymentsClient() {
             ]}
             payAction={
               (tp.status === "PENDING" || tp.status === "OVERDUE") && (tp.teamId ?? teamId) ? (
-                <Button
-                  className="w-full"
-                  loading={paying === `team-reg-${tp.teamId ?? teamId}`}
-                  onClick={() => pay("team-reg", (tp.teamId ?? teamId)!)}
-                >
-                  Zaplatit kartou online
-                </Button>
+                <DoKosiku
+                  jeUvnitr={vKosiku(cart.data, "TEAM_REG", tp.teamId ?? teamId)}
+                  busy={pridat.isPending}
+                  onAdd={() => pridat.mutate({ kind: "TEAM_REG", teamId: (tp.teamId ?? teamId)! })}
+                />
               ) : null
             }
-            transfer={
-              tp.status !== "PAID" && (tp.teamId ?? teamId)
-                ? {
-                    id: `team-${tp.id}`,
-                    type: "team-reg",
-                    entityId: (tp.teamId ?? teamId)!,
-                    fallbackVs: tp.variableSymbol,
-                    fallbackAmount: tp.amount,
-                    fallbackMsg: "FSL registrace tymu",
-                  }
-                : null
-            }
+            transfer={null}
             open={openTransfer}
             onToggle={setOpenTransfer}
           />
@@ -267,7 +240,7 @@ export function PaymentsClient() {
                 variant="danger"
                 className="w-full"
                 loading={paying === `fine-${f.id}`}
-                onClick={() => pay("fine", f.id)}
+                onClick={() => zaplatPokutu(f.id)}
               >
                 Zaplatit kartou online
               </Button>
@@ -293,9 +266,41 @@ export function PaymentsClient() {
   );
 }
 
+/* ---------------- Tlačítko do košíku ---------------- */
+
+/**
+ * Poplatky se od 10. 9. 2026 neplatí po jednom. Tlačítko proto jen přidává
+ * do košíku — zaplatí se všechno naráz nahoře na stránce, což ušetří pevný
+ * poplatek platební brány u každé další položky.
+ */
+function DoKosiku({
+  jeUvnitr,
+  busy,
+  variant,
+  onAdd,
+}: {
+  jeUvnitr: boolean;
+  busy: boolean;
+  variant?: "purple";
+  onAdd: () => void;
+}) {
+  if (jeUvnitr) {
+    return (
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-go/50 bg-go-soft px-4 py-2.5 text-[13px] font-semibold text-go">
+        <ShoppingCart size={15} /> V košíku nahoře
+      </div>
+    );
+  }
+  return (
+    <Button className="w-full" variant={variant} loading={busy} onClick={onAdd}>
+      <ShoppingCart size={16} /> Přidat do košíku
+    </Button>
+  );
+}
+
 /* ---------------- Karta platby ---------------- */
 
-type TransferProps = {
+export type TransferProps = {
   id: string;
   type: QrType;
   entityId: string;
@@ -375,7 +380,7 @@ function PaymentCard({
 
 /* ---------------- Bankovní převod + QR ---------------- */
 
-function TransferSection({
+export function TransferSection({
   id,
   type,
   entityId,

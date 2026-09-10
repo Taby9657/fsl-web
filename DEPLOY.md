@@ -146,6 +146,14 @@ přesměrovává na `/platby` (tam Stripe míří při zrušení platby).
 | Registrace týmu | prefix `3` | `TeamPayment.variableSymbol` |
 | Pokuta za kontumaci | prefix `5` | `Fine.variableSymbol` |
 | Balíček zápasů | prefix `7` | `MatchPack.variableSymbol` |
+| **Košík (víc poplatků naráz)** | prefix `8` | `Cart.variableSymbol` |
+
+**Poplatky se od 10. 9. 2026 platí přes košík.** Karty na Platbách do něj jen
+přidávají; zaplatí se všechno naráz nahoře. Důvod jsou peníze: platební brána si
+u každé transakce bere pevných 6,50 Kč navíc k procentům, takže tři platby stojí
+ligu o 13 Kč víc než jedna. Převodem je celý košík zdarma. Mimo košík zůstává
+**pokuta za kontumaci** — dokud visí, tým další zápas nerozehraje, takže čekat,
+až si někdo vybere balíček, nesmí.
 
 **Prefix 4 patřil poplatku za domácí zápas a nerecykluje se.** Kdyby dorazil starý
 převod, skončí mezi nespárovanými a podívá se na něj supervisor.
