@@ -99,6 +99,10 @@ export interface PacksOverview {
   spent: number;
   withdrawalHours: number;
   upcoming: UpcomingEntry[];
+  /** Odehrané zápasy bez kontumací. Chybí u hráče bez profilu. */
+  played?: number;
+  /** Doporučovací kód se odemyká po prvním odehraném zápase. */
+  canRefer?: boolean;
 }
 
 export interface ReferralOverview {

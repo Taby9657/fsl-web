@@ -78,6 +78,10 @@ export function PacksSection() {
 
   const zbyva = packs.data?.remaining ?? 0;
   const lhuta = packs.data?.withdrawalHours ?? 12;
+  // Doporučovací kód se odemyká po prvním odehraném zápase (kontumace se
+  // nepočítá). Než ho server pošle, blok se neukazuje — na starším backendu
+  // by `canRefer` chybělo a sekce by svítila každému hned po registraci.
+  const canRefer = packs.data?.canRefer === true;
 
   return (
     <>
@@ -153,8 +157,12 @@ export function PacksSection() {
         </>
       ) : null}
 
-      {/* Doporučovací kód. Načte se až po rozkliknutí — server ho při prvním
-          zobrazení vytvoří, nemá smysl to dělat všem hned. */}
+      {/* Doporučovací kód. Odemyká se až po prvním odehraném zápase — dřív
+          není co doporučovat a odměnu (zápas zdarma) by čerpal někdo, kdo
+          sám nehraje. Samotný kód se načte až po rozkliknutí, protože ho
+          server při prvním zobrazení teprve vytváří. */}
+      {!canRefer ? null : (
+      <>
       <SectionTitle>Přiveď hráče, máš zápas zdarma</SectionTitle>
       <Card className="p-5">
         {!showReferral ? (
@@ -165,7 +173,8 @@ export function PacksSection() {
             <p className="min-w-0 flex-1 text-[14px] text-mu">
               Když s tvým kódem přijde do ligy nový hráč a koupí si balíček od tří
               zápasů výš, dostaneš <strong className="text-wh">jeden zápas zdarma</strong>.
-              Může jít do jakéhokoli týmu.
+              Může jít do jakéhokoli týmu a{" "}
+              <strong className="text-wh">kolik lidí přivedeš, omezené není</strong>.
             </p>
             <Button size="sm" onClick={() => setShowReferral(true)}>
               Zobrazit kód
@@ -214,6 +223,8 @@ export function PacksSection() {
           </div>
         ) : null}
       </Card>
+      </>
+      )}
 
       <ConfirmDialog
         open={!!leaving}
