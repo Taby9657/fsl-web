@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useAuthStore, useIsSupervisor } from "@/store/auth";
 import { Page } from "@/components/layout/container";
@@ -19,15 +19,23 @@ export function AuthGuard({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const loading = useAuthStore((s) => s.loading);
   const isSupervisor = useIsSupervisor();
 
+  // `usePathname()` je bez query stringu. Dokud se `next` stavěl jen z něj,
+  // ztrácel se pozvánkový kód: `/registrace?kod=FSL-XX-1234` skončilo jako
+  // `next=%2Fregistrace` a člověk, který přišel z pozvánkového odkazu, musel
+  // kód opsat ručně. Stejně se ztrácelo `?next=` u vstupu z draftu.
+  const qs = params.toString();
+  const cil = qs ? `${pathname}?${qs}` : pathname;
+
   useEffect(() => {
     if (!loading && !user) {
-      router.replace(`/prihlaseni?next=${encodeURIComponent(pathname)}`);
+      router.replace(`/prihlaseni?next=${encodeURIComponent(cil)}`);
     }
-  }, [loading, user, router, pathname]);
+  }, [loading, user, router, cil]);
 
   if (loading) {
     return (

@@ -20,7 +20,8 @@ import { useState } from "react";
 import { errMsg, playersApi, teamsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
-import { Button, Card, EmptyState, LinkButton, PageTitle, Spinner } from "@/components/ui/primitives";
+import { Button, Card, EmptyState, Field, Input, LinkButton, PageTitle, Spinner } from "@/components/ui/primitives";
+import { validateJersey } from "@/lib/validation";
 import { TeamBadge } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
 
@@ -30,6 +31,12 @@ export function PozvankaClient({ code }: { code: string }) {
   const hydrated = useAuthStore((s) => s.hydrated);
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const [busy, setBusy] = useState(false);
+  // Číslo dresu se dřív neposílalo vůbec, takže backend vzal to z profilu —
+  // a když bylo v cílovém týmu obsazené, vrátil „vyber si jiné" na obrazovce,
+  // kde žádné pole pro dres nebylo. Hráč z draftu má navíc číslo 0, které je
+  // obsazené v každém týmu s brankářem s nulou.
+  const [jersey, setJersey] = useState("");
+  const [chybaDres, setChybaDres] = useState("");
 
   const q = useQuery({
     queryKey: ["pozvanka", code],
@@ -42,14 +49,24 @@ export function PozvankaClient({ code }: { code: string }) {
   const maTym = !!user?.player?.teamId;
 
   async function pripoj() {
+    const chyba = validateJersey(jersey);
+    if (chyba) return setChybaDres(chyba);
+    setChybaDres("");
     setBusy(true);
     try {
-      const res = await playersApi.join(code);
+      const res = await playersApi.join(
+        code,
+        jersey.trim() === "" ? undefined : Number(jersey),
+      );
       await refreshUser();
       toast.success("Jsi v týmu", `Vítej v týmu ${res.data.team.name}.`);
       router.push("/muj-ucet");
     } catch (e) {
-      toast.error("Nepovedlo se", errMsg(e));
+      const zprava = errMsg(e);
+      // Kolize dresu patří k poli, ne do toastu — jinak člověk dostane pokyn
+      // „vyber si jiné" a nemá kde.
+      if (/dres|obsazen/i.test(zprava)) setChybaDres(zprava);
+      else toast.error("Nepovedlo se", zprava);
     } finally {
       setBusy(false);
     }
@@ -140,6 +157,21 @@ export function PozvankaClient({ code }: { code: string }) {
           <>
             <p className="text-[14px] leading-6 text-mu">
               Hráčský profil už máš, stačí potvrdit vstup do týmu.
+            </p>
+            <Field label="Číslo dresu v tomto týmu" error={chybaDres}>
+              <Input
+                value={jersey}
+                onChange={(e) => {
+                  setJersey(e.target.value.replace(/\D/g, "").slice(0, 2));
+                  setChybaDres("");
+                }}
+                inputMode="numeric"
+                placeholder="nechat svoje"
+              />
+            </Field>
+            <p className="text-[12px] leading-5 text-di">
+              Nech prázdné, pokud chceš zůstat u svého čísla. Když je v tomhle
+              týmu obsazené, vyber si jiné.
             </p>
             <Button className="w-full" onClick={pripoj} loading={busy}>
               Připojit se k týmu {team.name}

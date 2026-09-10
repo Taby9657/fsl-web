@@ -112,7 +112,12 @@ export function LoginClient() {
         router.replace(next);
         return;
       }
-      const kod = /^\/pozvanka\/([^/?#]+)/.exec(next)?.[1];
+      // Kód může přijít dvěma cestami: z adresy pozvánky (`/pozvanka/KOD`),
+      // nebo jako `?kod=` na registraci — tak ho nese `AuthGuard`, když
+      // nepřihlášený člověk otevře `/registrace?kod=…` z pozvánkové stránky.
+      const kod =
+        /^\/pozvanka\/([^/?#]+)/.exec(next)?.[1] ??
+        /[?&]kod=([^&#]+)/.exec(next)?.[1];
       const dotazy = [
         next && next !== "/" ? `next=${encodeURIComponent(next)}` : null,
         kod ? `kod=${encodeURIComponent(decodeURIComponent(kod))}` : null,

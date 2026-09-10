@@ -7,19 +7,25 @@ import {
   ChevronRight,
   Copy,
   Flag,
+  RotateCcw,
   Shield,
   User,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { errMsg, playersApi, refereesApi, seasonsApi, teamsApi } from "@/lib/api";
 import {
-  firstError,
+  collectErrors,
   validateAbbr,
+  validateBankAccount,
+  validateBankCode,
+  validateBirthNo,
   validateBirthdate,
+  validateJersey,
   validateName,
   validatePhone,
-  validateJersey,
+  validateZip,
+  type Errors,
 } from "@/lib/validation";
 import type { Team } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
@@ -37,8 +43,65 @@ import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
 
+/**
+ * Registrace po krocích.
+ *
+ * Přepsáno 10. 9. 2026 podle `fsl-onboarding-audit-2026-09-10.md`. Tři věci
+ * z toho auditu určují, jak je tenhle soubor postavený — kdo je zruší,
+ * vrátí přesně ty problémy, které testování našlo:
+ *
+ *  1. **Data drží tahle komponenta, ne kroky.** Dřív měl každý krok vlastní
+ *     `useState`, takže návrat zpět komponentu odmontoval a vyplněné údaje
+ *     zmizely. Krok zpět proto neexistoval — bylo jen „zpět na výběr role".
+ *     Kroky dnes dostávají `data` a `set` a nic si nedrží.
+ *  2. **Krok je v URL (`?krok=`).** Bez toho neexistuje pro prohlížeč:
+ *     tlačítko Zpět odnavigovalo z registrace a refresh začínal od nuly.
+ *  3. **Rozdělaná registrace se ukládá do `localStorage`.** Mobil to má
+ *     (`utils/draftRegistration.ts`), web to neměl vůbec.
+ *
+ * Chyby se hlásí **u polí**, ne toastem: `firstError` vracel jen první
+ * chybu a toast po 5,2 s zmizel, takže se člověk se třemi prázdnými poli
+ * dozvěděl jednu a nevěděl kde. `collectErrors` vrací mapu pole → chyba.
+ */
+
 type Role = "player" | "manager" | "referee";
-type Step = "role" | "player-code" | "player-info" | "manager" | "referee" | "done";
+
+/** Slug kroku. Je součástí URL, takže se nepřejmenovává bezdůvodně. */
+type Krok =
+  | "role"
+  | "kod"
+  | "jmeno"
+  | "dres"
+  | "doplnky"
+  | "tym"
+  | "vzhled"
+  | "ja"
+  | "osobni"
+  | "vyplata"
+  | "kontrola"
+  | "hotovo";
+
+/** Pořadí kroků v každé roli. „role" a „hotovo" se do postupu nepočítají. */
+const POSTUP: Record<Role, Krok[]> = {
+  player: ["kod", "jmeno", "dres", "doplnky"],
+  manager: ["tym", "vzhled", "ja"],
+  referee: ["osobni", "vyplata", "kontrola"],
+};
+
+const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
+  role: { titul: "Vítej v FSL", popis: "Kdo jsi?" },
+  kod: { titul: "Pozvánkový kód", popis: "Dostaneš ho od vedoucího svého týmu." },
+  jmeno: { titul: "Jak se jmenuješ?", popis: "Pod tímhle jménem tě uvidí liga." },
+  dres: { titul: "Číslo a pozice", popis: "Číslo dresu musí být v týmu volné." },
+  doplnky: { titul: "Ještě něco?", popis: "Všechno tady je volitelné — jde to doplnit později." },
+  tym: { titul: "Nový tým", popis: "Začneme názvem. Zbytek za chvíli." },
+  vzhled: { titul: "Jak má tým vypadat?", popis: "Volitelné. Doplnit se to dá kdykoli." },
+  ja: { titul: "Ty jako hráč", popis: "Vedoucí je zároveň hráč týmu." },
+  osobni: { titul: "Osobní údaje", popis: "Jméno, pod kterým budeš pískat." },
+  vyplata: { titul: "Údaje pro výplatu", popis: "Za odpískaný zápas chodí odměna převodem." },
+  kontrola: { titul: "Kontrola", popis: "Projdi si, co se odešle." },
+  hotovo: { titul: "Hotovo", popis: undefined },
+};
 
 const ROLES: {
   id: Role;
@@ -76,19 +139,127 @@ const ROLES: {
 
 const POSITIONS = ["Útočník", "Obránce", "Brankář"];
 
+const TEAM_COLORS = [
+  "#C9A140", "#8B5CF6", "#EF4444", "#3B82F6",
+  "#10B981", "#F59E0B", "#EC4899", "#FFFFFF",
+];
+
+/** Všechna textová pole registrace na jednom místě. */
+type Data = {
+  // hráč
+  firstName: string;
+  lastName: string;
+  jersey: string;
+  position: string;
+  phone: string;
+  birthdate: string;
+  // tým
+  name: string;
+  abbr: string;
+  color: string;
+  venue: string;
+  // vedoucí jako hráč
+  mFirstName: string;
+  mLastName: string;
+  mJersey: string;
+  // rozhodčí
+  rFirstName: string;
+  rLastName: string;
+  rPhone: string;
+  birthNo: string;
+  address: string;
+  city: string;
+  zip: string;
+  bankAccount: string;
+  bankCode: string;
+};
+
+const PRAZDNA: Data = {
+  firstName: "", lastName: "", jersey: "", position: "Útočník", phone: "", birthdate: "",
+  name: "", abbr: "", color: "#C9A140", venue: "",
+  mFirstName: "", mLastName: "", mJersey: "",
+  rFirstName: "", rLastName: "", rPhone: "",
+  birthNo: "", address: "", city: "", zip: "", bankAccount: "", bankCode: "",
+};
+
+/* ---------------- Rozdělaná registrace ---------------- */
+
+const ULOZISTE = "fsl_registrace_v1";
+/** Starší než den se neobnovuje — ceník i pravidla se mezitím mohly změnit. */
+const PLATNOST_MS = 24 * 60 * 60 * 1000;
+
+type Ulozene = {
+  role: Role | null;
+  krok: Krok;
+  data: Data;
+  team: Team | null;
+  inviteCode: string | null;
+  ts: number;
+};
+
+/** Soubory (fotka, logo) se neukládají — `File` do `localStorage` nepatří. */
+function uloz(s: Omit<Ulozene, "ts">) {
+  try {
+    localStorage.setItem(ULOZISTE, JSON.stringify({ ...s, ts: Date.now() }));
+  } catch {
+    /* privátní okno nebo zakázané úložiště — registrace funguje dál, jen se
+       neobnoví po refreshi */
+  }
+}
+
+function precti(): Ulozene | null {
+  try {
+    const raw = localStorage.getItem(ULOZISTE);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as Ulozene;
+    if (!s?.ts || Date.now() - s.ts > PLATNOST_MS) return null;
+    return { ...s, data: { ...PRAZDNA, ...s.data } };
+  } catch {
+    return null;
+  }
+}
+
+function zapomen() {
+  try {
+    localStorage.removeItem(ULOZISTE);
+  } catch {
+    /* nic */
+  }
+}
+
+function vek(ts: number) {
+  const min = Math.round((Date.now() - ts) / 60000);
+  if (min < 2) return "právě teď";
+  if (min < 60) return `před ${min} min`;
+  const h = Math.round(min / 60);
+  return h === 1 ? "před hodinou" : `před ${h} h`;
+}
+
+/* ================================================================== */
+
 export function OnboardingClient() {
   const router = useRouter();
   const params = useSearchParams();
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const user = useAuthStore((s) => s.user);
-  // Kam pokračovat po dokončení — z pozvánky i z přihlášení chodí ?next=
+
   const next = params.get("next") || "/muj-ucet";
   const kodZOdkazu = (params.get("kod") ?? "").trim().toUpperCase();
+  const krokZUrl = params.get("krok") as Krok | null;
+  const roleZUrl = params.get("role") as Role | null;
 
-  const [step, setStep] = useState<Step>(kodZOdkazu ? "player-code" : "role");
-  const [role, setRole] = useState<Role | null>(kodZOdkazu ? "player" : null);
+  const [role, setRole] = useState<Role | null>(roleZUrl ?? (kodZOdkazu ? "player" : null));
+  const [krok, setKrokState] = useState<Krok>(
+    krokZUrl ?? (kodZOdkazu ? "kod" : "role"),
+  );
+  const [data, setData] = useState<Data>(PRAZDNA);
+  const [errors, setErrors] = useState<Errors>({});
   const [team, setTeam] = useState<Team | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [obnoveno, setObnoveno] = useState<string | null>(null);
 
   const maHrace = !!user?.player;
   const maTym = !!user?.player?.teamId;
@@ -96,14 +267,209 @@ export function OnboardingClient() {
   const jeRozhodci = !!user?.referee;
   const uzMaRoli = maHrace || jeVedouci || jeRozhodci;
 
-  // Role, které uživatel ještě nemá — ostatní nemá smysl nabízet.
-  // Dřív prošel celý wizard znovu a teprve na konci dostal z API 409.
   const dostupneRole = ROLES.filter((r) =>
     r.id === "player" ? !maHrace : r.id === "manager" ? !jeVedouci : !jeRozhodci,
   );
 
-  // Hráč bez týmu potřebuje jen kód; kdo má všechno, jen odkazy dál
-  if (uzMaRoli && step === "role") {
+  /** Krok mění i adresu, aby fungovalo zpětné tlačítko prohlížeče a refresh. */
+  const naKrok = useCallback(
+    (k: Krok, r: Role | null = role) => {
+      setKrokState(k);
+      setErrors({});
+      const q = new URLSearchParams(params.toString());
+      q.set("krok", k);
+      if (r) q.set("role", r);
+      else q.delete("role");
+      router.replace(`/registrace?${q.toString()}`, { scroll: false });
+    },
+    [params, role, router],
+  );
+
+  /* Obnovení rozdělané registrace. Jen jednou, při prvním vykreslení —
+     kdo už roli má, nic neobnovuje (dostane HotovaRoleStep). */
+  const obnovaProbehla = useRef(false);
+  useEffect(() => {
+    if (obnovaProbehla.current) return;
+    obnovaProbehla.current = true;
+    if (uzMaRoli) return;
+    const s = precti();
+    if (!s) return;
+    setData(s.data);
+    setTeam(s.team);
+    setInviteCode(s.inviteCode);
+    if (s.role) setRole(s.role);
+    setObnoveno(vek(s.ts));
+    // Kód z odkazu má přednost — člověk zrovna klikl na pozvánku.
+    if (!krokZUrl && !kodZOdkazu && s.krok !== "hotovo") {
+      naKrok(s.krok, s.role);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Uložení při každé změně. „hotovo" se neukládá — je dokončeno. */
+  useEffect(() => {
+    if (uzMaRoli || krok === "hotovo" || krok === "role") return;
+    uloz({ role, krok, data, team, inviteCode });
+  }, [role, krok, data, team, inviteCode, uzMaRoli]);
+
+  /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
+     a tenhle efekt srovná stav komponenty. */
+  useEffect(() => {
+    if (krokZUrl && krokZUrl !== krok) setKrokState(krokZUrl);
+    if (roleZUrl && roleZUrl !== role) setRole(roleZUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [krokZUrl, roleZUrl]);
+
+  const set = <K extends keyof Data>(k: K, v: Data[K]) => {
+    setData((d) => ({ ...d, [k]: v }));
+    // Chyba u pole zmizí, jakmile do něj člověk začne psát.
+    setErrors((e) => (e[k] ? { ...e, [k]: "" } : e));
+  };
+
+  /** Ověří pole kroku; při chybě je vypíše u polí a vrátí `false`. */
+  const zkontroluj = (checks: Record<string, string | null>) => {
+    const e = collectErrors(checks);
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const poradi = useMemo(() => (role ? POSTUP[role] : []), [role]);
+  const index = poradi.indexOf(krok);
+  const celkem = poradi.length;
+
+  function zpet() {
+    if (index > 0) naKrok(poradi[index - 1]);
+    else naKrok("role", null);
+  }
+
+  function zacniZnovu() {
+    zapomen();
+    setData(PRAZDNA);
+    setTeam(null);
+    setInviteCode(null);
+    setPhoto(null);
+    setLogo(null);
+    setObnoveno(null);
+    setRole(null);
+    naKrok("role", null);
+  }
+
+  /* ---------- odeslání ---------- */
+
+  async function odesliHrace() {
+    setBusy(true);
+    try {
+      const res = await playersApi.create({
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        ...(data.jersey.trim() ? { jersey: Number(data.jersey) } : {}),
+        position: data.position,
+        phone: data.phone.trim() || undefined,
+        birthdate: data.birthdate ? new Date(data.birthdate).toISOString() : undefined,
+        ...(team
+          ? { teamId: team.id, ...(inviteCode ? { inviteCode } : {}) }
+          : { bezTymu: true }),
+      });
+      if (photo) {
+        try {
+          await playersApi.uploadPhoto(res.data.id, photo);
+        } catch {
+          toast.error("Fotka se nenahrála", "Profil je hotový, fotku zkus přidat v Můj profil.");
+        }
+      }
+      zapomen();
+      await refreshUser();
+      naKrok("hotovo");
+    } catch (e) {
+      serverovaChyba(e, { jersey: ["JERSEY_TAKEN", "obsazen"] });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function odesliTym() {
+    setBusy(true);
+    try {
+      const dres = data.mJersey.trim() === "" ? undefined : Number(data.mJersey);
+      const res = await teamsApi.create({
+        name: data.name.trim(),
+        abbr: data.abbr.trim().toUpperCase(),
+        color: data.color,
+        venue: data.venue.trim() || undefined,
+        manager: {
+          firstName: data.mFirstName.trim() || undefined,
+          lastName: data.mLastName.trim() || undefined,
+          jersey: dres,
+        },
+      });
+      if (logo && res.data.team?.id) {
+        try {
+          await teamsApi.uploadLogo(res.data.team.id, logo);
+        } catch {
+          toast.error("Logo se nenahrálo", "Tým je založený, logo přidáš v nastavení týmu.");
+        }
+      }
+      setInviteCode(res.data.inviteCode);
+      zapomen();
+      await refreshUser();
+      naKrok("hotovo");
+    } catch (e) {
+      serverovaChyba(e, { abbr: ["abbr", "Zkratka"], name: ["název", "name"] });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function odesliRozhodciho() {
+    setBusy(true);
+    try {
+      await refereesApi.register({
+        firstName: data.rFirstName,
+        lastName: data.rLastName,
+        phone: data.rPhone,
+        birthNo: data.birthNo,
+        address: data.address,
+        city: data.city,
+        zip: data.zip,
+        bankAccount: data.bankAccount,
+        bankCode: data.bankCode,
+      });
+      zapomen();
+      await refreshUser();
+      naKrok("hotovo");
+    } catch (e) {
+      serverovaChyba(e, {});
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Serverovou chybu ukáže u pole, kterého se týká. Dřív šlo všechno jako
+   * `toast.error("Chyba", …)`, takže „Číslo dresu 10 je již obsazeno"
+   * nesměrovalo nikam.
+   */
+  function serverovaChyba(e: unknown, mapa: Record<string, string[]>) {
+    const zprava = errMsg(e);
+    for (const [pole, klice] of Object.entries(mapa)) {
+      if (klice.some((k) => zprava.toLowerCase().includes(k.toLowerCase()))) {
+        setErrors({ [pole]: zprava });
+        return;
+      }
+    }
+    toast.error("Nepovedlo se", zprava);
+  }
+
+  /* ---------- už má roli ---------- */
+
+  // Ochrana „tuhle roli už máš" musí platit na každém kroku, ne jen na
+  // výběru role. Dřív ji vstup `?kod=` obcházel: startovní krok byl „kod",
+  // takže člověk s hotovým profilem prošel celým formulářem znovu a teprve
+  // `POST /players` vrátil 409.
+  const rolUzMam =
+    role === "player" ? maHrace : role === "manager" ? jeVedouci : role === "referee" ? jeRozhodci : false;
+
+  if (uzMaRoli && (krok === "role" || rolUzMam)) {
     return (
       <Page size="narrow">
         <HotovaRoleStep
@@ -115,7 +481,7 @@ export function OnboardingClient() {
           dostupneRole={dostupneRole}
           onVyberRole={(id) => {
             setRole(id);
-            setStep(id === "player" ? "player-code" : id === "manager" ? "manager" : "referee");
+            naKrok(POSTUP[id][0], id);
           }}
           onPripojen={async () => {
             await refreshUser();
@@ -126,112 +492,666 @@ export function OnboardingClient() {
     );
   }
 
+  /* ---------- výběr role ---------- */
+
+  if (krok === "role") {
+    return (
+      <Page size="narrow">
+        <PageTitle title={NADPISY.role.titul} subtitle={NADPISY.role.popis} />
+        {obnoveno ? (
+          <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
+        ) : null}
+        <div className="space-y-3">
+          {ROLES.map((r) => (
+            <button
+              key={r.id}
+              onClick={() => {
+                setRole(r.id);
+                naKrok(POSTUP[r.id][0], r.id);
+              }}
+              className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
+              style={{ borderLeft: `4px solid ${r.color}` }}
+            >
+              <div className="flex items-start gap-4">
+                <span
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: `${r.color}22`, color: r.color }}
+                >
+                  {r.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[17px] font-bold text-wh">{r.title}</span>
+                  <span className="mt-1 block text-[13px] leading-6 text-mu">{r.desc}</span>
+                  <span
+                    className="mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                    style={{ backgroundColor: `${r.color}20`, color: r.color }}
+                  >
+                    {r.badge}
+                  </span>
+                </span>
+                <ChevronRight size={18} className="mt-1 shrink-0 text-di" />
+              </div>
+            </button>
+          ))}
+        </div>
+      </Page>
+    );
+  }
+
+  /* ---------- hotovo ---------- */
+
+  if (krok === "hotovo") {
+    return (
+      <Page size="narrow">
+        <DoneStep role={role} inviteCode={inviteCode} maTym={!!team} onFinish={() => router.push(next)} />
+      </Page>
+    );
+  }
+
+  /* ---------- krok formuláře ---------- */
+
+  const nadpis = NADPISY[krok];
+
   return (
     <Page size="narrow">
-      {step !== "role" && step !== "done" ? (
-        <button
-          onClick={() => setStep("role")}
-          className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-mu transition-colors hover:text-wh"
-        >
-          <ArrowLeft size={16} /> Zpět na výběr role
-        </button>
-      ) : null}
+      <button
+        onClick={zpet}
+        className="mb-4 inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-mu transition-colors hover:text-wh"
+      >
+        <ArrowLeft size={16} />
+        {index > 0 ? "Zpět" : "Zpět na výběr role"}
+      </button>
 
-      {step === "role" ? (
-        <>
-          <PageTitle title="Vítej v FSL" subtitle="Kdo jsi?" />
-          <div className="space-y-3">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => {
-                  setRole(r.id);
-                  setStep(
-                    r.id === "player" ? "player-code" : r.id === "manager" ? "manager" : "referee",
-                  );
-                }}
-                className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
-                style={{ borderLeft: `4px solid ${r.color}` }}
-              >
-                <div className="flex items-start gap-4">
-                  <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${r.color}22`, color: r.color }}
-                  >
-                    {r.icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[17px] font-bold text-wh">{r.title}</span>
-                    <span className="mt-1 block text-[13px] leading-6 text-mu">{r.desc}</span>
-                    <span
-                      className="mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                      style={{ backgroundColor: `${r.color}20`, color: r.color }}
-                    >
-                      {r.badge}
-                    </span>
-                  </span>
-                  <ChevronRight size={18} className="mt-1 shrink-0 text-di" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : null}
+      <PageTitle
+        title={nadpis.titul}
+        subtitle={
+          celkem ? (
+            <>
+              Krok {index + 1} ze {celkem}
+              {nadpis.popis ? ` — ${nadpis.popis}` : ""}
+            </>
+          ) : (
+            nadpis.popis
+          )
+        }
+      />
 
-      {step === "player-code" ? (
-        <PlayerCodeStep
+      <Postup index={index} celkem={celkem} />
+
+      {obnoveno ? <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} /> : null}
+
+      {/* ── hráč: kód ── */}
+      {krok === "kod" ? (
+        <KodStep
           vychoziKod={kodZOdkazu}
-          onJoined={(t, kod) => {
+          team={team}
+          onTeam={setTeam}
+          onDal={(t, kod) => {
             setTeam(t);
             setInviteCode(kod);
-            setStep("player-info");
+            naKrok("jmeno");
           }}
           onBezTymu={() => {
             setTeam(null);
             setInviteCode(null);
-            setStep("player-info");
+            naKrok("jmeno");
           }}
         />
       ) : null}
 
-      {step === "player-info" ? (
-        <PlayerInfoStep
-          team={team}
-          inviteCode={inviteCode}
-          onDone={async () => {
-            await refreshUser();
-            // Hráč bez týmu má hotovo teprve tím, že se nabídne v draftu —
-            // samotný profil ho vedoucím neukáže.
-            if (!team) router.push("/draft");
-            else setStep("done");
-          }}
-        />
+      {/* ── hráč: jméno ── */}
+      {krok === "jmeno" ? (
+        <Card className="space-y-4 p-6">
+          {team ? (
+            <p className="text-[13px] leading-6 text-mu">
+              Tým: <span className="font-semibold text-go">{team.name}</span>
+            </p>
+          ) : (
+            <p className="text-[13px] leading-6 text-mu">
+              Tým zatím nemáš — po dokončení se nabídneš v draftu.
+            </p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Jméno" required error={errors.firstName}>
+              <Input
+                value={data.firstName}
+                onChange={(e) => set("firstName", e.target.value)}
+                onBlur={() =>
+                  setErrors((p) => ({
+                    ...p,
+                    firstName: validateName(data.firstName, "Jméno") ?? "",
+                  }))
+                }
+                placeholder="Tomáš"
+                autoFocus
+              />
+            </Field>
+            <Field label="Příjmení" required error={errors.lastName}>
+              <Input
+                value={data.lastName}
+                onChange={(e) => set("lastName", e.target.value)}
+                onBlur={() =>
+                  setErrors((p) => ({
+                    ...p,
+                    lastName: validateName(data.lastName, "Příjmení") ?? "",
+                  }))
+                }
+                placeholder="Novák"
+              />
+            </Field>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (
+                zkontroluj({
+                  firstName: validateName(data.firstName, "Jméno"),
+                  lastName: validateName(data.lastName, "Příjmení"),
+                })
+              ) {
+                naKrok("dres");
+              }
+            }}
+          >
+            Pokračovat
+          </Button>
+        </Card>
       ) : null}
 
-      {step === "manager" ? (
-        <ManagerStep
-          onDone={async (code) => {
-            setInviteCode(code);
-            await refreshUser();
-            setStep("done");
-          }}
-        />
+      {/* ── hráč: dres a pozice ── */}
+      {krok === "dres" ? (
+        <Card className="space-y-4 p-6">
+          <Field
+            label="Číslo dresu"
+            required={!!team}
+            error={errors.jersey}
+          >
+            <Input
+              value={data.jersey}
+              onChange={(e) => set("jersey", e.target.value.replace(/\D/g, "").slice(0, 2))}
+              inputMode="numeric"
+              placeholder="10"
+              autoFocus
+            />
+          </Field>
+          {!team ? (
+            <p className="text-[12px] leading-5 text-di">
+              Bez týmu je číslo volitelné — čísla se hlídají v rámci týmu. Až
+              tě někdo draftuje, doplníš si ho v profilu.
+            </p>
+          ) : null}
+          <Field label="Pozice">
+            <div className="flex flex-wrap gap-2">
+              {POSITIONS.map((p) => (
+                <Chip key={p} active={data.position === p} onClick={() => set("position", p)}>
+                  {p}
+                </Chip>
+              ))}
+            </div>
+          </Field>
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (
+                zkontroluj({
+                  jersey: data.jersey.trim()
+                    ? validateJersey(data.jersey)
+                    : team
+                      ? "Číslo dresu je povinné, když vstupuješ do týmu."
+                      : null,
+                })
+              ) {
+                naKrok("doplnky");
+              }
+            }}
+          >
+            Pokračovat
+          </Button>
+        </Card>
       ) : null}
 
-      {step === "referee" ? (
-        <RefereeStep
-          onDone={async () => {
-            await refreshUser();
-            setStep("done");
-          }}
-        />
+      {/* ── hráč: volitelné doplňky ── */}
+      {krok === "doplnky" ? (
+        <Card className="space-y-4 p-6">
+          <Field label="Profilová fotka">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+              className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
+            />
+          </Field>
+          <Field label="Telefon" error={errors.phone}>
+            <Input
+              value={data.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              onBlur={() =>
+                setErrors((p) => ({ ...p, phone: validatePhone(data.phone) ?? "" }))
+              }
+              placeholder="+420 601 234 567"
+            />
+          </Field>
+          <Field label="Datum narození" error={errors.birthdate}>
+            <BirthdatePicker value={data.birthdate} onChange={(v) => set("birthdate", v)} />
+          </Field>
+          <Button
+            className="w-full"
+            loading={busy}
+            onClick={() => {
+              if (
+                zkontroluj({
+                  phone: validatePhone(data.phone),
+                  birthdate: validateBirthdate(data.birthdate),
+                })
+              ) {
+                void odesliHrace();
+              }
+            }}
+          >
+            Dokončit
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            disabled={busy}
+            onClick={() => {
+              setPhoto(null);
+              set("phone", "");
+              set("birthdate", "");
+              void odesliHrace();
+            }}
+          >
+            Přeskočit a dokončit
+          </Button>
+        </Card>
       ) : null}
 
-      {step === "done" ? (
-        <DoneStep role={role} inviteCode={inviteCode} onFinish={() => router.push(next)} />
+      {/* ── vedoucí: tým ── */}
+      {krok === "tym" ? (
+        <Card className="space-y-4 p-6">
+          <div className="flex items-center gap-4">
+            <TeamBadge abbr={data.abbr || "TM"} color={data.color} size={56} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[16px] font-bold text-wh">
+                {data.name || "Název týmu"}
+              </p>
+              <SezonaRadek />
+            </div>
+          </div>
+          <Field label="Název týmu" required error={errors.name}>
+            <Input
+              value={data.name}
+              onChange={(e) => set("name", e.target.value)}
+              onBlur={() =>
+                setErrors((p) => ({
+                  ...p,
+                  name: data.name.trim() ? "" : "Název týmu je povinný.",
+                }))
+              }
+              placeholder="Benavidez Eagles"
+              autoFocus
+            />
+          </Field>
+          <Field label="Zkratka (max 3 znaky)" required error={errors.abbr}>
+            <Input
+              value={data.abbr}
+              onChange={(e) => set("abbr", e.target.value.toUpperCase().slice(0, 3))}
+              onBlur={() => setErrors((p) => ({ ...p, abbr: validateAbbr(data.abbr) ?? "" }))}
+              maxLength={3}
+              placeholder="BE"
+            />
+          </Field>
+          <p className="rounded-lg border border-bd bg-c2/40 px-3 py-2 text-[12px] leading-5 text-mu">
+            Divizi a konferenci přiděluje supervisor při rozlosování — proto si ji
+            tady nevybíráš.
+          </p>
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (
+                zkontroluj({
+                  name: data.name.trim() ? null : "Název týmu je povinný.",
+                  abbr: validateAbbr(data.abbr),
+                })
+              ) {
+                naKrok("vzhled");
+              }
+            }}
+          >
+            Pokračovat
+          </Button>
+        </Card>
+      ) : null}
+
+      {/* ── vedoucí: vzhled ── */}
+      {krok === "vzhled" ? (
+        <Card className="space-y-4 p-6">
+          <div className="flex items-center gap-4">
+            <TeamBadge abbr={data.abbr || "TM"} color={data.color} size={56} />
+            <p className="truncate text-[16px] font-bold text-wh">{data.name}</p>
+          </div>
+          <Field label="Barva týmu">
+            <div className="flex flex-wrap gap-2.5">
+              {TEAM_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => set("color", c)}
+                  aria-label={c}
+                  className={clsx(
+                    "h-9 w-9 cursor-pointer rounded-full transition-transform",
+                    data.color === c && "ring-2 ring-white ring-offset-2 ring-offset-c1",
+                  )}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </Field>
+          <Field label="Logo týmu">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
+              className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
+            />
+          </Field>
+          <Field label="Domácí hřiště">
+            <Input
+              value={data.venue}
+              onChange={(e) => set("venue", e.target.value)}
+              placeholder="Hala Sparta"
+            />
+          </Field>
+          <Button className="w-full" onClick={() => naKrok("ja")}>
+            Pokračovat
+          </Button>
+        </Card>
+      ) : null}
+
+      {/* ── vedoucí: já jako hráč ── */}
+      {krok === "ja" ? (
+        <Card className="space-y-4 p-6">
+          {/* Profil vzniká s týmem, protože licence i balíčky startů visí na
+              hráči, ne na týmu — bez profilu by vedoucí po zaplacení
+              registrace nezaplatil nic dalšího. */}
+          <p className="text-[13px] leading-6 text-mu">
+            Jako vedoucí jsi zároveň hráč týmu. Profil ti založíme rovnou, ať
+            můžeš zaplatit registraci i balíček startů najednou. Údaje si pak
+            kdykoli upravíš.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Jméno" error={errors.mFirstName}>
+              <Input
+                value={data.mFirstName}
+                onChange={(e) => set("mFirstName", e.target.value)}
+                placeholder="Jakub"
+                autoFocus
+              />
+            </Field>
+            <Field label="Příjmení" error={errors.mLastName}>
+              <Input
+                value={data.mLastName}
+                onChange={(e) => set("mLastName", e.target.value)}
+                placeholder="Tabášek"
+              />
+            </Field>
+          </div>
+          <Field label="Číslo dresu" error={errors.mJersey}>
+            <Input
+              value={data.mJersey}
+              onChange={(e) => set("mJersey", e.target.value.replace(/\D/g, "").slice(0, 2))}
+              inputMode="numeric"
+              placeholder="volitelné"
+            />
+          </Field>
+          <p className="text-[12px] leading-5 text-di">
+            Jméno nechat prázdné jde — doplníme ho z tvého e-mailu a upravíš si
+            ho v profilu.
+          </p>
+          <Button
+            className="w-full"
+            loading={busy}
+            onClick={() => {
+              if (
+                zkontroluj({
+                  mJersey: validateJersey(data.mJersey),
+                })
+              ) {
+                void odesliTym();
+              }
+            }}
+          >
+            Vytvořit tým
+          </Button>
+        </Card>
+      ) : null}
+
+      {/* ── rozhodčí: osobní údaje ── */}
+      {krok === "osobni" ? (
+        <Card className="space-y-4 p-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Jméno" required error={errors.rFirstName}>
+              <Input
+                value={data.rFirstName}
+                onChange={(e) => set("rFirstName", e.target.value)}
+                placeholder="Jan"
+                autoFocus
+              />
+            </Field>
+            <Field label="Příjmení" required error={errors.rLastName}>
+              <Input
+                value={data.rLastName}
+                onChange={(e) => set("rLastName", e.target.value)}
+                placeholder="Procházka"
+              />
+            </Field>
+          </div>
+          <Field label="Telefon" error={errors.rPhone}>
+            <Input
+              value={data.rPhone}
+              onChange={(e) => set("rPhone", e.target.value)}
+              placeholder="+420 601 234 567"
+            />
+          </Field>
+          <Button
+            className="w-full"
+            onClick={() => {
+              if (
+                zkontroluj({
+                  rFirstName: validateName(data.rFirstName, "Jméno"),
+                  rLastName: validateName(data.rLastName, "Příjmení"),
+                  rPhone: validatePhone(data.rPhone),
+                })
+              ) {
+                naKrok("vyplata");
+              }
+            }}
+          >
+            Pokračovat
+          </Button>
+        </Card>
+      ) : null}
+
+      {/* ── rozhodčí: výplata ── */}
+      {krok === "vyplata" ? (
+        <Card className="space-y-4 p-6">
+          <div className="rounded-xl border border-blue/30 bg-blue/10 p-4 text-[13px] leading-6 text-mu">
+            <strong className="text-wh">Proč potřebujeme bankovní účet?</strong> Za každý
+            odpískaný zápas dostaneš odměnu, kterou posíláme převodem. Údaje vidí
+            pouze supervisor ligy.
+          </div>
+          <Field label="Rodné číslo" error={errors.birthNo}>
+            <Input
+              value={data.birthNo}
+              onChange={(e) => set("birthNo", e.target.value)}
+              placeholder="950615/1234"
+            />
+          </Field>
+          <Field label="Ulice a číslo popisné" error={errors.address}>
+            <Input
+              value={data.address}
+              onChange={(e) => set("address", e.target.value)}
+              placeholder="Vinohradská 12"
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
+            <Field label="Město" error={errors.city}>
+              <Input value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="Praha" />
+            </Field>
+            <Field label="PSČ" error={errors.zip}>
+              <Input
+                value={data.zip}
+                onChange={(e) => set("zip", e.target.value)}
+                placeholder="13000"
+                inputMode="numeric"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
+            <Field label="Číslo účtu" error={errors.bankAccount}>
+              <Input
+                value={data.bankAccount}
+                onChange={(e) => set("bankAccount", e.target.value)}
+                placeholder="192000145399"
+                inputMode="numeric"
+              />
+            </Field>
+            <Field label="Kód banky" error={errors.bankCode}>
+              <Input
+                value={data.bankCode}
+                onChange={(e) => set("bankCode", e.target.value)}
+                placeholder="0800"
+                inputMode="numeric"
+              />
+            </Field>
+          </div>
+          <p className="text-[12px] text-di">
+            Kód banky: ČS 0800 · KB 0100 · ČSOB 0300 · Fio 2010 · mBank 6210 · Air 3030
+          </p>
+          <Button
+            className="w-full"
+            onClick={() => {
+              // Prázdné projde, zjevný překlep ne. Do 10. 9. 2026 se tyhle
+              // údaje nevalidovaly vůbec, takže špatné číslo účtu se poznalo
+              // teprve tím, že nepřišla odměna.
+              if (
+                zkontroluj({
+                  birthNo: validateBirthNo(data.birthNo),
+                  zip: validateZip(data.zip),
+                  bankAccount: validateBankAccount(data.bankAccount),
+                  bankCode: validateBankCode(data.bankCode),
+                })
+              ) {
+                naKrok("kontrola");
+              }
+            }}
+          >
+            Pokračovat
+          </Button>
+        </Card>
+      ) : null}
+
+      {/* ── rozhodčí: kontrola ── */}
+      {krok === "kontrola" ? (
+        <Card className="space-y-4 p-6">
+          <dl className="divide-y divide-bd">
+            {(
+              [
+                ["Jméno", `${data.rFirstName} ${data.rLastName}`.trim()],
+                ["Telefon", data.rPhone],
+                ["Rodné číslo", data.birthNo],
+                ["Adresa", [data.address, data.city, data.zip].filter(Boolean).join(", ")],
+                ["Účet", data.bankAccount ? `${data.bankAccount}/${data.bankCode}` : ""],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <div key={k} className="flex items-center justify-between gap-4 py-3">
+                <dt className="text-[13px] text-mu">{k}</dt>
+                <dd className="text-right text-[14px] text-wh">{v || "—"}</dd>
+              </div>
+            ))}
+          </dl>
+          {!data.bankAccount.trim() || !data.birthNo.trim() ? (
+            <div className="rounded-xl border border-red/40 bg-red/10 p-4 text-[13px] leading-6 text-wh">
+              Chybí{" "}
+              {[!data.birthNo.trim() ? "rodné číslo" : null, !data.bankAccount.trim() ? "číslo účtu" : null]
+                .filter(Boolean)
+                .join(" a ")}
+              . Registraci to nezastaví, ale bez těchhle údajů ti supervisor nepošle
+              odměnu za odpískané zápasy — doplnit si je můžeš kdykoli v profilu
+              rozhodčího.
+            </div>
+          ) : null}
+          <div className="rounded-xl border border-go/30 bg-go-soft p-4 text-[13px] leading-6 text-mu">
+            Po odeslání musí registraci schválit supervisor FSL. Dostaneš oznámení,
+            jakmile bude vyřízena.
+          </div>
+          <Button className="w-full" loading={busy} onClick={() => void odesliRozhodciho()}>
+            Odeslat registraci
+          </Button>
+        </Card>
       ) : null}
     </Page>
   );
+}
+
+/* ---------------- Ukazatel průběhu ---------------- */
+
+function Postup({ index, celkem }: { index: number; celkem: number }) {
+  if (celkem < 2) return null;
+  return (
+    <div className="mb-6 flex items-center gap-2">
+      {Array.from({ length: celkem }, (_, i) => (
+        <span
+          key={i}
+          className={clsx(
+            "h-1.5 flex-1 rounded-full transition-colors",
+            i <= index ? "bg-go" : "bg-c2",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ---------------- Obnovená rozdělaná registrace ---------------- */
+
+function ObnovenoBanner({ vek, onZnovu }: { vek: string; onZnovu: () => void }) {
+  return (
+    <Card className="mb-5 flex flex-wrap items-center justify-between gap-3 border-go/40 bg-go-soft p-4">
+      <p className="text-[13px] leading-6 text-wh">
+        Pokračuješ v registraci, kterou jsi rozdělal <strong>{vek}</strong>.
+      </p>
+      <Button variant="ghost" size="sm" onClick={onZnovu}>
+        <RotateCcw size={14} /> Začít znovu
+      </Button>
+    </Card>
+  );
+}
+
+/* ---------------- Sezóna, do které se tým hlásí ---------------- */
+
+function SezonaRadek() {
+  const [sezona, setSezona] = useState<string | null>(null);
+  const [selhalo, setSelhalo] = useState(false);
+
+  // Tým se hlásí vždycky do sezóny, která zrovna běží — vybírat nejde nic.
+  // Dřív se při selhání dotazu blok mlčky nevykreslil a vedoucí nevěděl,
+  // do jaké sezóny tým hlásí.
+  useEffect(() => {
+    seasonsApi
+      .list()
+      .then((res) => setSezona(res.data.current ?? null))
+      .catch(() => setSelhalo(true));
+  }, []);
+
+  if (sezona) return <p className="text-[12px] text-mu">Sezóna {sezona}</p>;
+  if (selhalo)
+    return (
+      <p className="text-[12px] text-amber">
+        Sezónu se nepovedlo zjistit — tým se založí do té, která běží.
+      </p>
+    );
+  return <p className="text-[12px] text-di">Nový tým</p>;
 }
 
 /* ---------------- Uživatel, který roli už má ---------------- */
@@ -256,19 +1176,35 @@ function HotovaRoleStep({
   onPripojen: () => void;
 }) {
   const [code, setCode] = useState(kod);
+  const [jersey, setJersey] = useState("");
+  const [chybaKod, setChybaKod] = useState("");
+  const [chybaDres, setChybaDres] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Hráč bez týmu je jediný, kdo tu ještě něco potřebuje — připojit se kódem
   async function pripoj() {
     const clean = code.trim().toUpperCase();
-    if (!clean) return;
+    if (!clean) return setChybaKod("Zadej pozvánkový kód.");
+    const chyba = validateJersey(jersey);
+    if (chyba) return setChybaDres(chyba);
+    setChybaKod("");
+    setChybaDres("");
     setBusy(true);
     try {
-      const res = await playersApi.join(clean);
+      // Dřív se `jersey` neposílal vůbec, takže backend vzal číslo
+      // z profilu — a když bylo v cílovém týmu obsazené, vrátil „vyber si
+      // jiné" na obrazovce, kde žádné pole pro dres nebylo. Hráč z draftu
+      // má navíc číslo 0, které je obsazené v každém týmu s brankářem
+      // s nulou, takže to nebyl okrajový případ.
+      const res = await playersApi.join(
+        clean,
+        jersey.trim() === "" ? undefined : Number(jersey),
+      );
       toast.success("Jsi v týmu", `Vítej v týmu ${res.data.team.name}.`);
       onPripojen();
     } catch (e) {
-      toast.error("Nepovedlo se", errMsg(e));
+      const zprava = errMsg(e);
+      if (/dres|obsazen/i.test(zprava)) setChybaDres(zprava);
+      else setChybaKod(zprava);
     } finally {
       setBusy(false);
     }
@@ -278,7 +1214,9 @@ function HotovaRoleStep({
     maHrace ? "hráč" : null,
     jeVedouci ? "vedoucí týmu" : null,
     jeRozhodci ? "rozhodčí" : null,
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <>
@@ -292,19 +1230,41 @@ function HotovaRoleStep({
           <div>
             <p className="text-[16px] font-bold text-wh">Nejsi v žádném týmu</p>
             <p className="mt-1 text-[13px] leading-6 text-mu">
-              Máš pozvánkový kód od vedoucího? Zadej ho tady a naskočíš na soupisku.
-              Profil ani statistiky o nic nepřijdou.
+              Máš pozvánkový kód od vedoucího? Zadej ho tady a naskočíš na
+              soupisku. Profil ani statistiky o nic nepřijdou. Kód nemáš?{" "}
+              <a href="/draft" className="text-go hover:underline">
+                Nabídni se v draftu
+              </a>
+              .
             </p>
           </div>
-          <Field label="Pozvánkový kód">
+          <Field label="Pozvánkový kód" error={chybaKod}>
             <Input
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                setCode(e.target.value.toUpperCase());
+                setChybaKod("");
+              }}
               onKeyDown={(e) => e.key === "Enter" && pripoj()}
               placeholder="FSL-TM-XXXX"
               className="text-center text-[18px] font-bold tracking-[0.25em]"
             />
           </Field>
+          <Field label="Číslo dresu v novém týmu" error={chybaDres}>
+            <Input
+              value={jersey}
+              onChange={(e) => {
+                setJersey(e.target.value.replace(/\D/g, "").slice(0, 2));
+                setChybaDres("");
+              }}
+              inputMode="numeric"
+              placeholder="nechat svoje"
+            />
+          </Field>
+          <p className="text-[12px] leading-5 text-di">
+            Nech prázdné, pokud chceš zůstat u svého čísla. Když je v novém týmu
+            obsazené, vyber si tady jiné.
+          </p>
           <Button className="w-full" onClick={pripoj} loading={busy} disabled={!code.trim()}>
             Připojit se k týmu
           </Button>
@@ -360,49 +1320,55 @@ function HotovaRoleStep({
 
 /* ---------------- Hráč: pozvánkový kód ---------------- */
 
-function PlayerCodeStep({
+function KodStep({
   vychoziKod,
-  onJoined,
+  team,
+  onTeam,
+  onDal,
   onBezTymu,
 }: {
   vychoziKod?: string;
-  onJoined: (t: Team, kod: string) => void;
+  team: Team | null;
+  onTeam: (t: Team | null) => void;
+  onDal: (t: Team, kod: string) => void;
   /** Hráč, který kód nemá a nemůže mít — jde rovnou do draft poolu. */
   onBezTymu: () => void;
 }) {
   const [code, setCode] = useState(vychoziKod ?? "");
+  const [chyba, setChyba] = useState("");
   const [busy, setBusy] = useState(false);
-  const [team, setTeam] = useState<Team | null>(null);
 
-  async function verify(rawKod?: string) {
-    // Skutečný kód je FSL-ZKRATKA-XXXX, tedy 10+ znaků. Osm znaků prošlo
-    // lokální kontrolou a poslalo se na server jen proto, aby se vrátilo 404.
-    const clean = (rawKod ?? code).trim().toUpperCase();
-    if (clean.length < 10 || !clean.startsWith("FSL-")) {
-      toast.error("Zadej platný kód", "Kód má formát FSL-TM-XXXX.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await teamsApi.join(clean);
-      setTeam(res.data.team);
-    } catch (e) {
-      toast.error("Kód nesedí", errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
+  const verify = useCallback(
+    async (rawKod?: string) => {
+      // Skutečný kód je FSL-ZKRATKA-XXXX, tedy 10+ znaků.
+      const clean = (rawKod ?? code).trim().toUpperCase();
+      if (clean.length < 10 || !clean.startsWith("FSL-")) {
+        setChyba("Kód má formát FSL-TM-XXXX.");
+        return;
+      }
+      setChyba("");
+      setBusy(true);
+      try {
+        const res = await teamsApi.join(clean);
+        onTeam(res.data.team);
+      } catch (e) {
+        setChyba(errMsg(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [code, onTeam],
+  );
 
   // Kód z pozvánkového odkazu ověříme rovnou, ať uživatel nic nepřepisuje
   useEffect(() => {
-    if (vychoziKod && vychoziKod.length >= 10) verify(vychoziKod);
+    if (vychoziKod && vychoziKod.length >= 10) void verify(vychoziKod);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vychoziKod]);
 
   if (team) {
     return (
       <>
-        <PageTitle title="Připojuješ se k tomuto týmu?" />
         <Card
           className="mb-5 flex items-center gap-4 p-5"
           style={{ borderColor: team.color ?? undefined }}
@@ -417,14 +1383,16 @@ function PlayerCodeStep({
         {team.regStatus === "PENDING" || team.regStatus === "APPEALING" ? (
           <Card className="mb-5 border-go/40 bg-go-soft p-4">
             <p className="text-[13px] leading-6 text-wh">
-              Tenhle tým ještě čeká na schválení supervisorem. Na soupisku se zapsat můžeš,
-              zápasy se ale rozlosují až po schválení.
+              Tenhle tým ještě čeká na schválení supervisorem. Na soupisku se zapsat
+              můžeš, zápasy se ale rozlosují až po schválení.
             </p>
           </Card>
         ) : null}
         <div className="flex flex-col gap-2">
-          <Button onClick={() => onJoined(team, code.trim().toUpperCase())}>Ano, pokračovat</Button>
-          <Button variant="ghost" onClick={() => setTeam(null)}>
+          <Button onClick={() => onDal(team, code.trim().toUpperCase())}>
+            Ano, pokračovat
+          </Button>
+          <Button variant="ghost" onClick={() => onTeam(null)}>
             Zadat jiný kód
           </Button>
         </div>
@@ -434,23 +1402,28 @@ function PlayerCodeStep({
 
   return (
     <>
-      <PageTitle
-        title="Pozvánkový kód"
-        subtitle="Dostaneš ho od vedoucího svého týmu."
-      />
       <Card className="p-6">
-        <Field label="Kód" required>
+        <Field label="Kód" required error={chyba}>
           <Input
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase());
+              setChyba("");
+            }}
             onKeyDown={(e) => e.key === "Enter" && verify()}
             placeholder="FSL-TM-XXXX"
             maxLength={12}
             autoCapitalize="characters"
+            autoFocus
             className="text-center text-[20px] font-bold tracking-[0.3em]"
           />
         </Field>
-        <Button className="mt-5 w-full" onClick={() => verify()} loading={busy} disabled={!code.trim()}>
+        <Button
+          className="mt-5 w-full"
+          onClick={() => verify()}
+          loading={busy}
+          disabled={!code.trim()}
+        >
           Ověřit kód
         </Button>
       </Card>
@@ -462,517 +1435,12 @@ function PlayerCodeStep({
         <p className="text-[15px] font-bold text-wh">Kód nemáš?</p>
         <p className="mt-1 text-[13px] leading-6 text-mu">
           Založ si profil bez týmu a nabídni se v draftu. Vedoucí tě uvidí mezi
-          volnými hráči a můžou ti poslat nabídku. Dres si vybereš, až budeš
-          v týmu.
+          volnými hráči a můžou ti poslat nabídku. Číslo dresu si vybereš, až
+          budeš v týmu.
         </p>
         <Button variant="outline" className="mt-4 w-full" onClick={onBezTymu}>
           Chci do draftu
         </Button>
-      </Card>
-    </>
-  );
-}
-
-/* ---------------- Hráč: profil ---------------- */
-
-function PlayerInfoStep({
-  team,
-  inviteCode,
-  onDone,
-}: {
-  /** `null` = hráč bez týmu, který se jde nabídnout v draftu. */
-  team: Team | null;
-  inviteCode: string | null;
-  onDone: () => void;
-}) {
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    jersey: "",
-    position: "Útočník",
-    phone: "",
-    birthdate: "",
-  });
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function submit() {
-    const err = firstError([
-      validateName(form.firstName, "Jméno"),
-      validateName(form.lastName, "Příjmení"),
-      // Bez týmu dres nedává smysl — čísla se hlídají v rámci týmu.
-      form.jersey.trim()
-        ? validateJersey(form.jersey)
-        : team
-          ? "Číslo dresu je povinné."
-          : null,
-      validatePhone(form.phone),
-      validateBirthdate(form.birthdate),
-    ]);
-    if (err) {
-      toast.error("Vyplň povinné údaje", err);
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await playersApi.create({
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        ...(form.jersey.trim() ? { jersey: Number(form.jersey) } : {}),
-        position: form.position,
-        phone: form.phone.trim() || undefined,
-        birthdate: form.birthdate ? new Date(form.birthdate).toISOString() : undefined,
-        ...(team
-          ? {
-              teamId: team.id,
-              // Kód posíláme dál, aby se započítal jako použitý a znovu se ověřila platnost
-              ...(inviteCode ? { inviteCode } : {}),
-            }
-          : { bezTymu: true }),
-      });
-      if (photo) {
-        // Selhání uploadu registraci neshodí, ale uživatel se to musí dozvědět —
-        // dřív fotka prostě zmizela bez jediné hlášky
-        try {
-          await playersApi.uploadPhoto(res.data.id, photo);
-        } catch {
-          toast.error("Fotka se nenahrála", "Profil je hotový, fotku zkus přidat v Můj profil.");
-        }
-      }
-      onDone();
-    } catch (e) {
-      toast.error("Chyba", errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <PageTitle
-        title="Tvůj profil"
-        subtitle={
-          team ? (
-            <>
-              Tým: <span className="font-semibold text-go">{team.name}</span>
-            </>
-          ) : (
-            "Zatím bez týmu — po vyplnění se nabídneš v draftu."
-          )
-        }
-      />
-      <Card className="space-y-4 p-6">
-        <Field label="Profilová fotka">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-            className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
-          />
-        </Field>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Jméno" required>
-            <Input value={form.firstName} onChange={(e) => set("firstName", e.target.value)} placeholder="Tomáš" />
-          </Field>
-          <Field label="Příjmení" required>
-            <Input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} placeholder="Novák" />
-          </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Číslo dresu" required={!!team}>
-            <Input
-              value={form.jersey}
-              onChange={(e) => set("jersey", e.target.value.replace(/\D/g, "").slice(0, 2))}
-              inputMode="numeric"
-              placeholder="10"
-            />
-          </Field>
-          <Field label="Telefon">
-            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+420 601 234 567" />
-          </Field>
-        </div>
-        <Field label="Pozice">
-          <div className="flex flex-wrap gap-2">
-            {POSITIONS.map((p) => (
-              <Chip key={p} active={form.position === p} onClick={() => set("position", p)}>
-                {p}
-              </Chip>
-            ))}
-          </div>
-        </Field>
-        <Field label="Datum narození">
-          <BirthdatePicker value={form.birthdate} onChange={(v) => set("birthdate", v)} />
-        </Field>
-        <Button className="w-full" onClick={submit} loading={busy}>
-          Dokončit registraci
-        </Button>
-      </Card>
-    </>
-  );
-}
-
-/* ---------------- Vedoucí: nový tým ---------------- */
-
-const TEAM_COLORS = [
-  "#C9A140", "#8B5CF6", "#EF4444", "#3B82F6",
-  "#10B981", "#F59E0B", "#EC4899", "#FFFFFF",
-];
-function ManagerStep({ onDone }: { onDone: (code: string) => void }) {
-  const [form, setForm] = useState({
-    name: "",
-    abbr: "",
-    color: "#C9A140",
-    venue: "",
-  });
-  // Vedoucí je zároveň hráč. Profil mu vznikne s týmem, protože licence
-  // i balíčky startů visí na hráči, ne na týmu — bez profilu by po zaplacení
-  // registrace nezaplatil nic dalšího. Jméno je proto povinné, dres ne.
-  const [ja, setJa] = useState({ firstName: "", lastName: "", jersey: "" });
-  const [sezona, setSezona] = useState("");
-  const [logo, setLogo] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const setJaPole = (k: keyof typeof ja, v: string) => setJa((j) => ({ ...j, [k]: v }));
-
-  // Tým se hlásí vždycky do sezóny, která zrovna běží — vybírat nejde nic.
-  // Dřív šlo zvolit i příští ročník a tým pak vznikl v soutěži, která ještě
-  // není otevřená. Sezónu tu proto jen ukazujeme; rozhoduje o ní backend.
-  useEffect(() => {
-    seasonsApi
-      .list()
-      .then((res) => setSezona(res.data.current ?? ""))
-      .catch(() => {
-        /* bez odpovědi sezónu neukážeme, tým se stejně založí do aktuální */
-      });
-  }, []);
-
-  async function submit() {
-    const dres = ja.jersey.trim() === "" ? undefined : Number(ja.jersey);
-    const err = firstError([
-      form.name.trim() ? null : "Název týmu je povinný.",
-      validateAbbr(form.abbr),
-      ja.firstName.trim() && ja.lastName.trim()
-        ? null
-        : "Vyplň své jméno a příjmení — zakládá se z nich tvůj hráčský profil.",
-      dres !== undefined && (!Number.isInteger(dres) || dres < 0 || dres > 99)
-        ? "Číslo dresu musí být od 0 do 99. Nechat prázdné jde taky."
-        : null,
-    ]);
-    if (err) {
-      toast.error("Vyplň povinné údaje", err);
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await teamsApi.create({
-        name: form.name.trim(),
-        abbr: form.abbr.trim().toUpperCase(),
-        color: form.color,
-        venue: form.venue.trim() || undefined,
-        manager: {
-          firstName: ja.firstName.trim(),
-          lastName: ja.lastName.trim(),
-          jersey: dres,
-        },
-      });
-      if (logo && res.data.team?.id) {
-        try {
-          await teamsApi.uploadLogo(res.data.team.id, logo);
-        } catch {
-          toast.error("Logo se nenahrálo", "Tým je založený, logo přidáš v nastavení týmu.");
-        }
-      }
-      onDone(res.data.inviteCode);
-    } catch (e) {
-      toast.error("Chyba", errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <PageTitle title="Nový tým" subtitle="Vyplň základní informace o tvém týmu." />
-      <Card className="space-y-4 p-6">
-        <div className="flex items-center gap-4">
-          <TeamBadge abbr={form.abbr || "TM"} color={form.color} size={56} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[16px] font-bold text-wh">
-              {form.name || "Název týmu"}
-            </p>
-            <p className="text-[12px] text-mu">
-              {sezona ? `Sezóna ${sezona}` : "Nový tým"}
-            </p>
-          </div>
-        </div>
-
-        <Field label="Logo týmu">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
-            className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
-          />
-        </Field>
-
-        <Field label="Název týmu" required>
-          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Benavidez Eagles" />
-        </Field>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Zkratka (max 3 znaky)" required>
-            <Input
-              value={form.abbr}
-              onChange={(e) => set("abbr", e.target.value.toUpperCase().slice(0, 3))}
-              maxLength={3}
-              placeholder="BE"
-            />
-          </Field>
-          <Field label="Domácí hřiště">
-            <Input value={form.venue} onChange={(e) => set("venue", e.target.value)} placeholder="Hala Sparta" />
-          </Field>
-        </div>
-
-        {sezona ? (
-          <Field label="Sezóna">
-            <p className="rounded-lg border border-bd bg-c2/40 px-3 py-2 text-[14px] font-semibold text-wh">
-              {sezona}
-            </p>
-            <p className="mt-1.5 text-[12px] leading-5 text-mu">
-              Tým se přihlašuje do právě probíhající sezóny. Do další se přihlašuje znovu.
-            </p>
-          </Field>
-        ) : null}
-
-        <p className="rounded-lg border border-bd bg-c2/40 px-3 py-2 text-[12px] leading-5 text-mu">
-          Divizi a konferenci přiděluje supervisor při rozlosování — proto si ji tady
-          nevybíráš.
-        </p>
-
-        {/* Vedoucí = hráč. Profil vzniká s týmem, aby šlo hned zaplatit
-            licenci i balíček startů — obojí visí na hráči, ne na týmu. */}
-        <div className="border-t border-bd pt-4">
-          <p className="text-[15px] font-bold text-wh">Tvůj hráčský profil</p>
-          <p className="mt-1 text-[12px] leading-5 text-mu">
-            Jako vedoucí jsi zároveň hráč týmu. Profil ti založíme rovnou, ať můžeš
-            zaplatit registraci i balíček zápasů najednou. Údaje si pak kdykoli upravíš.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Jméno" required>
-            <Input
-              value={ja.firstName}
-              onChange={(e) => setJaPole("firstName", e.target.value)}
-              placeholder="Jakub"
-            />
-          </Field>
-          <Field label="Příjmení" required>
-            <Input
-              value={ja.lastName}
-              onChange={(e) => setJaPole("lastName", e.target.value)}
-              placeholder="Tabášek"
-            />
-          </Field>
-          <Field label="Číslo dresu">
-            <Input
-              value={ja.jersey}
-              onChange={(e) => setJaPole("jersey", e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
-              inputMode="numeric"
-              placeholder="volitelné"
-            />
-          </Field>
-        </div>
-
-        <Field label="Barva týmu">
-          <div className="flex flex-wrap gap-2.5">
-            {TEAM_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => set("color", c)}
-                aria-label={c}
-                className={clsx(
-                  "h-9 w-9 cursor-pointer rounded-full transition-transform",
-                  form.color === c && "ring-2 ring-white ring-offset-2 ring-offset-c1",
-                )}
-                style={{ backgroundColor: c }}
-              />
-            ))}
-          </div>
-        </Field>
-
-        <Button className="w-full" onClick={submit} loading={busy}>
-          Vytvořit tým
-        </Button>
-      </Card>
-    </>
-  );
-}
-
-/* ---------------- Rozhodčí ---------------- */
-
-function RefereeStep({ onDone }: { onDone: () => void }) {
-  const [sub, setSub] = useState(1);
-  const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    birthNo: "",
-    address: "",
-    city: "",
-    zip: "",
-    bankAccount: "",
-    bankCode: "",
-  });
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function submit() {
-    setBusy(true);
-    try {
-      await refereesApi.register(form);
-      onDone();
-    } catch (e) {
-      toast.error("Chyba", errMsg(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <PageTitle
-        title="Registrace rozhodčího"
-        subtitle={`Krok ${sub} ze 3 — ${sub === 1 ? "osobní údaje" : sub === 2 ? "údaje pro výplatu" : "kontrola"}`}
-      />
-
-      <div className="mb-6 flex items-center gap-2">
-        {[1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className={clsx(
-              "h-1.5 flex-1 rounded-full transition-colors",
-              i <= sub ? "bg-go" : "bg-c2",
-            )}
-          />
-        ))}
-      </div>
-
-      <Card className="space-y-4 p-6">
-        {sub === 1 ? (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Jméno" required>
-                <Input value={form.firstName} onChange={(e) => set("firstName", e.target.value)} placeholder="Jan" />
-              </Field>
-              <Field label="Příjmení" required>
-                <Input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} placeholder="Procházka" />
-              </Field>
-            </div>
-            <Field label="Telefon">
-              <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+420 601 234 567" />
-            </Field>
-            <Button
-              className="w-full"
-              onClick={() => {
-                const err = firstError([
-                  validateName(form.firstName, "Jméno"),
-                  validateName(form.lastName, "Příjmení"),
-                  validatePhone(form.phone),
-                ]);
-                if (err) return toast.error("Vyplň jméno a příjmení", err);
-                setSub(2);
-              }}
-            >
-              Pokračovat
-            </Button>
-          </>
-        ) : sub === 2 ? (
-          <>
-            <div className="rounded-xl border border-blue/30 bg-blue/10 p-4 text-[13px] leading-6 text-mu">
-              <strong className="text-wh">Proč potřebujeme bankovní účet?</strong> Za každý
-              odřízený zápas dostaneš odměnu, kterou posíláme převodem. Údaje vidí pouze
-              supervisor ligy.
-            </div>
-            <Field label="Rodné číslo">
-              <Input value={form.birthNo} onChange={(e) => set("birthNo", e.target.value)} placeholder="950615/1234" />
-            </Field>
-            <Field label="Ulice a číslo popisné">
-              <Input value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="Vinohradská 12" />
-            </Field>
-            <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-              <Field label="Město">
-                <Input value={form.city} onChange={(e) => set("city", e.target.value)} placeholder="Praha" />
-              </Field>
-              <Field label="PSČ">
-                <Input value={form.zip} onChange={(e) => set("zip", e.target.value)} placeholder="12000" inputMode="numeric" />
-              </Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-              <Field label="Číslo účtu">
-                <Input value={form.bankAccount} onChange={(e) => set("bankAccount", e.target.value)} placeholder="192000145399" inputMode="numeric" />
-              </Field>
-              <Field label="Kód banky">
-                <Input value={form.bankCode} onChange={(e) => set("bankCode", e.target.value)} placeholder="0800" inputMode="numeric" />
-              </Field>
-            </div>
-            <p className="text-[12px] text-di">
-              Kód banky: ČS 0800 · KB 0100 · ČSOB 0300 · Fio 2010 · mBank 6210 · Air 3030
-            </p>
-            <div className="flex gap-2">
-              <Button variant="ghost" className="flex-1" onClick={() => setSub(1)}>
-                Zpět
-              </Button>
-              <Button className="flex-1" onClick={() => setSub(3)}>
-                Pokračovat
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <dl className="divide-y divide-bd">
-              {(
-                [
-                  ["Jméno", `${form.firstName} ${form.lastName}`.trim()],
-                  ["Telefon", form.phone],
-                  ["Rodné číslo", form.birthNo],
-                  ["Adresa", [form.address, form.city, form.zip].filter(Boolean).join(", ")],
-                  ["Účet", form.bankAccount ? `${form.bankAccount}/${form.bankCode}` : ""],
-                ] as [string, string][]
-              ).map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between gap-4 py-3">
-                  <dt className="text-[13px] text-mu">{k}</dt>
-                  <dd className="text-right text-[14px] text-wh">{v || "—"}</dd>
-                </div>
-              ))}
-            </dl>
-            {!form.bankAccount.trim() || !form.birthNo.trim() ? (
-              <div className="rounded-xl border border-red/40 bg-red/10 p-4 text-[13px] leading-6 text-wh">
-                Chybí {[!form.birthNo.trim() ? "rodné číslo" : null, !form.bankAccount.trim() ? "číslo účtu" : null]
-                  .filter(Boolean)
-                  .join(" a ")}
-                . Registraci to nezastaví, ale bez těchhle údajů ti supervisor nepošle odměnu
-                za odpískané zápasy — doplnit si je můžeš kdykoli v profilu rozhodčího.
-              </div>
-            ) : null}
-            <div className="rounded-xl border border-go/30 bg-go-soft p-4 text-[13px] leading-6 text-mu">
-              Po odeslání musí registraci schválit supervisor FSL. Dostaneš oznámení, jakmile
-              bude vyřízena.
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" className="flex-1" onClick={() => setSub(2)} disabled={busy}>
-                Zpět
-              </Button>
-              <Button className="flex-1" onClick={submit} loading={busy}>
-                Odeslat registraci
-              </Button>
-            </div>
-          </>
-        )}
       </Card>
     </>
   );
@@ -983,10 +1451,13 @@ function RefereeStep({ onDone }: { onDone: () => void }) {
 function DoneStep({
   role,
   inviteCode,
+  maTym,
   onFinish,
 }: {
   role: Role | null;
   inviteCode: string | null;
+  /** Hráč bez týmu jde do draftu, ne na soupisku. */
+  maTym: boolean;
   onFinish: () => void;
 }) {
   const subtitle =
@@ -994,8 +1465,13 @@ function DoneStep({
       ? "Tvůj tým je zaregistrovaný ve FSL."
       : role === "referee"
         ? "Tvoje registrace rozhodčího čeká na schválení supervisorem."
-        : "Jsi teď součástí týmu.";
+        : maTym
+          ? "Jsi teď součástí týmu."
+          : "Profil máš hotový. Ještě se nabídni v draftu, ať tě vedoucí uvidí.";
 
+  // Hráč bez týmu dřív skončil `router.push("/draft")` bez jakéhokoli
+  // potvrzení — obrazovku „Registrace dokončena" nikdy neviděl, kdežto
+  // hráč s týmem ano.
   const next =
     role === "manager"
       ? [
@@ -1005,10 +1481,15 @@ function DoneStep({
         ]
       : role === "referee"
         ? [{ label: "Můj profil rozhodčího", href: "/rozhodci/profil" }]
-        : [
-            { label: "Zaplatit licenci", href: "/platby" },
-            { label: "Můj účet", href: "/muj-ucet" },
-          ];
+        : maTym
+          ? [
+              { label: "Zaplatit licenci", href: "/platby" },
+              { label: "Můj účet", href: "/muj-ucet" },
+            ]
+          : [
+              { label: "Nabídnout se v draftu", href: "/draft/profil" },
+              { label: "Zaplatit licenci", href: "/platby" },
+            ];
 
   return (
     <div className="py-6 text-center">
@@ -1034,6 +1515,12 @@ function DoneStep({
             size="sm"
             className="mt-4"
             onClick={() => {
+              // Bez optional chaining to v HTTP kontextu a starších in-app
+              // prohlížečích spadlo ještě před hláškou, takže klik neudělal nic.
+              if (!navigator.clipboard) {
+                toast.error("Nejde zkopírovat", "Kód označ a zkopíruj ručně.");
+                return;
+              }
               void navigator.clipboard.writeText(inviteCode);
               toast.success("Kód zkopírován");
             }}
