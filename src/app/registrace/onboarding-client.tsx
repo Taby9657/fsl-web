@@ -51,8 +51,8 @@ const ROLES: {
     id: "player",
     icon: <User size={22} />,
     title: "Jsem hráč",
-    desc: "Vedoucí týmu ti pošle pozvánkový kód. Zadáš ho tady a okamžitě jsi na soupisce.",
-    badge: "Potřebuješ kód od vedoucího",
+    desc: "Máš kód od vedoucího? Zadáš ho a jsi na soupisce. Tým zatím nemáš? Založíš si profil a nabídneš se v draftu.",
+    badge: "S kódem i bez kódu",
     color: "#C9A140",
   },
   {
@@ -185,16 +185,24 @@ export function OnboardingClient() {
             setInviteCode(kod);
             setStep("player-info");
           }}
+          onBezTymu={() => {
+            setTeam(null);
+            setInviteCode(null);
+            setStep("player-info");
+          }}
         />
       ) : null}
 
-      {step === "player-info" && team ? (
+      {step === "player-info" ? (
         <PlayerInfoStep
           team={team}
           inviteCode={inviteCode}
           onDone={async () => {
             await refreshUser();
-            setStep("done");
+            // Hráč bez týmu má hotovo teprve tím, že se nabídne v draftu —
+            // samotný profil ho vedoucím neukáže.
+            if (!team) router.push("/draft");
+            else setStep("done");
           }}
         />
       ) : null}
@@ -354,9 +362,12 @@ function HotovaRoleStep({
 function PlayerCodeStep({
   vychoziKod,
   onJoined,
+  onBezTymu,
 }: {
   vychoziKod?: string;
   onJoined: (t: Team, kod: string) => void;
+  /** Hráč, který kód nemá a nemůže mít — jde rovnou do draft poolu. */
+  onBezTymu: () => void;
 }) {
   const [code, setCode] = useState(vychoziKod ?? "");
   const [busy, setBusy] = useState(false);
@@ -442,6 +453,21 @@ function PlayerCodeStep({
           Ověřit kód
         </Button>
       </Card>
+
+      {/* Bez tohohle východu byla obrazovka slepá ulička: kdo do ligy přichází
+          sám a žádný tým nezná, kód nemá odkud vzít — a přitom je pro něj draft
+          jediná cesta dovnitř. */}
+      <Card className="mt-4 p-5">
+        <p className="text-[15px] font-bold text-wh">Kód nemáš?</p>
+        <p className="mt-1 text-[13px] leading-6 text-mu">
+          Založ si profil bez týmu a nabídni se v draftu. Vedoucí tě uvidí mezi
+          volnými hráči a můžou ti poslat nabídku. Dres si vybereš, až budeš
+          v týmu.
+        </p>
+        <Button variant="outline" className="mt-4 w-full" onClick={onBezTymu}>
+          Chci do draftu
+        </Button>
+      </Card>
     </>
   );
 }
@@ -453,7 +479,8 @@ function PlayerInfoStep({
   inviteCode,
   onDone,
 }: {
-  team: Team;
+  /** `null` = hráč bez týmu, který se jde nabídnout v draftu. */
+  team: Team | null;
   inviteCode: string | null;
   onDone: () => void;
 }) {
@@ -474,7 +501,12 @@ function PlayerInfoStep({
     const err = firstError([
       validateName(form.firstName, "Jméno"),
       validateName(form.lastName, "Příjmení"),
-      form.jersey.trim() ? validateJersey(form.jersey) : "Číslo dresu je povinné.",
+      // Bez týmu dres nedává smysl — čísla se hlídají v rámci týmu.
+      form.jersey.trim()
+        ? validateJersey(form.jersey)
+        : team
+          ? "Číslo dresu je povinné."
+          : null,
       validatePhone(form.phone),
       validateBirthdate(form.birthdate),
     ]);
@@ -487,13 +519,17 @@ function PlayerInfoStep({
       const res = await playersApi.create({
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
-        jersey: Number(form.jersey),
+        ...(form.jersey.trim() ? { jersey: Number(form.jersey) } : {}),
         position: form.position,
         phone: form.phone.trim() || undefined,
         birthdate: form.birthdate ? new Date(form.birthdate).toISOString() : undefined,
-        teamId: team.id,
-        // Kód posíláme dál, aby se započítal jako použitý a znovu se ověřila platnost
-        ...(inviteCode ? { inviteCode } : {}),
+        ...(team
+          ? {
+              teamId: team.id,
+              // Kód posíláme dál, aby se započítal jako použitý a znovu se ověřila platnost
+              ...(inviteCode ? { inviteCode } : {}),
+            }
+          : { bezTymu: true }),
       });
       if (photo) {
         // Selhání uploadu registraci neshodí, ale uživatel se to musí dozvědět —
@@ -517,9 +553,13 @@ function PlayerInfoStep({
       <PageTitle
         title="Tvůj profil"
         subtitle={
-          <>
-            Tým: <span className="font-semibold text-go">{team.name}</span>
-          </>
+          team ? (
+            <>
+              Tým: <span className="font-semibold text-go">{team.name}</span>
+            </>
+          ) : (
+            "Zatím bez týmu — po vyplnění se nabídneš v draftu."
+          )
         }
       />
       <Card className="space-y-4 p-6">
@@ -540,7 +580,7 @@ function PlayerInfoStep({
           </Field>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Číslo dresu" required>
+          <Field label="Číslo dresu" required={!!team}>
             <Input
               value={form.jersey}
               onChange={(e) => set("jersey", e.target.value.replace(/\D/g, "").slice(0, 2))}
