@@ -58,9 +58,14 @@ export default function TermsPage() {
           nebo bankovním převodem s variabilním symbolem; cena je v obou případech stejná.
         </p>
         <p>
+          Starty se hradí za každý zápas stejně, doma i venku — pořadatel neúčtuje týmu
+          za domácí zápas žádný samostatný poplatek. Z těchto plateb se hradí hřiště,
+          rozhodčí a zdravotník.
+        </p>
+        <p>
           Za nedostavení se k zápasu nebo nesehnání sestavy může pořadatel zápas kontumovat
-          a předepsat týmu pokutu ve výši ušlých nákladů na hřiště a rozhodčího. Do jejího
-          uhrazení nemusí být týmu umožněno nastoupit k dalšímu zápasu.
+          a předepsat týmu pokutu ve výši ušlých nákladů na hřiště, rozhodčího a zdravotníka.
+          Do jejího uhrazení nemusí být týmu umožněno nastoupit k dalšímu zápasu.
         </p>
         <p>
           Zaplacené poplatky se nevracejí. <strong>Nevyčerpané starty z balíčku ale

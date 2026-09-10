@@ -15,7 +15,7 @@ import { Card, LinkButton } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Mobilní aplikace FSL",
   description:
-    "Aplikace Floorball Stars Ligy pro iOS a Android — živé skóre, soupisky, platby licencí a draft přímo v telefonu.",
+    "Aplikace Floorball Stars Ligy pro iOS a Android — živé skóre, soupisky, licence a balíčky zápasů a draft přímo v telefonu.",
 };
 
 const FEATURES = [
@@ -31,8 +31,8 @@ const FEATURES = [
   },
   {
     icon: <CreditCard size={22} />,
-    title: "Platby licencí",
-    desc: "Kartou přes Stripe nebo převodem — QR kód pro bankovní aplikaci a automatické párování plateb.",
+    title: "Licence a balíčky zápasů",
+    desc: "Zápasy si platí každý hráč sám z balíčku startů. Kartou přes Stripe nebo převodem — QR kód pro bankovní aplikaci a automatické párování plateb.",
   },
   {
     icon: <Users size={22} />,
@@ -76,8 +76,8 @@ export default function AplikacePage() {
             FSL v mobilu
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] leading-7 text-mu">
-            Celá liga v kapse — živé výsledky s notifikacemi, soupisky, platby licencí
-            a draft. Aplikace pro iOS a Android.
+            Celá liga v kapse — živé výsledky s notifikacemi, soupisky, licence a balíčky
+            zápasů, draft. Aplikace pro iOS a Android.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <LinkButton href="/zapasy" size="lg" variant="outline">

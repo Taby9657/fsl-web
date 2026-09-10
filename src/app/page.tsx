@@ -280,8 +280,8 @@ export default async function HomePage() {
             <div>
               <h2 className="text-2xl font-bold text-wh">FSL v mobilu</h2>
               <p className="mx-auto mt-2 max-w-lg text-[15px] leading-6 text-mu">
-                Živé skóre s notifikacemi, soupisky před zápasem, platby licencí přes QR
-                kód a draft — vše přímo v telefonu.
+                Živé skóre s notifikacemi, soupisky před zápasem, licence a balíčky zápasů
+                přes QR kód a draft — vše přímo v telefonu.
               </p>
             </div>
             <LinkButton href="/aplikace" size="lg">
