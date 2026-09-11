@@ -11,6 +11,11 @@ import type {
   Fine,
   FixturePreview,
   Highlight,
+  LeagueConference,
+  LeagueDivision,
+  LeagueNode,
+  LeagueTeams,
+  LeagueTree,
   Match,
   MyStats,
   Player,
@@ -27,6 +32,7 @@ import type {
   TableRow,
   Team,
   TeamLite,
+  TeamPlacement,
   TeamPayment,
 } from "./types";
 
@@ -413,6 +419,52 @@ export const searchApi = {
 };
 
 /* ==================== SUPERVISOR ==================== */
+/**
+ * Soutěžní struktura: liga → konference → divize.
+ *
+ * Čtení je veřejné, zápis smí jen supervisor. Hloubka je volitelná — liga bez
+ * konferencí je platný stav, stejně jako konference bez divizí. Backend drží
+ * stropy (10 lig v sezóně, 2 konference v lize, 2 divize v konferenci) a vrací
+ * na jejich překročení 409 s českou hláškou, takže se tu nekopírují.
+ */
+export const leaguesApi = {
+  tree: (season?: string) => api.get<LeagueTree>("/leagues", { params: { season } }),
+  teams: (season?: string) => api.get<LeagueTeams>("/leagues/teams", { params: { season } }),
+
+  createLeague: (data: { name: string; level?: number; season?: string }) =>
+    api.post<LeagueNode>("/leagues", data),
+  updateLeague: (id: string, data: { name?: string; level?: number }) =>
+    api.put<LeagueNode>(`/leagues/${id}`, data),
+  deleteLeague: (id: string) => api.delete<{ ok: true }>(`/leagues/${id}`),
+
+  createConference: (leagueId: string, name: string) =>
+    api.post<LeagueConference>(`/leagues/${leagueId}/conferences`, { name }),
+  updateConference: (id: string, name: string) =>
+    api.put<LeagueConference>(`/leagues/conferences/${id}`, { name }),
+  deleteConference: (id: string) => api.delete<{ ok: true }>(`/leagues/conferences/${id}`),
+
+  createDivision: (conferenceId: string, name: string) =>
+    api.post<LeagueDivision>(`/leagues/conferences/${conferenceId}/divisions`, { name }),
+  updateDivision: (id: string, name: string) =>
+    api.put<LeagueDivision>(`/leagues/divisions/${id}`, { name }),
+  deleteDivision: (id: string) => api.delete<{ ok: true }>(`/leagues/divisions/${id}`),
+
+  /**
+   * Zařazení týmu do struktury pro danou sezónu.
+   * `leagueId: null` tým ze soutěže vyřadí, ale **přihlášku do sezóny nechává** —
+   * odhlášení ze sezóny je jiná akce (`/seasons/teams`).
+   */
+  setPlacement: (
+    teamId: string,
+    data: {
+      leagueId: string | null;
+      conferenceId?: string | null;
+      divisionId?: string | null;
+      season?: string;
+    },
+  ) => api.put<{ ok: true; placement: TeamPlacement | null }>(`/leagues/placement/${teamId}`, data),
+};
+
 export const supervisorApi = {
   dashboard: () => api.get<SupervisorDashboard>("/supervisor/dashboard"),
   referees: (status = "PENDING") =>

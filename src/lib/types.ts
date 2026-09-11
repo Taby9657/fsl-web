@@ -494,3 +494,56 @@ export interface FixturePreview {
   rounds: number;
   fixtures: { round: number; homeTeam: TeamLite; awayTeam: TeamLite }[];
 }
+
+/* ---------------- Soutěžní struktura: liga → konference → divize ---------------- */
+
+export interface LeagueDivision {
+  id: string;
+  conferenceId: string;
+  name: string;
+  /** Jen pro supervisora — počty týmů nejsou veřejný údaj. */
+  teamCount?: number;
+}
+
+export interface LeagueConference {
+  id: string;
+  leagueId: string;
+  name: string;
+  divisions: LeagueDivision[];
+  teamCount?: number;
+}
+
+export interface LeagueNode {
+  id: string;
+  season: string;
+  name: string;
+  level: number;
+  conferences: LeagueConference[];
+  teamCount?: number;
+}
+
+export interface LeagueTree {
+  season: string;
+  leagues: LeagueNode[];
+}
+
+export interface TeamPlacement {
+  leagueId: string;
+  conferenceId?: string | null;
+  divisionId?: string | null;
+  league?: { id: string; name: string } | null;
+  conference?: { id: string; name: string } | null;
+  division?: { id: string; name: string } | null;
+}
+
+/** Tým přihlášený do sezóny; `placement: null` = přihlášený, ale nezařazený. */
+export interface PlacedTeam extends TeamLite {
+  regStatus?: RegStatus;
+  _count?: { players?: number };
+  placement: TeamPlacement | null;
+}
+
+export interface LeagueTeams {
+  season: string;
+  teams: PlacedTeam[];
+}
