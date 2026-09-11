@@ -25,12 +25,42 @@ export function validateJersey(v: string) {
   return Number.isInteger(n) && n >= 0 && n <= 99 ? null : "Číslo dresu musí být 0–99.";
 }
 
+/* ---------------- Věk ----------------
+   Do FSL smí jen dospělí — 18 let **ke dni registrace**. Hranice je tvrdá
+   a skutečnou pojistkou je backend (`src/utils/vek.js`); tohle je jen
+   ohleduplnost k uživateli, ať se to dozví u pole a ne až po odeslání.
+   Kdyby se počítalo k začátku sezóny místo ke dni registrace, mění se to
+   tady a v backendu — jinde ne. */
+
+export const VEKOVA_HRANICE = 18;
+
+/** Dovršený věk v letech, nebo `null`, když datum nedává smysl. */
+export function vekVLetech(v: string, kDatu = new Date()): number | null {
+  const shoda = /^(\d{4})-(\d{2})-(\d{2})$/.exec((v ?? "").trim());
+  if (!shoda) return null;
+  const [, r, m, d] = shoda.map(Number);
+  const datum = new Date(r, m - 1, d);
+  // `new Date(2007, 1, 31)` nespadne, jen tiše posune na 3. března.
+  if (datum.getFullYear() !== r || datum.getMonth() !== m - 1 || datum.getDate() !== d) {
+    return null;
+  }
+  let let_ = kDatu.getFullYear() - r;
+  const mesic = kDatu.getMonth() - (m - 1);
+  if (mesic < 0 || (mesic === 0 && kDatu.getDate() < d)) let_ -= 1;
+  return let_;
+}
+
+/**
+ * Datum narození je **povinné** — bez něj se nedá ověřit věk. Do 11. 9. 2026
+ * bylo volitelné a prázdná hodnota procházela.
+ */
 export function validateBirthdate(v: string) {
-  if (!v?.trim()) return null;
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return "Datum narození není platné.";
-  const y = d.getFullYear();
-  if (y < 1920 || d.getTime() > Date.now()) return "Datum narození není platné.";
+  if (!v?.trim()) return "Datum narození je povinné.";
+  const let_ = vekVLetech(v);
+  if (let_ === null) return "Datum narození není platné.";
+  const rok = Number(v.slice(0, 4));
+  if (rok < 1920 || let_ < 0) return "Datum narození není platné.";
+  if (let_ < VEKOVA_HRANICE) return `Do FSL smí jen hráči od ${VEKOVA_HRANICE} let.`;
   return null;
 }
 
@@ -74,14 +104,38 @@ export function validateBankCode(v: string) {
     : "Kód banky má čtyři číslice, například 0800.";
 }
 
+/** Datum narození schované v rodném čísle — `RRMMDD/XXX[X]`, jako `YYYY-MM-DD`. */
+export function datumZRodnehoCisla(v: string): string | null {
+  const cisla = (v ?? "").replace(/\D/g, "");
+  if (cisla.length !== 9 && cisla.length !== 10) return null;
+
+  const rr = Number(cisla.slice(0, 2));
+  let mm = Number(cisla.slice(2, 4));
+  const dd = Number(cisla.slice(4, 6));
+
+  // Ženám se k měsíci přičítá 50, od roku 2004 navíc 20 (u žen tedy 70),
+  // když v jednom dni došla čísla.
+  if (mm > 70) mm -= 70;
+  else if (mm > 50) mm -= 50;
+  else if (mm > 20) mm -= 20;
+
+  // Devítimístné rodné číslo se přidělovalo do roku 1953.
+  const rok = cisla.length === 9 ? 1900 + rr : rr <= 53 ? 2000 + rr : 1900 + rr;
+  const datum = `${rok}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+  return vekVLetech(datum) === null ? null : datum;
+}
+
+/**
+ * Rodné číslo rozhodčího. Od 11. 9. 2026 je **povinné** — nese datum
+ * narození, a bez něj se nedá ověřit věková hranice. Kontrolní číslice se
+ * schválně neověřuje: u starších rodných čísel neplatí a odmítnout platné RČ
+ * by bylo horší než pustit překlep.
+ */
 export function validateBirthNo(v: string) {
-  if (!v?.trim()) return null;
-  // Jen formát, ne kontrolní číslice — na tu se nedá spoléhat u starších
-  // rodných čísel a odmítnout platné RČ by bylo horší než překlep pustit.
-  const clean = v.replace(/\s/g, "");
-  return /^\d{6}\/?\d{3,4}$/.test(clean)
-    ? null
-    : "Rodné číslo zadej ve formátu 950615/1234.";
+  if (!v?.trim()) return "Rodné číslo je povinné.";
+  const datum = datumZRodnehoCisla(v);
+  if (!datum) return "Rodné číslo zadej ve formátu 950615/1234.";
+  return validateBirthdate(datum);
 }
 
 export function firstError(checks: (string | null)[]) {

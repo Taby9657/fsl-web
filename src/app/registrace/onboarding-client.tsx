@@ -91,7 +91,7 @@ const POSTUP: Record<Role, Krok[]> = {
 const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   role: { titul: "Vítej v FSL", popis: "Kdo jsi?" },
   kod: { titul: "Pozvánkový kód", popis: "Dostaneš ho od vedoucího svého týmu." },
-  jmeno: { titul: "Jak se jmenuješ?", popis: "Pod tímhle jménem tě uvidí liga." },
+  jmeno: { titul: "Jak se jmenuješ?", popis: "Pod tímhle jménem tě uvidí liga. Hrát smí jen od 18 let." },
   dres: { titul: "Číslo a pozice", popis: "Číslo dresu musí být v týmu volné." },
   doplnky: { titul: "Ještě něco?", popis: "Všechno tady je volitelné — jde to doplnit později." },
   tym: { titul: "Nový tým", popis: "Začneme názvem. Zbytek za chvíli." },
@@ -162,6 +162,7 @@ type Data = {
   mFirstName: string;
   mLastName: string;
   mJersey: string;
+  mBirthdate: string;
   // rozhodčí
   rFirstName: string;
   rLastName: string;
@@ -177,7 +178,7 @@ type Data = {
 const PRAZDNA: Data = {
   firstName: "", lastName: "", jersey: "", position: "Útočník", phone: "", birthdate: "",
   name: "", abbr: "", color: "#C9A140", venue: "",
-  mFirstName: "", mLastName: "", mJersey: "",
+  mFirstName: "", mLastName: "", mJersey: "", mBirthdate: "",
   rFirstName: "", rLastName: "", rPhone: "",
   birthNo: "", address: "", city: "", zip: "", bankAccount: "", bankCode: "",
 };
@@ -400,6 +401,7 @@ export function OnboardingClient() {
           firstName: data.mFirstName.trim() || undefined,
           lastName: data.mLastName.trim() || undefined,
           jersey: dres,
+          birthdate: new Date(data.mBirthdate).toISOString(),
         },
       });
       if (logo && res.data.team?.id) {
@@ -640,6 +642,14 @@ export function OnboardingClient() {
               />
             </Field>
           </div>
+          {/* Datum narození stojí tady, ne mezi volitelnými doplňky: bez něj
+              se nedá ověřit věk a do soutěže smí jen dospělí. */}
+          <Field label="Datum narození" required error={errors.birthdate}>
+            <BirthdatePicker value={data.birthdate} onChange={(v) => set("birthdate", v)} />
+          </Field>
+          <p className="text-[12px] leading-5 text-di">
+            Do FSL smí jen hráči od 18 let.
+          </p>
           <Button
             className="w-full"
             onClick={() => {
@@ -647,6 +657,7 @@ export function OnboardingClient() {
                 zkontroluj({
                   firstName: validateName(data.firstName, "Jméno"),
                   lastName: validateName(data.lastName, "Příjmení"),
+                  birthdate: validateBirthdate(data.birthdate),
                 })
               ) {
                 naKrok("dres");
@@ -731,19 +742,11 @@ export function OnboardingClient() {
               placeholder="+420 601 234 567"
             />
           </Field>
-          <Field label="Datum narození" error={errors.birthdate}>
-            <BirthdatePicker value={data.birthdate} onChange={(v) => set("birthdate", v)} />
-          </Field>
           <Button
             className="w-full"
             loading={busy}
             onClick={() => {
-              if (
-                zkontroluj({
-                  phone: validatePhone(data.phone),
-                  birthdate: validateBirthdate(data.birthdate),
-                })
-              ) {
+              if (zkontroluj({ phone: validatePhone(data.phone) })) {
                 void odesliHrace();
               }
             }}
@@ -755,9 +758,10 @@ export function OnboardingClient() {
             className="w-full"
             disabled={busy}
             onClick={() => {
+              // Datum narození se schválně nemaže — je povinné a vyplňuje
+              // se o krok dřív. Přeskakují se jen fotka a telefon.
               setPhoto(null);
               set("phone", "");
-              set("birthdate", "");
               void odesliHrace();
             }}
           >
@@ -904,9 +908,14 @@ export function OnboardingClient() {
               placeholder="volitelné"
             />
           </Field>
+          {/* Vedoucí je zároveň hráč, takže pro něj platí stejná věková
+              hranice. Jméno se dá odvodit z e-mailu, datum narození ne. */}
+          <Field label="Datum narození" required error={errors.mBirthdate}>
+            <BirthdatePicker value={data.mBirthdate} onChange={(v) => set("mBirthdate", v)} />
+          </Field>
           <p className="text-[12px] leading-5 text-di">
             Jméno nechat prázdné jde — doplníme ho z tvého e-mailu a upravíš si
-            ho v profilu.
+            ho v profilu. Datum narození je povinné: do FSL smí jen od 18 let.
           </p>
           <Button
             className="w-full"
@@ -915,6 +924,7 @@ export function OnboardingClient() {
               if (
                 zkontroluj({
                   mJersey: validateJersey(data.mJersey),
+                  mBirthdate: validateBirthdate(data.mBirthdate),
                 })
               ) {
                 void odesliTym();
@@ -980,7 +990,7 @@ export function OnboardingClient() {
             odpískaný zápas dostaneš odměnu, kterou posíláme převodem. Údaje vidí
             pouze supervisor ligy.
           </div>
-          <Field label="Rodné číslo" error={errors.birthNo}>
+          <Field label="Rodné číslo" required error={errors.birthNo}>
             <Input
               value={data.birthNo}
               onChange={(e) => set("birthNo", e.target.value)}
@@ -1034,6 +1044,9 @@ export function OnboardingClient() {
               // Prázdné projde, zjevný překlep ne. Do 10. 9. 2026 se tyhle
               // údaje nevalidovaly vůbec, takže špatné číslo účtu se poznalo
               // teprve tím, že nepřišla odměna.
+              //
+              // Výjimkou je rodné číslo: od 11. 9. 2026 je povinné, protože
+              // z něj plyne datum narození a pískat smí jen od 18 let.
               if (
                 zkontroluj({
                   birthNo: validateBirthNo(data.birthNo),
@@ -1070,15 +1083,11 @@ export function OnboardingClient() {
               </div>
             ))}
           </dl>
-          {!data.bankAccount.trim() || !data.birthNo.trim() ? (
+          {!data.bankAccount.trim() ? (
             <div className="rounded-xl border border-red/40 bg-red/10 p-4 text-[13px] leading-6 text-wh">
-              Chybí{" "}
-              {[!data.birthNo.trim() ? "rodné číslo" : null, !data.bankAccount.trim() ? "číslo účtu" : null]
-                .filter(Boolean)
-                .join(" a ")}
-              . Registraci to nezastaví, ale bez těchhle údajů ti supervisor nepošle
-              odměnu za odpískané zápasy — doplnit si je můžeš kdykoli v profilu
-              rozhodčího.
+              Chybí číslo účtu. Registraci to nezastaví, ale bez něj ti supervisor
+              nepošle odměnu za odpískané zápasy — doplnit si ho můžeš kdykoli
+              v profilu rozhodčího.
             </div>
           ) : null}
           <div className="rounded-xl border border-go/30 bg-go-soft p-4 text-[13px] leading-6 text-mu">

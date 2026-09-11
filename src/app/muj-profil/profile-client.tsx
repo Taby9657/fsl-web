@@ -4,7 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errMsg, playersApi } from "@/lib/api";
 import { POSITION_FULL } from "@/lib/format";
-import { firstError, validateJersey, validateName, validatePhone } from "@/lib/validation";
+import {
+  firstError,
+  validateBirthdate,
+  validateJersey,
+  validateName,
+  validatePhone,
+} from "@/lib/validation";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
 import { Button, Card, Chip, Field, Input, PageTitle } from "@/components/ui/primitives";
@@ -59,6 +65,10 @@ export function ProfileClient() {
       lastName: validateName(form.lastName, "Příjmení"),
       phone: validatePhone(form.phone),
       jersey: validateJersey(form.jersey),
+      // Věkovou hranici hlídá i profil. Bez toho by stačilo projít registrací
+      // se správným datem a hned si ho tady přepsat. Komu datum chybí (profil
+      // z doby, kdy bylo volitelné), doplní ho při první úpravě profilu.
+      birthdate: validateBirthdate(form.birthdate),
     };
     setErrors(next);
     const err = firstError(Object.values(next));
@@ -74,7 +84,7 @@ export function ProfileClient() {
         jersey: form.jersey ? parseInt(form.jersey, 10) : undefined,
         position: form.position,
         phone: form.phone.trim() || undefined,
-        birthdate: form.birthdate ? new Date(form.birthdate).toISOString() : undefined,
+        birthdate: new Date(form.birthdate).toISOString(),
       });
       await refreshUser();
       toast.success("Uloženo", "Profil byl aktualizován.");
@@ -158,7 +168,7 @@ export function ProfileClient() {
             ))}
           </div>
         </Field>
-        <Field label="Datum narození">
+        <Field label="Datum narození" required error={errors.birthdate ?? undefined}>
           <BirthdatePicker value={form.birthdate} onChange={(v) => set("birthdate", v)} />
         </Field>
 
