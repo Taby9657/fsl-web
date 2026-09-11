@@ -101,7 +101,7 @@ export default function CenikPage() {
     <Page>
       <PageTitle
         title="Ceník"
-        subtitle="Sezóna 2026/27 · 16 kol základní části + play-off · uvedené ceny jsou konečné a nic se k nim nepřipočítává"
+        subtitle="Sezóna 2026/27 · 15–20 kol základní části + play-off pro všechny týmy · uvedené ceny jsou konečné a nic se k nim nepřipočítává"
       />
 
       {/* ── Model v jedné větě ── */}
@@ -175,10 +175,13 @@ export default function CenikPage() {
         </div>
 
         <p className="mt-4 text-[13px] leading-6 text-di">
-          Základní část má <strong className="font-semibold text-mu">16 kol</strong>,
-          na ni navazuje <strong className="font-semibold text-mu">play-off</strong>.
-          Starty do play-off se nekupují zvlášť — jdou ze stejného balíčku, a co
-          v základní části nevyčerpáš, si tam bereš s sebou.
+          Základní část má{" "}
+          <strong className="font-semibold text-mu">15 až 20 kol</strong> podle
+          počtu přihlášených týmů, na ni navazuje{" "}
+          <strong className="font-semibold text-mu">play-off</strong> — a do toho
+          postupují všechny týmy. Starty do play-off se nekupují zvlášť — jdou
+          ze stejného balíčku, a co v základní části nevyčerpáš, si tam bereš
+          s sebou.
         </p>
       </div>
 
