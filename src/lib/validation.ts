@@ -104,40 +104,6 @@ export function validateBankCode(v: string) {
     : "Kód banky má čtyři číslice, například 0800.";
 }
 
-/** Datum narození schované v rodném čísle — `RRMMDD/XXX[X]`, jako `YYYY-MM-DD`. */
-export function datumZRodnehoCisla(v: string): string | null {
-  const cisla = (v ?? "").replace(/\D/g, "");
-  if (cisla.length !== 9 && cisla.length !== 10) return null;
-
-  const rr = Number(cisla.slice(0, 2));
-  let mm = Number(cisla.slice(2, 4));
-  const dd = Number(cisla.slice(4, 6));
-
-  // Ženám se k měsíci přičítá 50, od roku 2004 navíc 20 (u žen tedy 70),
-  // když v jednom dni došla čísla.
-  if (mm > 70) mm -= 70;
-  else if (mm > 50) mm -= 50;
-  else if (mm > 20) mm -= 20;
-
-  // Devítimístné rodné číslo se přidělovalo do roku 1953.
-  const rok = cisla.length === 9 ? 1900 + rr : rr <= 53 ? 2000 + rr : 1900 + rr;
-  const datum = `${rok}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
-  return vekVLetech(datum) === null ? null : datum;
-}
-
-/**
- * Rodné číslo rozhodčího. Od 11. 9. 2026 je **povinné** — nese datum
- * narození, a bez něj se nedá ověřit věková hranice. Kontrolní číslice se
- * schválně neověřuje: u starších rodných čísel neplatí a odmítnout platné RČ
- * by bylo horší než pustit překlep.
- */
-export function validateBirthNo(v: string) {
-  if (!v?.trim()) return "Rodné číslo je povinné.";
-  const datum = datumZRodnehoCisla(v);
-  if (!datum) return "Rodné číslo zadej ve formátu 950615/1234.";
-  return validateBirthdate(datum);
-}
-
 export function firstError(checks: (string | null)[]) {
   return checks.find((c) => c !== null) ?? null;
 }

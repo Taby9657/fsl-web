@@ -17,14 +17,10 @@ import { errMsg, playersApi, refereesApi, seasonsApi, teamsApi } from "@/lib/api
 import {
   collectErrors,
   validateAbbr,
-  validateBankAccount,
-  validateBankCode,
-  validateBirthNo,
   validateBirthdate,
   validateJersey,
   validateName,
   validatePhone,
-  validateZip,
   type Errors,
 } from "@/lib/validation";
 import type { Team } from "@/lib/types";
@@ -77,7 +73,6 @@ type Krok =
   | "vzhled"
   | "ja"
   | "osobni"
-  | "vyplata"
   | "kontrola"
   | "hotovo";
 
@@ -85,8 +80,22 @@ type Krok =
 const POSTUP: Record<Role, Krok[]> = {
   player: ["kod", "jmeno", "dres", "doplnky"],
   manager: ["tym", "vzhled", "ja"],
-  referee: ["osobni", "vyplata", "kontrola"],
+  referee: ["osobni", "kontrola"],
 };
+
+/**
+ * Krok z adresy ani z rozdělané registrace se nebere na slovo.
+ *
+ * `?krok=` se dřív jen přetypoval, takže neznámá hodnota vykreslila prázdnou
+ * stránku. Od zrušení kroku „vyplata" (přihláška rozhodčího je jen základní
+ * profil) na něj navíc míří staré odkazy i uložené rozdělané registrace.
+ */
+function platnyKrok(k: string | null | undefined, r: Role | null): Krok | null {
+  if (!k) return null;
+  if (k === "role" || k === "hotovo") return k;
+  if (r && (POSTUP[r] as string[]).includes(k)) return k as Krok;
+  return null;
+}
 
 const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   role: { titul: "Vítej v FSL", popis: "Kdo jsi?" },
@@ -98,7 +107,6 @@ const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   vzhled: { titul: "Jak má tým vypadat?", popis: "Volitelné. Doplnit se to dá kdykoli." },
   ja: { titul: "Ty jako hráč", popis: "Vedoucí je zároveň hráč týmu." },
   osobni: { titul: "Osobní údaje", popis: "Jméno, pod kterým budeš pískat." },
-  vyplata: { titul: "Údaje pro výplatu", popis: "Za odpískaný zápas chodí odměna převodem." },
   kontrola: { titul: "Kontrola", popis: "Projdi si, co se odešle." },
   hotovo: { titul: "Hotovo", popis: undefined },
 };
@@ -167,20 +175,14 @@ type Data = {
   rFirstName: string;
   rLastName: string;
   rPhone: string;
-  birthNo: string;
-  address: string;
-  city: string;
-  zip: string;
-  bankAccount: string;
-  bankCode: string;
+  rBirthdate: string;
 };
 
 const PRAZDNA: Data = {
   firstName: "", lastName: "", jersey: "", position: "Útočník", phone: "", birthdate: "",
   name: "", abbr: "", color: "#C9A140", venue: "",
   mFirstName: "", mLastName: "", mJersey: "", mBirthdate: "",
-  rFirstName: "", rLastName: "", rPhone: "",
-  birthNo: "", address: "", city: "", zip: "", bankAccount: "", bankCode: "",
+  rFirstName: "", rLastName: "", rPhone: "", rBirthdate: "",
 };
 
 /* ---------------- Rozdělaná registrace ---------------- */
@@ -251,7 +253,7 @@ export function OnboardingClient() {
 
   const [role, setRole] = useState<Role | null>(roleZUrl ?? (kodZOdkazu ? "player" : null));
   const [krok, setKrokState] = useState<Krok>(
-    krokZUrl ?? (kodZOdkazu ? "kod" : "role"),
+    platnyKrok(krokZUrl, roleZUrl) ?? (kodZOdkazu ? "kod" : "role"),
   );
   const [data, setData] = useState<Data>(PRAZDNA);
   const [errors, setErrors] = useState<Errors>({});
@@ -302,7 +304,9 @@ export function OnboardingClient() {
     setObnoveno(vek(s.ts));
     // Kód z odkazu má přednost — člověk zrovna klikl na pozvánku.
     if (!krokZUrl && !kodZOdkazu && s.krok !== "hotovo") {
-      naKrok(s.krok, s.role);
+      // Uložený krok, který už neexistuje, vrátí člověka na začátek jeho role
+      // — ne na prázdnou stránku.
+      naKrok(platnyKrok(s.krok, s.role) ?? (s.role ? POSTUP[s.role][0] : "role"), s.role);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -316,7 +320,8 @@ export function OnboardingClient() {
   /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
      a tenhle efekt srovná stav komponenty. */
   useEffect(() => {
-    if (krokZUrl && krokZUrl !== krok) setKrokState(krokZUrl);
+    const zUrl = platnyKrok(krokZUrl, roleZUrl ?? role);
+    if (zUrl && zUrl !== krok) setKrokState(zUrl);
     if (roleZUrl && roleZUrl !== role) setRole(roleZUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [krokZUrl, roleZUrl]);
@@ -429,12 +434,7 @@ export function OnboardingClient() {
         firstName: data.rFirstName,
         lastName: data.rLastName,
         phone: data.rPhone,
-        birthNo: data.birthNo,
-        address: data.address,
-        city: data.city,
-        zip: data.zip,
-        bankAccount: data.bankAccount,
-        bankCode: data.bankCode,
+        birthdate: new Date(data.rBirthdate).toISOString(),
       });
       zapomen();
       await refreshUser();
@@ -963,6 +963,14 @@ export function OnboardingClient() {
               placeholder="+420 601 234 567"
             />
           </Field>
+          <Field label="Datum narození" required error={errors.rBirthdate}>
+            <BirthdatePicker value={data.rBirthdate} onChange={(v) => set("rBirthdate", v)} />
+          </Field>
+          <p className="text-[12px] leading-5 text-di">
+            Pískat smí jen rozhodčí od 18 let. Rodné číslo, adresu ani účet tady
+            nechceme — ty patří na smlouvu, kterou podepíšeš, až tě supervisor
+            schválí.
+          </p>
           <Button
             className="w-full"
             onClick={() => {
@@ -971,88 +979,7 @@ export function OnboardingClient() {
                   rFirstName: validateName(data.rFirstName, "Jméno"),
                   rLastName: validateName(data.rLastName, "Příjmení"),
                   rPhone: validatePhone(data.rPhone),
-                })
-              ) {
-                naKrok("vyplata");
-              }
-            }}
-          >
-            Pokračovat
-          </Button>
-        </Card>
-      ) : null}
-
-      {/* ── rozhodčí: výplata ── */}
-      {krok === "vyplata" ? (
-        <Card className="space-y-4 p-6">
-          <div className="rounded-xl border border-blue/30 bg-blue/10 p-4 text-[13px] leading-6 text-mu">
-            <strong className="text-wh">Proč potřebujeme bankovní účet?</strong> Za každý
-            odpískaný zápas dostaneš odměnu, kterou posíláme převodem. Údaje vidí
-            pouze supervisor ligy.
-          </div>
-          <Field label="Rodné číslo" required error={errors.birthNo}>
-            <Input
-              value={data.birthNo}
-              onChange={(e) => set("birthNo", e.target.value)}
-              placeholder="950615/1234"
-            />
-          </Field>
-          <Field label="Ulice a číslo popisné" error={errors.address}>
-            <Input
-              value={data.address}
-              onChange={(e) => set("address", e.target.value)}
-              placeholder="Vinohradská 12"
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-            <Field label="Město" error={errors.city}>
-              <Input value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="Praha" />
-            </Field>
-            <Field label="PSČ" error={errors.zip}>
-              <Input
-                value={data.zip}
-                onChange={(e) => set("zip", e.target.value)}
-                placeholder="13000"
-                inputMode="numeric"
-              />
-            </Field>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-            <Field label="Číslo účtu" error={errors.bankAccount}>
-              <Input
-                value={data.bankAccount}
-                onChange={(e) => set("bankAccount", e.target.value)}
-                placeholder="192000145399"
-                inputMode="numeric"
-              />
-            </Field>
-            <Field label="Kód banky" error={errors.bankCode}>
-              <Input
-                value={data.bankCode}
-                onChange={(e) => set("bankCode", e.target.value)}
-                placeholder="0800"
-                inputMode="numeric"
-              />
-            </Field>
-          </div>
-          <p className="text-[12px] text-di">
-            Kód banky: ČS 0800 · KB 0100 · ČSOB 0300 · Fio 2010 · mBank 6210 · Air 3030
-          </p>
-          <Button
-            className="w-full"
-            onClick={() => {
-              // Prázdné projde, zjevný překlep ne. Do 10. 9. 2026 se tyhle
-              // údaje nevalidovaly vůbec, takže špatné číslo účtu se poznalo
-              // teprve tím, že nepřišla odměna.
-              //
-              // Výjimkou je rodné číslo: od 11. 9. 2026 je povinné, protože
-              // z něj plyne datum narození a pískat smí jen od 18 let.
-              if (
-                zkontroluj({
-                  birthNo: validateBirthNo(data.birthNo),
-                  zip: validateZip(data.zip),
-                  bankAccount: validateBankAccount(data.bankAccount),
-                  bankCode: validateBankCode(data.bankCode),
+                  rBirthdate: validateBirthdate(data.rBirthdate),
                 })
               ) {
                 naKrok("kontrola");
@@ -1072,9 +999,10 @@ export function OnboardingClient() {
               [
                 ["Jméno", `${data.rFirstName} ${data.rLastName}`.trim()],
                 ["Telefon", data.rPhone],
-                ["Rodné číslo", data.birthNo],
-                ["Adresa", [data.address, data.city, data.zip].filter(Boolean).join(", ")],
-                ["Účet", data.bankAccount ? `${data.bankAccount}/${data.bankCode}` : ""],
+                [
+                  "Datum narození",
+                  data.rBirthdate ? data.rBirthdate.split("-").reverse().join(". ") : "",
+                ],
               ] as [string, string][]
             ).map(([k, v]) => (
               <div key={k} className="flex items-center justify-between gap-4 py-3">
@@ -1083,16 +1011,10 @@ export function OnboardingClient() {
               </div>
             ))}
           </dl>
-          {!data.bankAccount.trim() ? (
-            <div className="rounded-xl border border-red/40 bg-red/10 p-4 text-[13px] leading-6 text-wh">
-              Chybí číslo účtu. Registraci to nezastaví, ale bez něj ti supervisor
-              nepošle odměnu za odpískané zápasy — doplnit si ho můžeš kdykoli
-              v profilu rozhodčího.
-            </div>
-          ) : null}
           <div className="rounded-xl border border-go/30 bg-go-soft p-4 text-[13px] leading-6 text-mu">
             Po odeslání musí registraci schválit supervisor FSL. Dostaneš oznámení,
-            jakmile bude vyřízena.
+            jakmile bude vyřízena. Rodné číslo, adresu a bankovní spojení pro
+            výplatu odměn budeš vyplňovat až na smlouvě.
           </div>
           <Button className="w-full" loading={busy} onClick={() => void odesliRozhodciho()}>
             Odeslat registraci
