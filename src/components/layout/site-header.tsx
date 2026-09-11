@@ -17,7 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { notificationsApi } from "@/lib/api";
-import { useAuthStore, useIsSupervisor } from "@/store/auth";
+import { useAuthStore, useHasAnyRole, useIsSupervisor } from "@/store/auth";
 import { Button, LinkButton } from "@/components/ui/primitives";
 
 const NAV = [
@@ -41,6 +41,11 @@ export function SiteHeader() {
   const loading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
   const isSupervisor = useIsSupervisor();
+  // Registrace je jediná cesta do ligy, ale do 11. 9. 2026 na ni ze žádné
+  // veřejné stránky kromě draftu a pozvánky nevedl odkaz — vedoucí týmu,
+  // na kterého míří celý nábor, neměl kam kliknout. Komu už nějaká role
+  // patří, tomu by tlačítko jen překáželo.
+  const maRoli = useHasAnyRole();
 
   const { data: unread = 0 } = useQuery({
     queryKey: ["notifications", "unread"],
@@ -123,6 +128,12 @@ export function SiteHeader() {
             </Link>
           ) : null}
 
+          {!loading && !maRoli ? (
+            <LinkButton href="/registrace" size="sm" className="hidden sm:inline-flex">
+              Přihlásit tým
+            </LinkButton>
+          ) : null}
+
           {loading ? (
             <div className="h-9 w-20 animate-fsl-skeleton rounded-xl bg-c2" />
           ) : user ? (
@@ -180,7 +191,7 @@ export function SiteHeader() {
               ) : null}
             </div>
           ) : (
-            <LinkButton href="/prihlaseni" size="sm">
+            <LinkButton href="/prihlaseni" size="sm" variant="outline">
               Přihlásit se
             </LinkButton>
           )}
@@ -222,9 +233,18 @@ export function SiteHeader() {
             >
               Mobilní aplikace
             </Link>
-            {!user ? (
+            {!maRoli ? (
               <Button
                 variant="gold"
+                className="mt-2"
+                onClick={() => router.push("/registrace")}
+              >
+                Přihlásit tým nebo sebe
+              </Button>
+            ) : null}
+            {!user ? (
+              <Button
+                variant="outline"
                 className="mt-2"
                 onClick={() => router.push("/prihlaseni")}
               >

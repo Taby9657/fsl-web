@@ -22,6 +22,9 @@ const COLS = [
   {
     title: "FSL",
     links: [
+      // Odkaz na registraci patří i sem: kdo doroluje na konec stránky,
+      // většinou hledá právě „jak se přihlásit".
+      { href: "/registrace", label: "Přihlásit tým nebo sebe" },
       { href: "/cenik", label: "Ceník" },
       { href: "/aktuality", label: "Aktuality" },
       { href: "/aplikace", label: "Mobilní aplikace" },

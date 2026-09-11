@@ -4,7 +4,6 @@ import {
   CalendarDays,
   Pin,
   PlayCircle,
-  Smartphone,
   Trophy,
   Users,
 } from "lucide-react";
@@ -61,20 +60,23 @@ export default async function HomePage() {
                 <span className="text-go">Stars Liga</span>
               </h1>
               <p className="mt-5 max-w-xl text-[16px] leading-7 text-mu">
-                Živé výsledky, tabulka, statistiky hráčů, soupisky týmů a draft volných
-                hráčů. Celá liga na jednom místě — na webu i v mobilní aplikaci.
+                Nová amatérská liga v Praze. Živé výsledky, tabulka, statistiky
+                hráčů, soupisky týmů a draft volných hráčů — celá liga na jednom
+                místě. Registrace do sezóny 2026/27 je otevřená.
               </p>
+              {/* První tlačítko musí být vstup do ligy, ne výsledky.
+                  Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
+                  a na registraci nevedl z úvodní stránky odkaz žádný. */}
               <div className="mt-8 flex flex-wrap gap-3">
-                <LinkButton href="/zapasy" size="lg">
-                  Zápasy a výsledky
+                <LinkButton href="/registrace" size="lg">
+                  Přihlásit tým nebo sebe
                   <ArrowRight size={18} />
                 </LinkButton>
-                <LinkButton href="/tabulka" variant="outline" size="lg">
-                  Tabulka
+                <LinkButton href="/cenik" variant="outline" size="lg">
+                  Co to stojí
                 </LinkButton>
-                <LinkButton href="/aplikace" variant="ghost" size="lg">
-                  <Smartphone size={18} />
-                  Mobilní aplikace
+                <LinkButton href="/zapasy" variant="ghost" size="lg">
+                  Zápasy a výsledky
                 </LinkButton>
               </div>
             </div>
@@ -270,24 +272,34 @@ export default async function HomePage() {
         </div>
       </Container>
 
-      {/* ---------- CTA APLIKACE ---------- */}
+      {/* ---------- CTA REGISTRACE ----------
+          Dřív tu stálo CTA na mobilní aplikaci. Appka ale není ke stažení
+          (viz patička), takže poslední, co návštěvník na úvodní stránce
+          viděl, bylo pozvání ke stažení něčeho, co nedostane — a pozvání
+          do ligy nikde. */}
       <section className="border-t border-bd bg-c1/40">
         <Container className="py-14">
           <div className="flex flex-col items-center gap-6 text-center">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-go/40 bg-go-soft text-go">
-              <Smartphone size={26} />
+              <Trophy size={26} />
             </span>
             <div>
-              <h2 className="text-2xl font-bold text-wh">FSL v mobilu</h2>
+              <h2 className="text-2xl font-bold text-wh">Přidej se do sezóny 2026/27</h2>
               <p className="mx-auto mt-2 max-w-lg text-[15px] leading-6 text-mu">
-                Živé skóre s notifikacemi, soupisky před zápasem, licence a balíčky zápasů
-                přes QR kód a draft — vše přímo v telefonu.
+                Máte partu? Přihlaste tým — vedoucí spravuje soupisku a sestavy,
+                zápasy si platí každý hráč sám z balíčku startů. Nemáš tým?
+                Nabídni se v draftu, nic to nestojí.
               </p>
             </div>
-            <LinkButton href="/aplikace" size="lg">
-              Zjistit více
-              <ArrowRight size={18} />
-            </LinkButton>
+            <div className="flex flex-wrap justify-center gap-3">
+              <LinkButton href="/registrace" size="lg">
+                Přihlásit tým nebo sebe
+                <ArrowRight size={18} />
+              </LinkButton>
+              <LinkButton href="/draft" variant="outline" size="lg">
+                Draft volných hráčů
+              </LinkButton>
+            </div>
           </div>
         </Container>
       </section>
