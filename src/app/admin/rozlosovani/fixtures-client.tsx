@@ -2,12 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowRight, CheckCircle2, Circle, Network, Repeat } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle, Layers, Network, Repeat } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { errMsg, supervisorApi } from "@/lib/api";
+import { errMsg, leaguesApi, supervisorApi } from "@/lib/api";
 import { pluralTeam } from "@/lib/format";
-import type { FixturePreview, TeamLite } from "@/lib/types";
+import type { FixturePreview, LeagueNode, PlacedTeam, TeamLite } from "@/lib/types";
 import { useSeasons } from "@/hooks/use-league";
 import {
   Button,
@@ -27,7 +27,16 @@ import { TeamDot } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
 
 type Step = "struktura" | "rozsah" | "konfig" | "nahled" | "hotovo";
-type Scope = "division" | "conference" | "custom";
+/**
+ * `struktura` = liga → konference → divize ze Správy ligy. Zápasy pak nesou
+ * leagueId/conferenceId/divisionId, takže je tabulka i pavouk najdou podle
+ * struktury, ne podle textové divize.
+ *
+ * `division` a `conference` jsou stará textová pole na týmu. Zůstávají kvůli
+ * sezónám, které strukturu nemají — zápasy z nich mají jen text a tabulka
+ * na ně padá na záložní cestu.
+ */
+type Scope = "struktura" | "division" | "conference" | "custom";
 
 const STEPS: { id: Step; label: string }[] = [
   { id: "struktura", label: "Struktura" },
@@ -38,11 +47,16 @@ const STEPS: { id: Step; label: string }[] = [
 
 export function FixturesClient() {
   const [step, setStep] = useState<Step>("struktura");
-  const [scope, setScope] = useState<Scope>("division");
+  const [scopeVolba, setScopeVolba] = useState<Scope | null>(null);
   const [division, setDivision] = useState("");
   const [conference, setConference] = useState("");
   const [teamIds, setTeamIds] = useState<string[]>([]);
   const [moving, setMoving] = useState<TeamLite | null>(null);
+
+  // výběr ze struktury
+  const [leagueId, setLeagueId] = useState("");
+  const [conferenceId, setConferenceId] = useState("");
+  const [divisionId, setDivisionId] = useState("");
 
   const [startDate, setStartDate] = useState("");
   const [season, setSeason] = useState("");
@@ -58,12 +72,29 @@ export function FixturesClient() {
 
   const { data: seasons = [] } = useSeasons();
 
+  const tree = useQuery({
+    queryKey: ["leagues", "tree", ""],
+    queryFn: async () => (await leaguesApi.tree()).data,
+  });
+
+  const placed = useQuery({
+    queryKey: ["leagues", "teams", ""],
+    queryFn: async () => (await leaguesApi.teams()).data,
+  });
+
   const teams = useQuery({
     queryKey: ["supervisor", "conferences"],
     queryFn: async () => (await supervisorApi.conferences()).data,
   });
 
+  const leagues = tree.data?.leagues ?? [];
+  const strukturaSezony = tree.data?.season ?? "";
+  const placedList = placed.data?.teams ?? [];
+  const maStrukturu = leagues.length > 0;
   const list = teams.data ?? [];
+
+  /** Dokud se struktura nenačte, nevybírá se nic — jinak by první render určil rozsah. */
+  const scope: Scope = scopeVolba ?? (maStrukturu ? "struktura" : "division");
 
   const divisions = useMemo(
     () => [...new Set(list.map((t) => t.division).filter(Boolean))].sort() as string[],
@@ -74,7 +105,8 @@ export function FixturesClient() {
     [list],
   );
 
-  const tree = useMemo(() => {
+  /** Textová struktura — záloha pro sezóny, které ligu → konferenci → divizi nemají. */
+  const textovyStrom = useMemo(() => {
     const map = new Map<string, Map<string, TeamLite[]>>();
     list.forEach((t) => {
       const conf = t.conference ?? "⚠ Nepřiřazené týmy";
@@ -89,19 +121,48 @@ export function FixturesClient() {
     );
   }, [list]);
 
+  const vybranaLiga = leagues.find((l) => l.id === leagueId) ?? null;
+  const vybranaKonference = vybranaLiga?.conferences.find((k) => k.id === conferenceId) ?? null;
+
+  /** Týmy v nejužším zvoleném rozsahu struktury. */
+  const tymyVeStrukture = useMemo(() => {
+    if (!leagueId) return [];
+    return placedList.filter((t) => {
+      const p = t.placement;
+      if (!p) return false;
+      if (divisionId) return p.divisionId === divisionId;
+      if (conferenceId) return p.conferenceId === conferenceId;
+      return p.leagueId === leagueId;
+    });
+  }, [placedList, leagueId, conferenceId, divisionId]);
+
+  const nezarazene = useMemo(() => placedList.filter((t) => !t.placement), [placedList]);
+
   const selectedCount =
     scope === "custom"
       ? teamIds.length
-      : scope === "division"
-        ? list.filter((t) => t.division === division).length
-        : list.filter((t) => t.conference === conference).length;
+      : scope === "struktura"
+        ? tymyVeStrukture.length
+        : scope === "division"
+          ? list.filter((t) => t.division === division).length
+          : list.filter((t) => t.conference === conference).length;
+
+  /** Sezóna posílaná na server: ručně zadaná má přednost, jinak ta ze struktury. */
+  const sezonaPayload = season.trim() || (scope === "struktura" ? strukturaSezony : "");
 
   const scopePayload = () =>
     scope === "custom"
       ? { teamIds }
-      : scope === "division"
-        ? { division }
-        : { conference };
+      : scope === "struktura"
+        ? {
+            leagueId,
+            conferenceId: conferenceId || undefined,
+            divisionId: divisionId || undefined,
+            season: sezonaPayload || undefined,
+          }
+        : scope === "division"
+          ? { division }
+          : { conference };
 
   async function loadPreview() {
     if (selectedCount < 2) {
@@ -136,7 +197,7 @@ export function FixturesClient() {
       const res = await supervisorApi.generateFixtures({
         ...scopePayload(),
         startDate: d.toISOString(),
-        season: season.trim() || null,
+        season: sezonaPayload || null,
         roundIntervalDays: parseInt(interval, 10) || 7,
         defaultTime: time,
         defaultVenue: venue.trim() || null,
@@ -172,6 +233,7 @@ export function FixturesClient() {
   }
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const nacitaStrukturu = tree.isLoading || placed.isLoading;
 
   return (
     <>
@@ -205,9 +267,7 @@ export function FixturesClient() {
                 {s.label}
               </span>
               {i < STEPS.length - 1 ? (
-                <span
-                  className={clsx("h-px flex-1", i < stepIndex ? "bg-go" : "bg-bd")}
-                />
+                <span className={clsx("h-px flex-1", i < stepIndex ? "bg-go" : "bg-bd")} />
               ) : null}
             </div>
           ))}
@@ -216,8 +276,52 @@ export function FixturesClient() {
 
       {/* ---------- 1. struktura ---------- */}
       {step === "struktura" ? (
-        teams.isLoading ? (
+        nacitaStrukturu || teams.isLoading ? (
           <SkeletonList rows={6} />
+        ) : maStrukturu ? (
+          <>
+            <SectionTitle
+              action={
+                <LinkButton href="/admin/liga" size="sm" variant="subtle">
+                  Upravit strukturu
+                </LinkButton>
+              }
+            >
+              Sezóna {strukturaSezony}
+            </SectionTitle>
+
+            <div className="space-y-4">
+              {leagues.map((liga) => (
+                <StrukturaLiga key={liga.id} liga={liga} teams={placedList} />
+              ))}
+
+              {nezarazene.length ? (
+                <Card className="overflow-hidden border-red/40">
+                  <div className="bg-red/10 px-4 py-2.5 text-[13px] font-semibold text-red">
+                    Nezařazené týmy ({nezarazene.length})
+                  </div>
+                  <div className="divide-y divide-bd">
+                    {nezarazene.map((t) => (
+                      <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+                        <TeamDot color={t.color} />
+                        <span className="min-w-0 flex-1 truncate text-[14px] text-wh">
+                          {t.name}
+                        </span>
+                        <span className="text-[12px] font-bold text-di">{t.abbr}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="border-t border-bd px-4 py-2.5 text-[12px] text-mu">
+                    Do rozlosování se nedostanou, dokud je nezařadíš ve Správě ligy.
+                  </p>
+                </Card>
+              ) : null}
+            </div>
+
+            <Button className="mt-6 w-full" onClick={() => setStep("rozsah")}>
+              Generovat rozlosování <ArrowRight size={16} />
+            </Button>
+          </>
         ) : !list.length ? (
           <EmptyState
             icon={<Network size={44} />}
@@ -231,8 +335,19 @@ export function FixturesClient() {
           />
         ) : (
           <>
+            <Card className="mb-4 border-go/30 bg-go/5 p-4">
+              <p className="text-[13px] leading-6 text-mu">
+                Pro tuhle sezónu není založená <strong className="text-wh">ligová struktura</strong>,
+                takže se níž pracuje se starou textovou divizí u týmu. Zápasy z ní nenesou
+                vazbu na ligu ani divizi a tabulka si je pak dohledává podle textu.
+              </p>
+              <LinkButton href="/admin/liga" size="sm" className="mt-3">
+                <Layers size={15} /> Založit strukturu
+              </LinkButton>
+            </Card>
+
             <div className="space-y-6">
-              {tree.map(([conf, divs]) => (
+              {textovyStrom.map(([conf, divs]) => (
                 <section key={conf}>
                   <h2 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-go">
                     {conf}
@@ -283,47 +398,135 @@ export function FixturesClient() {
         <>
           <SectionTitle>Rozsah rozlosování</SectionTitle>
           <div className="space-y-3">
-            <ScopeCard
-              active={scope === "division"}
-              title="Divize"
-              desc="Zápasy jen v rámci jedné divize"
-              onClick={() => setScope("division")}
-            >
-              <ChipRow>
-                {divisions.map((d) => (
-                  <Chip key={d} active={division === d} onClick={() => setDivision(d)}>
-                    {d} ({list.filter((t) => t.division === d).length})
-                  </Chip>
-                ))}
-              </ChipRow>
-            </ScopeCard>
+            {maStrukturu ? (
+              <ScopeCard
+                active={scope === "struktura"}
+                title="Ze struktury sezóny"
+                desc="Liga, konference nebo divize podle Správy ligy"
+                onClick={() => setScopeVolba("struktura")}
+              >
+                <div className="space-y-3">
+                  <Field label="Liga" required>
+                    <ChipRow>
+                      {leagues.map((l) => (
+                        <Chip
+                          key={l.id}
+                          active={leagueId === l.id}
+                          onClick={() => {
+                            setLeagueId(l.id);
+                            setConferenceId("");
+                            setDivisionId("");
+                          }}
+                        >
+                          {l.name}
+                        </Chip>
+                      ))}
+                    </ChipRow>
+                  </Field>
 
-            <ScopeCard
-              active={scope === "conference"}
-              title="Konference"
-              desc="Všechny týmy konference hrají křížově"
-              onClick={() => setScope("conference")}
-            >
-              {conferences.length ? (
-                <ChipRow>
-                  {conferences.map((c) => (
-                    <Chip key={c} active={conference === c} onClick={() => setConference(c)}>
-                      {c} ({list.filter((t) => t.conference === c).length})
-                    </Chip>
-                  ))}
-                </ChipRow>
-              ) : (
-                <p className="text-[13px] text-mu">
-                  Žádné konference — přiřaď je týmům ve správě týmů.
-                </p>
-              )}
-            </ScopeCard>
+                  {vybranaLiga?.conferences.length ? (
+                    <Field label="Konference">
+                      <ChipRow>
+                        <Chip
+                          active={conferenceId === ""}
+                          onClick={() => {
+                            setConferenceId("");
+                            setDivisionId("");
+                          }}
+                        >
+                          Celá liga
+                        </Chip>
+                        {vybranaLiga.conferences.map((k) => (
+                          <Chip
+                            key={k.id}
+                            active={conferenceId === k.id}
+                            onClick={() => {
+                              setConferenceId(k.id);
+                              setDivisionId("");
+                            }}
+                          >
+                            {k.name}
+                          </Chip>
+                        ))}
+                      </ChipRow>
+                    </Field>
+                  ) : null}
+
+                  {vybranaKonference?.divisions.length ? (
+                    <Field label="Divize">
+                      <ChipRow>
+                        <Chip active={divisionId === ""} onClick={() => setDivisionId("")}>
+                          Celá konference
+                        </Chip>
+                        {vybranaKonference.divisions.map((d) => (
+                          <Chip
+                            key={d.id}
+                            active={divisionId === d.id}
+                            onClick={() => setDivisionId(d.id)}
+                          >
+                            {d.name}
+                          </Chip>
+                        ))}
+                      </ChipRow>
+                    </Field>
+                  ) : null}
+
+                  {leagueId ? (
+                    <p className="text-[12px] text-mu">
+                      {tymyVeStrukture.length
+                        ? `${pluralTeam(tymyVeStrukture.length)} v tomhle rozsahu`
+                        : "V tomhle rozsahu není žádný zařazený tým."}
+                    </p>
+                  ) : null}
+                </div>
+              </ScopeCard>
+            ) : null}
+
+            {!maStrukturu ? (
+              <>
+                <ScopeCard
+                  active={scope === "division"}
+                  title="Divize (textová)"
+                  desc="Zápasy jen v rámci jedné divize"
+                  onClick={() => setScopeVolba("division")}
+                >
+                  <ChipRow>
+                    {divisions.map((d) => (
+                      <Chip key={d} active={division === d} onClick={() => setDivision(d)}>
+                        {d} ({list.filter((t) => t.division === d).length})
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                </ScopeCard>
+
+                <ScopeCard
+                  active={scope === "conference"}
+                  title="Konference (textová)"
+                  desc="Všechny týmy konference hrají křížově"
+                  onClick={() => setScopeVolba("conference")}
+                >
+                  {conferences.length ? (
+                    <ChipRow>
+                      {conferences.map((c) => (
+                        <Chip key={c} active={conference === c} onClick={() => setConference(c)}>
+                          {c} ({list.filter((t) => t.conference === c).length})
+                        </Chip>
+                      ))}
+                    </ChipRow>
+                  ) : (
+                    <p className="text-[13px] text-mu">
+                      Žádné konference — přiřaď je týmům ve správě týmů.
+                    </p>
+                  )}
+                </ScopeCard>
+              </>
+            ) : null}
 
             <ScopeCard
               active={scope === "custom"}
               title="Vlastní výběr"
-              desc="Vyber konkrétní týmy napříč divizemi"
-              onClick={() => setScope("custom")}
+              desc="Vyber konkrétní týmy napříč strukturou"
+              onClick={() => setScopeVolba("custom")}
             >
               <div className="max-h-64 divide-y divide-bd overflow-y-auto rounded-xl border border-bd">
                 {list.map((t) => {
@@ -354,6 +557,10 @@ export function FixturesClient() {
                   );
                 })}
               </div>
+              <p className="mt-2 text-[12px] text-mu">
+                Zápasy z vlastního výběru nenesou vazbu na ligu ani divizi — tabulka si je
+                dohledá podle textové divize týmů.
+              </p>
             </ScopeCard>
           </div>
 
@@ -390,7 +597,7 @@ export function FixturesClient() {
               <Input
                 value={season}
                 onChange={(e) => setSeason(e.target.value)}
-                placeholder={seasons[0] ?? "2025/26"}
+                placeholder={strukturaSezony || seasons[0] || "2026/27"}
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -541,6 +748,77 @@ export function FixturesClient() {
   );
 }
 
+/* ---------------- struktura jedné ligy ---------------- */
+
+function StrukturaLiga({ liga, teams }: { liga: LeagueNode; teams: PlacedTeam[] }) {
+  const vLize = teams.filter((t) => t.placement?.leagueId === liga.id);
+  const bezKonference = vLize.filter((t) => !t.placement?.conferenceId);
+
+  return (
+    <section>
+      <h2 className="mb-3 flex items-center gap-2 text-[13px] font-bold text-go">
+        {liga.name}
+        <span className="text-[12px] font-normal text-mu">({pluralTeam(vLize.length)})</span>
+      </h2>
+
+      <div className="space-y-3">
+        {liga.conferences.map((konf) => {
+          const vKonferenci = vLize.filter((t) => t.placement?.conferenceId === konf.id);
+          const bezDivize = vKonferenci.filter((t) => !t.placement?.divisionId);
+          return (
+            <div key={konf.id} className="space-y-3">
+              {konf.divisions.map((div) => (
+                <TymySkupina
+                  key={div.id}
+                  nadpis={`${konf.name} · ${div.name}`}
+                  teams={vKonferenci.filter((t) => t.placement?.divisionId === div.id)}
+                />
+              ))}
+              {bezDivize.length ? (
+                <TymySkupina nadpis={`${konf.name} · bez divize`} teams={bezDivize} />
+              ) : null}
+            </div>
+          );
+        })}
+
+        {bezKonference.length ? (
+          <TymySkupina nadpis="Přímo v lize" teams={bezKonference} />
+        ) : null}
+
+        {!vLize.length ? (
+          <Card className="px-4 py-3 text-[13px] text-mu">
+            V téhle lize ještě není zařazený žádný tým.
+          </Card>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function TymySkupina({ nadpis, teams }: { nadpis: string; teams: PlacedTeam[] }) {
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex items-center justify-between bg-c2/60 px-4 py-2.5">
+        <span className="text-[13px] font-semibold text-wh">{nadpis}</span>
+        <span className="text-[12px] text-mu">{teams.length}</span>
+      </div>
+      {teams.length ? (
+        <div className="divide-y divide-bd">
+          {teams.map((t) => (
+            <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+              <TeamDot color={t.color} />
+              <span className="min-w-0 flex-1 truncate text-[14px] text-wh">{t.name}</span>
+              <span className="text-[12px] font-bold text-di">{t.abbr}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="px-4 py-2.5 text-[12px] text-mu">Prázdné</p>
+      )}
+    </Card>
+  );
+}
+
 function ScopeCard({
   active,
   title,
@@ -595,12 +873,7 @@ function MoveTeamModal({
   const [conference, setConference] = useState("");
 
   return (
-    <Modal
-      open={!!team}
-      onClose={onClose}
-      title={`Přesunout ${team?.name ?? ""}`}
-      size="sm"
-    >
+    <Modal open={!!team} onClose={onClose} title={`Přesunout ${team?.name ?? ""}`} size="sm">
       <div className="space-y-4">
         <Field label="Konference">
           <ChipRow>
