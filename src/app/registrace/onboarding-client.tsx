@@ -139,7 +139,7 @@ const ROLES: {
     id: "referee",
     icon: <Flag size={22} />,
     title: "Chci být rozhodčí",
-    desc: "Vyplníš osobní údaje a bankovní spojení pro výplatu odměn. Supervisor tě do 48 h schválí.",
+    desc: "Vyplníš jméno, kontakt a datum narození — nic víc. Supervisor tě do 48 h schválí.",
     badge: "Čeká na schválení supervisorem",
     color: "#3B82F6",
   },
