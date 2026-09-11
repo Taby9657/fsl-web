@@ -55,7 +55,9 @@ const BALICKY: Balicek[] = [
   { zapasu: 3, cena: 550, zaZapas: 183 },
   { zapasu: 7, cena: 1200, zaZapas: 171 },
   { zapasu: 12, cena: 2000, zaZapas: 167, znacka: "nejčastější volba" },
-  { zapasu: 16, cena: 2600, zaZapas: 163, znacka: "celá základní část" },
+  // Značka „celá základní část" tu byla, dokud měla základní část 16 kol.
+  // Při 15 až 20 kolech to není pravda a na ceníku nesmí stát.
+  { zapasu: 16, cena: 2600, zaZapas: 163 },
   { zapasu: 20, cena: 3000, zaZapas: 150, znacka: "nejnižší cena za zápas" },
 ];
 
