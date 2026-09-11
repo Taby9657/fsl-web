@@ -165,7 +165,6 @@ type Data = {
   name: string;
   abbr: string;
   color: string;
-  venue: string;
   // vedoucí jako hráč
   mFirstName: string;
   mLastName: string;
@@ -180,7 +179,7 @@ type Data = {
 
 const PRAZDNA: Data = {
   firstName: "", lastName: "", jersey: "", position: "Útočník", phone: "", birthdate: "",
-  name: "", abbr: "", color: "#C9A140", venue: "",
+  name: "", abbr: "", color: "#C9A140",
   mFirstName: "", mLastName: "", mJersey: "", mBirthdate: "",
   rFirstName: "", rLastName: "", rPhone: "", rBirthdate: "",
 };
@@ -401,7 +400,9 @@ export function OnboardingClient() {
         name: data.name.trim(),
         abbr: data.abbr.trim().toUpperCase(),
         color: data.color,
-        venue: data.venue.trim() || undefined,
+        // Halu tým nevyplňuje — shání ji liga a supervisor ji doplní
+        // při rozlosování. Do 11. 9. 2026 se na ni registrace ptala,
+        // což vedoucímu tvrdilo, že je to jeho starost.
         manager: {
           firstName: data.mFirstName.trim() || undefined,
           lastName: data.mLastName.trim() || undefined,
@@ -857,13 +858,6 @@ export function OnboardingClient() {
               accept="image/*"
               onChange={(e) => setLogo(e.target.files?.[0] ?? null)}
               className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
-            />
-          </Field>
-          <Field label="Domácí hřiště">
-            <Input
-              value={data.venue}
-              onChange={(e) => set("venue", e.target.value)}
-              placeholder="Hala Sparta"
             />
           </Field>
           <Button className="w-full" onClick={() => naKrok("ja")}>
