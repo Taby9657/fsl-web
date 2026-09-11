@@ -212,7 +212,7 @@ export function AdminHighlightsClient() {
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
               className="min-h-[130px]"
-              placeholder="Tomáš Novák (BE) vstřelil hattrick v derby zápase…"
+              placeholder="Jan Novák (BE) vstřelil hattrick v derby zápase…"
             />
           </Field>
           <Field label="URL obrázku (volitelné)">

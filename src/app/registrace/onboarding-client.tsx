@@ -625,7 +625,7 @@ export function OnboardingClient() {
                     firstName: validateName(data.firstName, "Jméno") ?? "",
                   }))
                 }
-                placeholder="Tomáš"
+                placeholder="Jan"
                 autoFocus
               />
             </Field>
@@ -882,7 +882,7 @@ export function OnboardingClient() {
               <Input
                 value={data.mFirstName}
                 onChange={(e) => set("mFirstName", e.target.value)}
-                placeholder="Jakub"
+                placeholder="Jan"
                 autoFocus
               />
             </Field>
@@ -890,7 +890,7 @@ export function OnboardingClient() {
               <Input
                 value={data.mLastName}
                 onChange={(e) => set("mLastName", e.target.value)}
-                placeholder="Tabášek"
+                placeholder="Novák"
               />
             </Field>
           </div>
@@ -946,7 +946,7 @@ export function OnboardingClient() {
               <Input
                 value={data.rLastName}
                 onChange={(e) => set("rLastName", e.target.value)}
-                placeholder="Procházka"
+                placeholder="Novák"
               />
             </Field>
           </div>
