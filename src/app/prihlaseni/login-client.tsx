@@ -79,7 +79,12 @@ export function LoginClient() {
   const [gisReady, setGisReady] = useState(false);
   const btnRef = useRef<HTMLDivElement>(null);
 
-  const [mode, setMode] = useState<Mode>("login");
+  // Kdo přijde s ?ucet=novy, chce zakládat účet, ne se přihlašovat.
+  // Bez toho každý odkaz spadl na přihlašovací formulář a člověk bez účtu
+  // musel hledat, kde se registruje.
+  const [mode, setMode] = useState<Mode>(
+    params.get("ucet") === "novy" ? "register" : "login",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -402,7 +407,30 @@ export function LoginClient() {
           </div>
 
           <form onSubmit={submitEmailForm} className="space-y-3 text-left">
-            <p className="text-center text-[13px] font-semibold text-wh">{t.title}</p>
+            {/* Přepínač, ne odkaz pod formulářem. Kdo nemá účet, musel dřív
+                najít drobné „Vytvořit účet" pod tlačítkem — a do té doby
+                koukal na přihlášení, které mu k ničemu není. */}
+            {mode === "login" || mode === "register" ? (
+              <div className="flex gap-1 rounded-xl border border-bd bg-c2/40 p-1">
+                {(["login", "register"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => switchMode(m)}
+                    className={
+                      "flex-1 cursor-pointer rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors " +
+                      (mode === m
+                        ? "bg-go text-bg"
+                        : "text-mu hover:bg-c1 hover:text-wh")
+                    }
+                  >
+                    {m === "login" ? "Mám účet" : "Vytvořit účet"}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-[13px] font-semibold text-wh">{t.title}</p>
+            )}
 
             {mode === "reset" ? (
               <p className="text-center text-[12px] leading-5 text-mu">
@@ -478,7 +506,7 @@ export function LoginClient() {
           </form>
 
           <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-mu">
-            {mode !== "login" ? (
+            {mode === "forgot" || mode === "reset" ? (
               <button
                 type="button"
                 onClick={() => switchMode("login")}
@@ -488,22 +516,13 @@ export function LoginClient() {
               </button>
             ) : null}
             {mode === "login" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => switchMode("register")}
-                  className="cursor-pointer underline hover:text-wh"
-                >
-                  Vytvořit účet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchMode("forgot")}
-                  className="cursor-pointer underline hover:text-wh"
-                >
-                  Zapomenuté heslo
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => switchMode("forgot")}
+                className="cursor-pointer underline hover:text-wh"
+              >
+                Zapomenuté heslo
+              </button>
             ) : null}
           </div>
 

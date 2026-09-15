@@ -194,8 +194,13 @@ export function SiteHeader() {
               ) : null}
             </div>
           ) : (
+            /* Popisek říká obojí, protože na /prihlaseni se dá i založit
+               účet — „Přihlásit se" samotné posílalo nováčky hledat
+               registraci jinam. Na užších displejích je zkrácená varianta,
+               jinak by hlavička přetekla; celá věta je v mobilním menu. */
             <LinkButton href="/prihlaseni" size="sm" variant="outline">
-              Přihlásit se
+              <span className="hidden xl:inline">Přihlásit se nebo registrovat</span>
+              <span className="xl:hidden">Přihlásit / Registrovat</span>
             </LinkButton>
           )}
 
@@ -251,7 +256,7 @@ export function SiteHeader() {
                 className="mt-2"
                 onClick={() => router.push("/prihlaseni")}
               >
-                Přihlásit se ke svému účtu
+                Přihlásit se nebo registrovat
               </Button>
             ) : null}
           </nav>
