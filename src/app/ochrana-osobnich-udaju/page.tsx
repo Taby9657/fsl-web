@@ -21,7 +21,7 @@ export default function PrivacyPage() {
     <Page size="narrow">
       <PageTitle
         title="Zásady ochrany osobních údajů"
-        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 21. 8. 2026"
+        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 15. 9. 2026"
       />
       <Prose>
         <h2>1. Správce údajů</h2>
@@ -36,9 +36,14 @@ export default function PrivacyPage() {
         <h2>2. Jaké údaje zpracováváme</h2>
         <p>Zpracováváme pouze údaje nezbytné pro provoz florbalové ligy:</p>
         <ul>
-          <li>e-mailová adresa (z přihlášení přes Google nebo Apple),</li>
+          <li>e-mailová adresa (ze zakládání účtu nebo z přihlášení přes Google či Apple),</li>
+          <li>heslo v podobě nevratného otisku, pokud si účet zakládáte e-mailem,</li>
           <li>jméno a příjmení zadané při registraci,</li>
-          <li>číslo dresu, pozice, datum narození a telefon (dobrovolné údaje hráče),</li>
+          <li>
+            <strong>datum narození — povinný údaj</strong>, slouží k ověření věkové hranice
+            18 let,
+          </li>
+          <li>číslo dresu, pozice a telefon (dobrovolné údaje hráče),</li>
           <li>profilová fotografie a logo týmu, pokud je nahrajete,</li>
           <li>herní statistiky — góly, asistence, tresty, účast v zápasech,</li>
           <li>
@@ -54,9 +59,9 @@ export default function PrivacyPage() {
         <h2>3. Účel a právní základ</h2>
         <p>
           Údaje zpracováváme pro plnění smlouvy o účasti v lize (evidence hráčů, soupisek a
-          výsledků), pro oprávněný zájem na fungování soutěže a pro plnění právních povinností
-          souvisejících s vyplácením odměn rozhodčím. Zasílání notifikací je dobrovolné a lze
-          jej kdykoli vypnout.
+          výsledků), pro <strong>ověření věkové hranice 18 let</strong>, pro oprávněný zájem
+          na fungování soutěže a pro plnění právních povinností souvisejících s vyplácením
+          odměn rozhodčím. Zasílání notifikací je dobrovolné a lze jej kdykoli vypnout.
         </p>
 
         <h2>4. Veřejně dostupné údaje</h2>
@@ -76,6 +81,7 @@ export default function PrivacyPage() {
           <li>Vercel — provoz webu,</li>
           <li>Cloudinary — ukládání fotek a videí,</li>
           <li>Stripe — zpracování online plateb kartou,</li>
+          <li>Resend — odesílání e-mailů (obnova hesla, oznámení z ligy),</li>
           <li>Sentry — sledování chyb aplikace.</li>
         </ul>
 
@@ -88,8 +94,9 @@ export default function PrivacyPage() {
 
         <h2>7. Zabezpečení</h2>
         <p>
-          Veškerá komunikace probíhá přes HTTPS. Hesla neukládáme, přihlášení je výhradně přes
-          Google nebo Apple. Přístup k citlivým údajům rozhodčích má pouze supervisor ligy.
+          Veškerá komunikace probíhá přes HTTPS. Hesla neukládáme v čitelné podobě, ale
+          výhradně jako nevratný otisk; přihlásit se lze i přes Google nebo Apple. Přístup
+          k citlivým údajům rozhodčích má pouze supervisor ligy.
         </p>
 
         <h2>8. Vaše práva</h2>
