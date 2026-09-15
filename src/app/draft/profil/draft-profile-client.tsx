@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { PlayCircle, Trash2, Upload } from "lucide-react";
+import { Mail, PlayCircle, Trash2, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { draftApi, errMsg } from "@/lib/api";
@@ -12,6 +12,7 @@ import {
   Card,
   Chip,
   Field,
+  LinkButton,
   PageTitle,
   Textarea,
   Spinner,
@@ -50,6 +51,8 @@ export function DraftProfileClient() {
   }, [q.data]);
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const nabidky = (q.data?.offers ?? []).filter((o) => o.status === "PENDING");
 
   async function save() {
     setBusy(true);
@@ -130,9 +133,44 @@ export function DraftProfileClient() {
   return (
     <Page size="narrow">
       <PageTitle
-        title={hasProfile ? "Upravit draft profil" : "Vytvořit draft profil"}
-        subtitle="Zviditelni se pro vedoucí týmů, kteří hledají posily"
+        title={hasProfile ? "Můj draft profil" : "Vytvořit draft profil"}
+        subtitle="Tohle o tobě vidí vedoucí, kteří hledají posily"
       />
+
+      {/* Nabídky patří sem. `GET /draft/me` je posílal už dřív, ale tahle
+          obrazovka je nezobrazovala — hráč dostal zprávu „někdo o tebe má
+          zájem", otevřel si svůj profil a nabídka nikde. Přijmout ji šlo
+          jedině přes adresu s vlastním `playerId`, na kterou ho nic
+          nenavedlo. */}
+      {nabidky.length ? (
+        <Card className="mb-4 border-go/50 p-5">
+          <p className="flex items-center gap-2 text-[15px] font-semibold text-wh">
+            <Mail size={17} className="text-go" />
+            {nabidky.length === 1
+              ? "Máš nabídku od týmu"
+              : `Máš ${nabidky.length} nabídky od týmů`}
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {nabidky.map((o) => (
+              <li key={o.id} className="text-[13px] text-mu">
+                <span className="font-semibold text-wh">{o.team?.name ?? "Tým"}</span>
+                {o.message ? ` — „${o.message}"` : null}
+              </li>
+            ))}
+          </ul>
+          <LinkButton
+            href={`/draft/${q.data?.playerId}`}
+            size="sm"
+            className="mt-4"
+          >
+            Zobrazit a rozhodnout
+          </LinkButton>
+          <p className="mt-2 text-[12px] leading-5 text-di">
+            Když se nerozhodneš, první nabídka se po vypršení okna přijme
+            automaticky.
+          </p>
+        </Card>
+      ) : null}
 
       <Card className="space-y-5 p-5">
         <Field label="Pozice">
