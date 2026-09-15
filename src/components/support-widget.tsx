@@ -22,14 +22,18 @@ export function SupportWidget() {
 
   return (
     <>
+      {/* Zlatá výplň, ne obtažení: v decentní variantě si tlačítka nikdo
+          nevšiml na první dobrou — a to je u hlášení chyb ta jediná věc,
+          na které záleží. Popisek je vidět i na telefonu; samotná ikona
+          nikomu neřekne, co se po kliknutí stane. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Napsat nám"
-        className="fixed bottom-4 right-4 z-[90] flex items-center gap-2 rounded-full border border-gold/40 bg-c1/95 px-4 py-3 text-[13px] font-semibold text-gold shadow-xl backdrop-blur transition hover:border-gold hover:bg-c2 sm:bottom-6 sm:right-6"
+        className="fixed bottom-4 right-4 z-[90] flex items-center gap-2.5 rounded-full bg-go px-5 py-3.5 text-[15px] font-bold text-bg shadow-[0_10px_30px_-6px_rgba(201,161,64,0.65)] ring-1 ring-black/10 transition hover:bg-[#d8b055] active:bg-[#bd9439] sm:bottom-6 sm:right-6 sm:px-6 sm:py-4 sm:text-[16px]"
       >
-        <MessageSquarePlus size={18} />
-        <span className="hidden sm:inline">Napsat nám</span>
+        <MessageSquarePlus size={22} strokeWidth={2.4} />
+        Napsat nám
       </button>
 
       <Modal
