@@ -338,7 +338,9 @@ export function LoginClient() {
           </span>
           <h1 className="mt-6 text-2xl font-bold text-wh">Floorball Stars Liga</h1>
           <p className="mt-2 text-[14px] leading-6 text-mu">
-            Přihlas se ke svému účtu — otevře ti správu týmu, platby a draft.
+            {mode === "register"
+              ? "Založ si účet — otevře ti správu týmu, platby a draft."
+              : "Přihlas se ke svému účtu — otevře ti správu týmu, platby a draft."}
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3">

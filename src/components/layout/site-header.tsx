@@ -141,21 +141,22 @@ export function SiteHeader() {
             </Link>
           ) : null}
 
-          {/* „Přihláška do ligy", ne „Přihlásit tým": vedle tlačítka
-              „Přihlásit se" do účtu by dvě věci se stejným slovesem splývaly
-              v jednu, a jsou to dvě různé věci. */}
-          {/* Na `hidden` se u Buttonu ani LinkButtonu nedá spolehnout: obě
+          {/* Odhlášenému nemá smysl nabízet přihlášku do ligy: /registrace je
+              za AuthGuardem a stejně ho to pošle nejdřív založit účet. Vidí
+              proto jen Registrace + Přihlásit se; kdo účet založí a nemá
+              profil, do přihlášky ho pustí `goAfterAuth` sám. Zlaté tlačítko
+              tak zůstává jen pro přihlášeného bez role — pro toho je to
+              jediná cesta do náboru viditelná bez otevření menu.
+
+              Na `hidden` se u Buttonu ani LinkButtonu nedá spolehnout: obě
               komponenty mají v základu `inline-flex`, clsx třídy jen slepí
               (nemerguje je) a v CSS pak vyhraje ta základní. Do 15. 9. 2026
               tu stálo `hidden sm:inline-flex`, tlačítko se ale neschovalo
               nikdy — hlavička byla 438 px široká na displeji, který má 360,
               stránka šla táhnout do strany a tlačítko menu bylo mimo
-              obrazovku. Kdo tu bude něco schovávat, obalí to divem.
-
-              Zlaté tlačítko zůstává vidět i na mobilu schválně: je to jediná
-              cesta do náboru, která je vidět bez otevření menu. Na úzkých
-              displejích se zkracuje popisek, ne tlačítko. */}
-          {!loading && !maRoli && !naPrihlaseni ? (
+              obrazovku. Kdo tu bude něco schovávat, obalí to divem. Na
+              úzkých displejích se zkracuje popisek, ne tlačítko. */}
+          {!loading && user && !maRoli ? (
             <LinkButton href="/registrace" size="sm">
               <span className="sm:hidden">Přihláška</span>
               <span className="hidden sm:inline">Přihláška do ligy</span>
@@ -219,15 +220,18 @@ export function SiteHeader() {
               ) : null}
             </div>
           ) : naPrihlaseni ? null : (
-            /* Popisek říká obojí, protože na /prihlaseni se dá i založit
-               účet — „Přihlásit se" samotné posílalo nováčky hledat
-               registraci jinam. Na užších displejích je zkrácená varianta,
-               jinak by hlavička přetekla; celá věta je v mobilním menu. */
-            <LinkButton href="/prihlaseni" size="sm" variant="outline">
-              <span className="hidden xl:inline">Přihlásit se nebo registrovat</span>
-              <span className="hidden md:inline xl:hidden">Přihlásit / Registrovat</span>
-              <span className="md:hidden">Přihlásit</span>
-            </LinkButton>
+            /* Dvě tlačítka, dvě věci. Jedno „Přihlásit se nebo registrovat"
+               říkalo obojí najednou a nováček nevěděl, kam patří; registrace
+               míří rovnou na `?ucet=novy`, takže mu formulář rovnou nabídne
+               zakládání účtu, ne přihlašování. */
+            <>
+              <LinkButton href="/prihlaseni?ucet=novy" size="sm">
+                Registrace
+              </LinkButton>
+              <LinkButton href="/prihlaseni" size="sm" variant="outline">
+                Přihlásit se
+              </LinkButton>
+            </>
           )}
 
           <button
@@ -267,7 +271,7 @@ export function SiteHeader() {
             >
               Mobilní aplikace
             </Link>
-            {!maRoli && !naPrihlaseni ? (
+            {user && !maRoli ? (
               <Button
                 variant="gold"
                 className="mt-2"
@@ -277,13 +281,22 @@ export function SiteHeader() {
               </Button>
             ) : null}
             {!user && !naPrihlaseni ? (
-              <Button
-                variant="outline"
-                className="mt-2"
-                onClick={() => router.push("/prihlaseni")}
-              >
-                Přihlásit se nebo registrovat
-              </Button>
+              <>
+                <Button
+                  variant="gold"
+                  className="mt-2"
+                  onClick={() => router.push("/prihlaseni?ucet=novy")}
+                >
+                  Registrace
+                </Button>
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => router.push("/prihlaseni")}
+                >
+                  Přihlásit se
+                </Button>
+              </>
             ) : null}
           </nav>
         </div>
