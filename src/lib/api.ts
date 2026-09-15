@@ -535,6 +535,18 @@ export const supervisorApi = {
 
 /* ==================== ŽÁDOSTI (běžní uživatelé) ==================== */
 export const requestsApi = {
-  create: (data: { type: string; body: string; teamId?: string; matchId?: string }) =>
-    api.post<SupervisorRequest>("/requests", data),
+  /**
+   * Zpráva supervisorovi. Funguje i bez přihlášení — pak je `email`
+   * povinný, jinak se bere z účtu. `web` je past na roboty a zůstává
+   * prázdné.
+   */
+  create: (data: {
+    type: string;
+    body: string;
+    email?: string;
+    page?: string;
+    teamId?: string;
+    matchId?: string;
+    web?: string;
+  }) => api.post<{ ok: boolean; id?: string }>("/requests", data),
 };

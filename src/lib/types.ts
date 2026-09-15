@@ -21,9 +21,13 @@ export type RefereeStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type RegStatus = "PENDING" | "APPROVED" | "REJECTED" | "APPEALING";
 export type DraftOfferStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
 export type RequestType =
+  | "WEB_BUG"
+  | "REGISTRATION"
+  | "PAYMENT"
+  | "ROSTER"
   | "MATCH_TRANSCRIPT"
-  | "PLAYER_DISPUTE"
   | "LICENSE_ISSUE"
+  | "PLAYER_DISPUTE"
   | "OTHER";
 export type RequestStatus = "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
 export type MatchEventType =
@@ -423,6 +427,10 @@ export interface SupervisorRequest {
   userId?: string | null;
   teamId?: string | null;
   matchId?: string | null;
+  /** Kontakt na odesílatele — u nepřihlášeného jediná cesta, jak odpovědět. */
+  email?: string | null;
+  /** Stránka, ze které zpráva odešla. U hlášení chyby to nejdůležitější. */
+  page?: string | null;
   body: string;
   note?: string | null;
   status: RequestStatus;

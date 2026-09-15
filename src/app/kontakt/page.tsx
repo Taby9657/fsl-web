@@ -55,13 +55,14 @@ export default function KontaktPage() {
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-go-soft text-go">
           <MessageSquare size={20} />
         </span>
-        <h2 className="mt-4 text-[16px] font-bold text-wh">Žádost supervisorovi</h2>
+        <h2 className="mt-4 text-[16px] font-bold text-wh">Napsat nám z webu</h2>
         <p className="mt-1 max-w-lg text-[14px] leading-6 text-mu">
-          Reklamace zápisu ze zápasu, hráčský spor nebo problém s licencí řeš přímo přes
-          formulář v aplikaci — žádost se supervisorovi zobrazí ve frontě i s historií.
+          Dotaz k platbám, soupisce nebo registraci, reklamace zápisu ze zápasu
+          i chyba na webu — napiš to rovnou tady. Účet k tomu není potřeba
+          a zpráva se supervisorovi zobrazí ve frontě i s historií.
         </p>
         <LinkButton href="/zadost" className="mt-4" size="sm">
-          Podat žádost
+          Napsat nám
         </LinkButton>
       </Card>
     </Page>

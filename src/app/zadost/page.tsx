@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import { AuthGuard } from "@/components/auth-guard";
-import { RequestClient } from "./request-client";
+import { ZadostClient } from "./request-client";
 
 export const metadata: Metadata = {
-  title: "Žádost supervisorovi",
+  title: "Napsat nám",
+  description:
+    "Dotaz k lize, platbám, soupisce nebo registraci — a hlášení chyb na webu.",
   robots: { index: false, follow: false },
 };
 
+// Schválně bez AuthGuard: kdo se nemůže přihlásit, musí mít jak to nahlásit.
 export default function ZadostPage() {
-  return (
-    <AuthGuard>
-      <RequestClient />
-    </AuthGuard>
-  );
+  return <ZadostClient />;
 }

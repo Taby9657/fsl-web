@@ -139,10 +139,14 @@ export const REG_STATUS_COLOR: Record<RegStatus, string> = {
 };
 
 export const REQUEST_TYPE_LABEL: Record<RequestType, string> = {
+  WEB_BUG: "Chyba na webu",
+  REGISTRATION: "Registrace a přihlášení",
+  PAYMENT: "Platby",
+  ROSTER: "Soupiska a sestavy",
   MATCH_TRANSCRIPT: "Zápis ze zápasu",
+  LICENSE_ISSUE: "Licence",
   PLAYER_DISPUTE: "Hráčský spor",
-  LICENSE_ISSUE: "Problém s licencí",
-  OTHER: "Ostatní",
+  OTHER: "Něco jiného",
 };
 
 export const REFEREE_LEVEL_LABEL: Record<string, string> = {

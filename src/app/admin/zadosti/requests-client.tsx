@@ -103,8 +103,17 @@ export function AdminRequestsClient() {
                 <span className="ml-auto text-[11px] text-di">{fmtDate(r.createdAt)}</span>
               </div>
 
-              {r.user?.email ? (
-                <p className="text-[12px] text-mu">Od: {r.user.email}</p>
+              {/* Adresa se bere z účtu, a když ho odesílatel nemá, z formuláře.
+                  Bez toho by u zpráv od nepřihlášených nebylo komu odpovědět. */}
+              {r.user?.email || r.email ? (
+                <p className="text-[12px] text-mu">
+                  Od: {r.user?.email ?? r.email}
+                  {r.user ? null : " · nepřihlášený"}
+                </p>
+              ) : null}
+
+              {r.page ? (
+                <p className="text-[12px] text-di">Ze stránky: {r.page}</p>
               ) : null}
 
               <p className="mt-2 whitespace-pre-line text-[14px] leading-6 text-wh">{r.body}</p>

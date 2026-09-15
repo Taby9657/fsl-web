@@ -29,6 +29,7 @@ const COLS = [
       { href: "/aktuality", label: "Aktuality" },
       { href: "/aplikace", label: "Mobilní aplikace" },
       { href: "/kontakt", label: "Kontakt" },
+      { href: "/zadost", label: "Napsat nám" },
     ],
   },
   {

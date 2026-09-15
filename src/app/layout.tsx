@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SupportWidget } from "@/components/support-widget";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fslleague.cz"),
@@ -67,6 +68,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <SiteFooter />
           </div>
+          <SupportWidget />
         </Providers>
       </body>
     </html>
