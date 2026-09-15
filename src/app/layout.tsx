@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SupportWidget } from "@/components/support-widget";
+import { MetaPixel } from "@/components/meta-pixel";
 import { OG_OBRAZEK } from "@/lib/og";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -88,6 +89,7 @@ export default function RootLayout({
           <SupportWidget />
         </Providers>
         <Analytics />
+        <MetaPixel />
       </body>
     </html>
   );
