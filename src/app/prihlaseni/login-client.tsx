@@ -343,13 +343,13 @@ export function LoginClient() {
           <p className="mt-2 text-[14px] leading-6 text-mu">
             Přihlas se ke svému účtu — otevře ti správu týmu, platby a draft.
           </p>
+          {/* „Formulář přihlášky" tu schválně není odkaz: /registrace je za
+              AuthGuardem, takže odhlášeného pošle rovnou zpátky sem. Do
+              15. 9. 2026 to odkaz byl a točil se dokola. Kdo se přihlásí,
+              dojde do přihlášky sám — `next` v adrese ho tam vrátí. */}
           <p className="mt-2 text-[12px] leading-5 text-di">
             Účet není přihláška do ligy. Tým, sebe nebo rozhodčího přihlásíš
-            až potom, ve{" "}
-            <Link href="/registrace" className="underline hover:text-wh">
-              formuláři přihlášky
-            </Link>
-            .
+            až potom, ve formuláři přihlášky — otevře se hned po přihlášení.
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3">
