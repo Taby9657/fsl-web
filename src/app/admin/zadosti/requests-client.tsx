@@ -181,9 +181,30 @@ export function AdminRequestsClient() {
         title={deciding?.approve ? "Schválit žádost" : "Zamítnout žádost"}
         size="sm"
       >
-        <Field label="Poznámka pro žadatele (volitelné)">
-          <Textarea value={note} onChange={(e) => setNote(e.target.value)} className="min-h-[90px]" />
+        {/* Tahle poznámka se od teď doopravdy odesílá. Dřív skončila
+            v adminu a ten, kdo psal, se odpověď nedozvěděl nikdy. */}
+        <Field label="Odpověď žadateli">
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="min-h-[90px]"
+            placeholder="Co jsme s tím udělali. Pošle se e-mailem."
+          />
         </Field>
+        <p className="mt-2 text-[12px] leading-5 text-di">
+          {deciding?.req.email || deciding?.req.user?.email ? (
+            <>
+              Odejde e-mailem na{" "}
+              <span className="text-mu">
+                {deciding.req.email ?? deciding.req.user?.email}
+              </span>
+              {deciding?.req.userId ? " a jako oznámení do účtu" : null}. Prázdné
+              pole nechá stav změnit potichu, bez e-mailu.
+            </>
+          ) : (
+            "U téhle žádosti není kontakt, takže se nic neodešle — jde jen o změnu stavu."
+          )}
+        </p>
         <Button
           variant={deciding?.approve ? "success" : "danger"}
           className="mt-4 w-full"
