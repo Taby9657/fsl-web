@@ -99,7 +99,7 @@ const PRAVIDLA = [
   },
   {
     t: "Jak platit",
-    d: "Kartou, přes Apple Pay a Google Pay, nebo převodem s QR kódem. Cena je ve všech případech stejná. Doklad chodí ke každé platbě, v aplikaci je i souhrn za celou sezónu.",
+    d: "Kartou, přes Apple Pay a Google Pay, nebo převodem s QR kódem. Cena je ve všech případech stejná. Stav všech svých plateb vidíš po přihlášení v sekci Platby.",
   },
 ];
 
