@@ -46,12 +46,11 @@ const MIN_HESLO = 8;
 type Mode = "login" | "register" | "forgot" | "reset";
 
 /**
- * Účet a přihláška do ligy jsou dvě různé věci a lidem to splývá — obojí
- * se česky řekne „registrace". Účet je jen přístup k webu; teprve pak se
- * přihlašuje tým, hráč nebo rozhodčí do soutěže. Texty to musí říct
- * nahlas, jinak člověk vyplní e-mail s heslem a myslí si, že je v lize.
+ * Stránka mluví jen o účtu. Co je přihláška do ligy a jak se vyplňuje, patří
+ * do samotné přihlášky — tady to 15. 9. 2026 vypadlo, protože dvě „registrace"
+ * vedle sebe (účet × přihláška) přihlašovací obrazovku jen mátly.
  */
-const TEXTS: Record<Mode, { title: string; submit: string; popis?: string }> = {
+const TEXTS: Record<Mode, { title: string; submit: string }> = {
   login: {
     title: "Přihlášení e-mailem",
     submit: "Přihlásit se",
@@ -59,8 +58,6 @@ const TEXTS: Record<Mode, { title: string; submit: string; popis?: string }> = {
   register: {
     title: "Vytvoření účtu",
     submit: "Vytvořit účet",
-    popis:
-      "Účet je jen přístup k webu. Tým ani sebe tím do ligy nepřihlašuješ — přihlášku vyplníš hned potom.",
   },
   forgot: { title: "Zapomenuté heslo", submit: "Poslat kód" },
   reset: { title: "Nové heslo", submit: "Nastavit heslo a přihlásit" },
@@ -343,14 +340,6 @@ export function LoginClient() {
           <p className="mt-2 text-[14px] leading-6 text-mu">
             Přihlas se ke svému účtu — otevře ti správu týmu, platby a draft.
           </p>
-          {/* „Formulář přihlášky" tu schválně není odkaz: /registrace je za
-              AuthGuardem, takže odhlášeného pošle rovnou zpátky sem. Do
-              15. 9. 2026 to odkaz byl a točil se dokola. Kdo se přihlásí,
-              dojde do přihlášky sám — `next` v adrese ho tam vrátí. */}
-          <p className="mt-2 text-[12px] leading-5 text-di">
-            Účet není přihláška do ligy. Tým, sebe nebo rozhodčího přihlásíš
-            až potom, ve formuláři přihlášky — otevře se hned po přihlášení.
-          </p>
 
           <div className="mt-8 flex flex-col items-center gap-3">
             {busy ? (
@@ -488,11 +477,6 @@ export function LoginClient() {
               </Field>
             ) : null}
 
-            {t.popis ? (
-              <p className="rounded-xl border border-go/30 bg-go-soft px-3 py-2 text-left text-[12px] leading-5 text-mu">
-                {t.popis}
-              </p>
-            ) : null}
             {notice ? (
               <p className="rounded-xl border border-bd bg-c2/60 px-3 py-2 text-[12px] leading-5 text-mu">
                 {notice}
