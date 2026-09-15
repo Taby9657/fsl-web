@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import {
   Bell,
   ClipboardList,
@@ -16,6 +17,12 @@ export const metadata: Metadata = {
   title: "Mobilní aplikace FSL",
   description:
     "Mobilní aplikace Floorball Stars Ligy pro iOS a Android se připravuje. Do té doby zvládne web všechno, co appka — zápasy, soupisky, sestavy, platby i draft.",
+  ...sdileni({
+    title: "Mobilní aplikace FSL",
+    description:
+      "Aplikaci pro iOS a Android dokončujeme. Čekat na ni nemusíš — web zvládne přihlášku, soupisku, sestavu, platby i draft.",
+    path: "/aplikace",
+  }),
 };
 
 const FEATURES = [

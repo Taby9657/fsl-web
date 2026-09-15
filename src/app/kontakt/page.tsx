@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import { Mail, MessageSquare, Shield } from "lucide-react";
 import { Page } from "@/components/layout/container";
 import { Card, LinkButton, PageTitle } from "@/components/ui/primitives";
@@ -6,6 +7,12 @@ import { Card, LinkButton, PageTitle } from "@/components/ui/primitives";
 export const metadata: Metadata = {
   title: "Kontakt",
   description: "Kontakt na vedení Floorball Stars Ligy.",
+  ...sdileni({
+    title: "Kontakt — Floorball Stars Liga",
+    description:
+      "Dotaz k lize, registraci týmu nebo platbám? Napiš nám přímo z webu.",
+    path: "/kontakt",
+  }),
 };
 
 export default function KontaktPage() {

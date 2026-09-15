@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SupportWidget } from "@/components/support-widget";
+import { OG_OBRAZEK } from "@/lib/og";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fslleague.cz"),
@@ -30,6 +31,21 @@ export const metadata: Metadata = {
     description:
       "Živé výsledky, tabulka, statistiky a soupisky české florbalové ligy FSL.",
     url: "https://fslleague.cz",
+    images: [OG_OBRAZEK],
+  },
+  // Bez obrázku se odkaz na web sdílí na Facebooku, v Messengeru i ve
+  // WhatsAppu jako holý řádek textu. `summary_large_image` říká, že má být
+  // velká karta, ne malá ikonka vedle textu.
+  twitter: {
+    card: "summary_large_image",
+    title: "Floorball Stars Liga — FSL",
+    description:
+      "Živé výsledky, tabulka, statistiky a soupisky české florbalové ligy FSL.",
+    images: [OG_OBRAZEK.url],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   robots: { index: true, follow: true },
   // Ověření vlastnictví domény pro Google Search Console. Search Console je

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import { Page } from "@/components/layout/container";
 import { PageTitle } from "@/components/ui/primitives";
 import { Prose } from "@/components/prose";
@@ -6,6 +7,12 @@ import { Prose } from "@/components/prose";
 export const metadata: Metadata = {
   title: "Podmínky použití",
   description: "Podmínky použití webu a aplikace Floorball Stars Ligy.",
+  ...sdileni({
+    title: "Podmínky použití — Floorball Stars Liga",
+    description:
+      "Podmínky použití webu a aplikace Floorball Stars Ligy.",
+    path: "/podminky",
+  }),
 };
 
 export default function TermsPage() {

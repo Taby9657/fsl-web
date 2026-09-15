@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import { Page } from "@/components/layout/container";
 import { PageTitle } from "@/components/ui/primitives";
 import { Prose } from "@/components/prose";
@@ -7,6 +8,12 @@ export const metadata: Metadata = {
   title: "Ochrana osobních údajů",
   description:
     "Zásady ochrany osobních údajů Floorball Stars Ligy — jaké údaje zpracováváme a proč.",
+  ...sdileni({
+    title: "Ochrana osobních údajů — Floorball Stars Liga",
+    description:
+      "Jaké údaje Floorball Stars Liga sbírá, proč je sbírá a kdo je zpracovává.",
+    path: "/ochrana-osobnich-udaju",
+  }),
 };
 
 export default function PrivacyPage() {

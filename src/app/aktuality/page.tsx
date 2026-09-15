@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import { Newspaper, Pin, PlayCircle } from "lucide-react";
 import Image from "next/image";
 import { publicFetch } from "@/lib/api";
@@ -12,6 +13,12 @@ export const revalidate = 120;
 export const metadata: Metadata = {
   title: "Aktuality",
   description: "Highlighty kola, novinky a zajímavosti z Floorball Stars Ligy.",
+  ...sdileni({
+    title: "Aktuality z Floorball Stars Ligy",
+    description:
+      "Highlighty kola, novinky a zajímavosti z Floorball Stars Ligy.",
+    path: "/aktuality",
+  }),
 };
 
 export default async function AktualityPage() {

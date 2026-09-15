@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sdileni } from "@/lib/og";
 import Link from "next/link";
 import { Page } from "@/components/layout/container";
 import { Card, CardBody, PageTitle, SectionTitle, LinkButton } from "@/components/ui/primitives";
@@ -7,6 +8,12 @@ export const metadata: Metadata = {
   title: "Ceník",
   description:
     "Ceník Floorball Stars Ligy pro sezónu 2026/27 — registrace klubu, hráčská licence, superlicence a balíčky startů.",
+  ...sdileni({
+    title: "Ceník FSL 2026/27 — co stojí registrace týmu, licence a starty",
+    description:
+      "Registrace klubu 3 000 Kč, hráčská licence 300 Kč a balíčky startů od 200 Kč. Za zápasy platí hráč, ne tým.",
+    path: "/cenik",
+  }),
 };
 
 /* Ceny jsou zapsané natvrdo, ne tažené z API: je to veřejný výpis, ne účet
