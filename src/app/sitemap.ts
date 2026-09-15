@@ -9,6 +9,12 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     "",
+    // `/registrace` tu schválně není. Stránka má `robots: index: false` a je
+    // za AuthGuardem, takže odhlášeného pošle na /prihlaseni — kdo ji sem
+    // přidá, ohlásí vyhledávači adresu, která sama říká „neindexuj"
+    // (Search Console to hlásí jako chybu) a návštěvníka z vyhledávání
+    // vyhodí na přihlášení. Cesta do náboru vede z úvodní stránky, z ceníku
+    // a z hlavičky, ne z výsledků vyhledávání.
     "/zapasy",
     "/tabulka",
     "/statistiky",
