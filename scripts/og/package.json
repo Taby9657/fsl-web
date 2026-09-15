@@ -1,0 +1,12 @@
+{
+  "name": "fsl-og",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "playwright": "^1.55.0"
+  }
+}

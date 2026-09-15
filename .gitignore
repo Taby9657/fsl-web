@@ -42,3 +42,6 @@ next-env.d.ts
 
 # mock api
 mock-api/node_modules
+
+# og karta (generuje se ručně, viz scripts/og)
+scripts/og/node_modules

@@ -1,0 +1,127 @@
+<!doctype html>
+<!--
+  Předloha sdílecí karty (`public/og.png`, 1200 × 630).
+
+  Karta byla do 15. 9. 2026 jen hotový PNG bez zdroje — a když se formát hry
+  změnil ze 4 + 1 na 5 + 1, text v obrázku zůstal starý, protože nebylo co
+  přepsat. Od té doby se generuje odsud.
+
+  Vykreslení:
+      cd scripts/og
+      npm i                 # @fontsource/inter + playwright
+      node render.mjs       # zapíše ../../public/og.png
+
+  Inter musí být lokálně (fontsource), ne ze systému: web má v `globals.css`
+  stack "Inter", -apple-system, … a na Macu bez nainstalovaného Interu by se
+  karta vykreslila jiným písmem než na CI.
+-->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: Inter; font-weight: 400; src: url("node_modules/@fontsource/inter/files/inter-latin-ext-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: Inter; font-weight: 700; src: url("node_modules/@fontsource/inter/files/inter-latin-ext-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: Inter; font-weight: 900; src: url("node_modules/@fontsource/inter/files/inter-latin-ext-900-normal.woff2") format("woff2"); }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; }
+  body {
+    font-family: Inter, sans-serif;
+    background: #0d0120;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow: hidden;
+  }
+  .card { position: relative; width: 1200px; height: 630px; overflow: hidden; background: #0d0120; }
+
+  /* Barvy jsou tokeny z `src/app/globals.css` — bg, go, pu, wh. */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(201,161,64,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(201,161,64,0.05) 1px, transparent 1px);
+    background-size: 92px 92px;
+  }
+  .glow-gold {
+    position: absolute; top: -300px; right: -160px; width: 760px; height: 700px;
+    background: radial-gradient(closest-side, rgba(201,161,64,0.22), rgba(201,161,64,0) 70%);
+  }
+  .glow-purple {
+    position: absolute; bottom: -300px; left: -120px; width: 820px; height: 740px;
+    background: radial-gradient(closest-side, rgba(139,92,246,0.13), rgba(139,92,246,0) 70%);
+  }
+  .glow-mid {
+    position: absolute; top: 60px; left: 160px; width: 820px; height: 560px;
+    background: radial-gradient(closest-side, rgba(46,15,88,0.6), rgba(46,15,88,0) 72%);
+  }
+
+  /* Prvky jsou umístěné absolutně na pevné souřadnice — karta má jediný
+     rozměr 1200 × 630 a nikde se neresponzivně nezalamuje. */
+  .brand { position: absolute; top: 65px; left: 72px; display: flex; align-items: center; gap: 20px; }
+  .badge {
+    width: 62px; height: 62px; border-radius: 50%; border: 2px solid #c9a140;
+    display: flex; align-items: center; justify-content: center;
+    color: #c9a140; font-weight: 700; font-size: 19px;
+  }
+  .brand-name { color: #f0e8ff; font-weight: 700; font-size: 25px; letter-spacing: -0.012em; }
+
+  h1 {
+    position: absolute; top: 134px; left: 72px;
+    font-size: 112px; font-weight: 900; line-height: 120px; letter-spacing: -0.028em;
+  }
+  h1 .l1 { color: #f0e8ff; display: block; }
+  h1 .l2 { color: #c9a140; display: block; }
+
+  .sub {
+    position: absolute; top: 378px; left: 72px;
+    color: #d3c8ef; font-size: 26px; font-weight: 400; line-height: 40px; letter-spacing: -0.004em;
+  }
+
+  .pill {
+    position: absolute; top: 502px; left: 72px; height: 61px;
+    display: flex; align-items: center; gap: 18px;
+    background: #c9a140; color: #1a0535;
+    font-weight: 700; font-size: 22px; letter-spacing: -0.012em;
+    padding: 0 30px 0 28px; border-radius: 12px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #6e5719; }
+
+  .site {
+    position: absolute; top: 518px; right: 71px;
+    color: #8b5cf6; font-weight: 700; font-size: 24px; letter-spacing: -0.012em;
+  }
+
+  .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+    background: linear-gradient(to right, #c9a140 0%, #a98bd8 55%, #8b5cf6 100%); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="grid"></div>
+    <div class="glow-mid"></div>
+    <div class="glow-gold"></div>
+    <div class="glow-purple"></div>
+
+    <div class="brand">
+      <div class="badge">FSL</div>
+      <div class="brand-name">Floorball Stars Liga</div>
+    </div>
+
+    <h1>
+      <span class="l1">Nová florbalová</span>
+      <span class="l2">liga v Praze</span>
+    </h1>
+
+    <!-- Formát hry musí souhlasit s `fsl-pravidla-souteze.md`, oddíl 1. -->
+    <div class="sub">
+      Amatérská soutěž 5 + 1 od listopadu do března.<br>
+      Play-off pro každý tým, statistiky a soupisky online.
+    </div>
+
+    <div class="pill"><span class="dot"></span>Registrace na sezónu 2026/27 je otevřená</div>
+    <div class="site">fslleague.cz</div>
+
+    <div class="bar"></div>
+  </div>
+</body>
+</html>
