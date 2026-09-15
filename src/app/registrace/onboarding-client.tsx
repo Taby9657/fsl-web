@@ -34,6 +34,7 @@ import {
   Input,
   LinkButton,
   PageTitle,
+  Spinner,
 } from "@/components/ui/primitives";
 import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
@@ -249,6 +250,10 @@ export function OnboardingClient() {
   const params = useSearchParams();
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const user = useAuthStore((s) => s.user);
+  // Dokud se nedopočítá přihlášení, nevykresluje se nic: jinak by člověk,
+  // který roli už má, na okamžik uviděl výběr role. Bez tokenu je hotovo
+  // hned a bez síťového volání, takže návštěvník z reklamy nečeká.
+  const loadingAuth = useAuthStore((s) => s.loading);
 
   const next = params.get("next") || "/muj-ucet";
   const kodZOdkazu = (params.get("kod") ?? "").trim().toUpperCase();
@@ -364,9 +369,43 @@ export function OnboardingClient() {
     naKrok("role", null);
   }
 
+  /* ---------- účet až na konci ---------- */
+
+  /**
+   * Přihlášku smí od 15. 9. 2026 vyplnit i odhlášený návštěvník — stránka
+   * není za `AuthGuard` (proč, viz `page.tsx`). Účet je pořád potřeba, jen
+   * se o něj řekne až tady, při odeslání.
+   *
+   * Vrací `true`, když se o účet muselo říct — volající v tu chvíli končí
+   * a nic neodesílá. Rozdělaná přihláška se ukládá do `localStorage`, krok
+   * a role jdou do `next`, takže se člověk po založení účtu vrátí přesně
+   * sem a vyplněné zůstane vyplněné.
+   */
+  const vyzadujUcet = useCallback(() => {
+    if (user) return false;
+    uloz({ role, krok, data, team, inviteCode });
+    const q = new URLSearchParams();
+    q.set("krok", krok);
+    if (role) q.set("role", role);
+    const cil = `/registrace?${q.toString()}`;
+    // `ucet=novy` přepne přihlašovací stránku rovnou na zakládání účtu:
+    // kdo přišel z reklamy, účet skoro jistě nemá.
+    router.push(`/prihlaseni?ucet=novy&next=${encodeURIComponent(cil)}`);
+    return true;
+  }, [user, role, krok, data, team, inviteCode, router]);
+
+  /** Vysvětlení u odesílacího tlačítka, dokud člověk účet nemá. */
+  const poznamkaUcet = user ? null : (
+    <p className="text-[12px] leading-5 text-di">
+      Účet zatím nemáš — po odeslání si ho založíš a přihláška se dokončí.
+      Vyplněné údaje zůstanou uložené.
+    </p>
+  );
+
   /* ---------- odeslání ---------- */
 
   async function odesliHrace() {
+    if (vyzadujUcet()) return;
     setBusy(true);
     try {
       const res = await playersApi.create({
@@ -398,6 +437,7 @@ export function OnboardingClient() {
   }
 
   async function odesliTym() {
+    if (vyzadujUcet()) return;
     setBusy(true);
     try {
       const dres = data.mJersey.trim() === "" ? undefined : Number(data.mJersey);
@@ -434,6 +474,7 @@ export function OnboardingClient() {
   }
 
   async function odesliRozhodciho() {
+    if (vyzadujUcet()) return;
     setBusy(true);
     try {
       await refereesApi.register({
@@ -466,6 +507,18 @@ export function OnboardingClient() {
       }
     }
     toast.error("Nepovedlo se", zprava);
+  }
+
+  /* ---------- načítání přihlášení ---------- */
+
+  if (loadingAuth) {
+    return (
+      <Page>
+        <div className="flex justify-center py-24 text-go">
+          <Spinner size={32} />
+        </div>
+      </Page>
+    );
   }
 
   /* ---------- už má roli ---------- */
@@ -505,7 +558,14 @@ export function OnboardingClient() {
   if (krok === "role") {
     return (
       <Page size="narrow">
-        <PageTitle title={NADPISY.role.titul} subtitle={NADPISY.role.popis} />
+        <PageTitle
+          title={NADPISY.role.titul}
+          subtitle={
+            user
+              ? NADPISY.role.popis
+              : "Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
+          }
+        />
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
@@ -748,6 +808,7 @@ export function OnboardingClient() {
               placeholder="+420 601 234 567"
             />
           </Field>
+          {poznamkaUcet}
           <Button
             className="w-full"
             loading={busy}
@@ -915,6 +976,7 @@ export function OnboardingClient() {
             Jméno nechat prázdné jde — doplníme ho z tvého e-mailu a upravíš si
             ho v profilu. Datum narození je povinné: do FSL smí jen od 18 let.
           </p>
+          {poznamkaUcet}
           <Button
             className="w-full"
             loading={busy}
@@ -1014,6 +1076,7 @@ export function OnboardingClient() {
             jakmile bude vyřízena. Rodné číslo, adresu a bankovní spojení pro
             výplatu odměn budeš vyplňovat až na smlouvě.
           </div>
+          {poznamkaUcet}
           <Button className="w-full" loading={busy} onClick={() => void odesliRozhodciho()}>
             Odeslat registraci
           </Button>
