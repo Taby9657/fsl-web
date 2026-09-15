@@ -51,7 +51,7 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
               variant={mine.data?.isActive ? "gold" : "outline"}
             >
               <UserPlus size={15} />
-              {mine.data?.isActive ? "Můj profil" : "Přidat se"}
+              {mine.data?.isActive ? "Můj profil" : "Doplnit profil"}
             </LinkButton>
           ) : undefined
         }
@@ -69,7 +69,7 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
           title="Draft pool je prázdný"
           description={
             canJoin
-              ? "Buď první — přidej svůj draft profil."
+              ? "Zatím jsi tu sám. Doplň si profil, ať o tobě vedoucí něco vědí."
               : user
                 ? "Momentálně žádní volní hráči."
                 : "Momentálně se v draftu nikdo nenabízí. Můžeš být první."
@@ -77,7 +77,7 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
           action={
             canJoin ? (
               <LinkButton href="/draft/profil" size="sm">
-                Vytvořit profil
+                Doplnit profil
               </LinkButton>
             ) : undefined
           }
