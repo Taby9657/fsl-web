@@ -616,7 +616,7 @@ export function OnboardingClient() {
             </p>
           ) : (
             <p className="text-[13px] leading-6 text-mu">
-              Tým zatím nemáš — po dokončení se nabídneš v draftu.
+              Tým zatím nemáš — dokončením přihlášky se rovnou nabídneš v draftu.
             </p>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1396,7 +1396,7 @@ function DoneStep({
         ? "Tvoje registrace rozhodčího čeká na schválení supervisorem."
         : maTym
           ? "Jsi teď součástí týmu."
-          : "Profil máš hotový. Ještě se nabídni v draftu, ať tě vedoucí uvidí.";
+          : "Jsi v draftu volných hráčů — vedoucí tě vidí a můžou ti poslat nabídku.";
 
   // Hráč bez týmu dřív skončil `router.push("/draft")` bez jakéhokoli
   // potvrzení — obrazovku „Registrace dokončena" nikdy neviděl, kdežto
@@ -1416,7 +1416,7 @@ function DoneStep({
               { label: "Můj účet", href: "/muj-ucet" },
             ]
           : [
-              { label: "Nabídnout se v draftu", href: "/draft/profil" },
+              { label: "Doplnit profil v draftu", href: "/draft/profil" },
               { label: "Zaplatit licenci", href: "/platby" },
             ];
 
