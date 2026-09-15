@@ -1,6 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { getToken, clearToken } from "./token";
 import type {
+  AdminPlayer,
   AppNotification,
   AuthUser,
   BankTransaction,
@@ -502,6 +503,15 @@ export const supervisorApi = {
     api.put<Team>(`/supervisor/teams/${id}/approve`, { note }),
   rejectTeam: (id: string, reason: string) =>
     api.put<Team>(`/supervisor/teams/${id}/reject`, { reason }),
+  // Správa hráčů — jediná cesta, jak liga někoho zařadí do týmu.
+  // `POST /teams/:id/roster` patří vedoucímu, tohle supervisorovi.
+  players: (params?: Record<string, unknown>) =>
+    api.get<{ season: string; players: AdminPlayer[] }>("/supervisor/players", { params }),
+  updatePlayer: (id: string, data: Record<string, unknown>) =>
+    api.put<AdminPlayer>(`/supervisor/players/${id}`, data),
+  setPlayerTeam: (id: string, data: Record<string, unknown>) =>
+    api.put<AdminPlayer>(`/supervisor/players/${id}/team`, data),
+
   divisions: () => api.get<DivisionRow[]>("/teams/divisions"),
   conferences: () => api.get<TeamLite[]>("/supervisor/conferences"),
 
