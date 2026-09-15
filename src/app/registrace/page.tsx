@@ -3,8 +3,8 @@ import { AuthGuard } from "@/components/auth-guard";
 import { OnboardingClient } from "./onboarding-client";
 
 export const metadata: Metadata = {
-  title: "Registrace",
-  description: "Dokonči registraci do Floorball Stars Ligy.",
+  title: "Přihláška do ligy",
+  description: "Přihlas do Floorball Stars Ligy tým, sebe jako hráče, nebo se přihlas jako rozhodčí.",
   robots: { index: false, follow: false },
 };
 

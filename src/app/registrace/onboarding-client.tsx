@@ -98,7 +98,12 @@ function platnyKrok(k: string | null | undefined, r: Role | null): Krok | null {
 }
 
 const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
-  role: { titul: "Vítej v FSL", popis: "Kdo jsi?" },
+  // „Přihláška do ligy", ne „registrace": účet se zakládá na /prihlaseni
+  // a člověk si ta dvě slova plete. Tohle je krok do soutěže.
+  role: {
+    titul: "Přihláška do ligy",
+    popis: "Účet už máš. Teď řekni, kdo jsi — a přihlásíme tě do soutěže.",
+  },
   kod: { titul: "Pozvánkový kód", popis: "Dostaneš ho od vedoucího svého týmu." },
   jmeno: { titul: "Jak se jmenuješ?", popis: "Pod tímhle jménem tě uvidí liga. Hrát smí jen od 18 let." },
   dres: { titul: "Číslo a pozice", popis: "Číslo dresu musí být v týmu volné." },
@@ -1145,7 +1150,7 @@ function HotovaRoleStep({
   return (
     <>
       <PageTitle
-        title="Registraci už máš za sebou"
+        title="Přihlášku už máš za sebou"
         subtitle={`V lize jsi vedený jako ${role}.`}
       />
 

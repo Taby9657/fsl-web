@@ -45,9 +45,23 @@ const MIN_HESLO = 8;
 
 type Mode = "login" | "register" | "forgot" | "reset";
 
-const TEXTS: Record<Mode, { title: string; submit: string }> = {
-  login: { title: "Přihlášení e-mailem", submit: "Přihlásit se" },
-  register: { title: "Nový účet", submit: "Vytvořit účet" },
+/**
+ * Účet a přihláška do ligy jsou dvě různé věci a lidem to splývá — obojí
+ * se česky řekne „registrace". Účet je jen přístup k webu; teprve pak se
+ * přihlašuje tým, hráč nebo rozhodčí do soutěže. Texty to musí říct
+ * nahlas, jinak člověk vyplní e-mail s heslem a myslí si, že je v lize.
+ */
+const TEXTS: Record<Mode, { title: string; submit: string; popis?: string }> = {
+  login: {
+    title: "Přihlášení e-mailem",
+    submit: "Přihlásit se",
+  },
+  register: {
+    title: "Vytvoření účtu",
+    submit: "Vytvořit účet",
+    popis:
+      "Účet je jen přístup k webu. Tým ani sebe tím do ligy nepřihlašuješ — přihlášku vyplníš hned potom.",
+  },
   forgot: { title: "Zapomenuté heslo", submit: "Poslat kód" },
   reset: { title: "Nové heslo", submit: "Nastavit heslo a přihlásit" },
 };
@@ -321,8 +335,16 @@ export function LoginClient() {
             FSL
           </span>
           <h1 className="mt-6 text-2xl font-bold text-wh">Floorball Stars Liga</h1>
-          <p className="mt-2 text-[14px] text-mu">
-            Přihlas se pro přístup ke správě týmu, platbám a draftu.
+          <p className="mt-2 text-[14px] leading-6 text-mu">
+            Přihlas se ke svému účtu — otevře ti správu týmu, platby a draft.
+          </p>
+          <p className="mt-2 text-[12px] leading-5 text-di">
+            Účet není přihláška do ligy. Tým, sebe nebo rozhodčího přihlásíš
+            až potom, ve{" "}
+            <Link href="/registrace" className="underline hover:text-wh">
+              formuláři přihlášky
+            </Link>
+            .
           </p>
 
           <div className="mt-8 flex flex-col items-center gap-3">
@@ -438,6 +460,11 @@ export function LoginClient() {
               </Field>
             ) : null}
 
+            {t.popis ? (
+              <p className="rounded-xl border border-go/30 bg-go-soft px-3 py-2 text-left text-[12px] leading-5 text-mu">
+                {t.popis}
+              </p>
+            ) : null}
             {notice ? (
               <p className="rounded-xl border border-bd bg-c2/60 px-3 py-2 text-[12px] leading-5 text-mu">
                 {notice}
@@ -467,7 +494,7 @@ export function LoginClient() {
                   onClick={() => switchMode("register")}
                   className="cursor-pointer underline hover:text-wh"
                 >
-                  Nemám účet
+                  Vytvořit účet
                 </button>
                 <button
                   type="button"

@@ -163,12 +163,16 @@ export function AccountClient() {
 
       {!hasRole ? (
         <Card className="mb-6 border-go/50 p-5">
-          <p className="text-[15px] font-semibold text-wh">Dokonči registraci</p>
-          <p className="mt-1 text-[13px] text-mu">
-            Připoj se k týmu, založ vlastní tým nebo se zaregistruj jako rozhodčí.
+          {/* Účet ještě neznamená, že je člověk v lize. Text to musí říct
+              rovnou — jinak tu sedí s hotovým účtem a čeká, co bude dál. */}
+          <p className="text-[15px] font-semibold text-wh">
+            Účet máš, do ligy ale ještě přihlášený nejsi
+          </p>
+          <p className="mt-1 text-[13px] leading-6 text-mu">
+            Přihlas tým, sebe jako hráče, nebo se přihlas jako rozhodčí.
           </p>
           <LinkButton href="/registrace" className="mt-4" size="sm">
-            Pokračovat v registraci
+            Přihláška do ligy
           </LinkButton>
         </Card>
       ) : null}

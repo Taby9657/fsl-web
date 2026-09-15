@@ -128,9 +128,12 @@ export function SiteHeader() {
             </Link>
           ) : null}
 
+          {/* „Přihláška do ligy", ne „Přihlásit tým": vedle tlačítka
+              „Přihlásit se" do účtu by dvě věci se stejným slovesem splývaly
+              v jednu, a jsou to dvě různé věci. */}
           {!loading && !maRoli ? (
             <LinkButton href="/registrace" size="sm" className="hidden sm:inline-flex">
-              Přihlásit tým
+              Přihláška do ligy
             </LinkButton>
           ) : null}
 
@@ -239,7 +242,7 @@ export function SiteHeader() {
                 className="mt-2"
                 onClick={() => router.push("/registrace")}
               >
-                Přihlásit tým nebo sebe
+                Přihláška do ligy — tým nebo sebe
               </Button>
             ) : null}
             {!user ? (
@@ -248,7 +251,7 @@ export function SiteHeader() {
                 className="mt-2"
                 onClick={() => router.push("/prihlaseni")}
               >
-                Přihlásit se
+                Přihlásit se ke svému účtu
               </Button>
             ) : null}
           </nav>
