@@ -186,15 +186,16 @@ export function AccountClient() {
           <p className="text-[15px] font-semibold text-wh">Nejsi v žádném týmu</p>
           <p className="mt-1 text-[13px] leading-6 text-mu">
             Bez týmu nemůžeš nastoupit k zápasu. Máš pozvánkový kód od vedoucího?
-            Zadej ho a naskočíš na soupisku. Kód nemáš? Nabídni se v draftu —
+            Zadej ho a naskočíš na soupisku. Kód nemáš? V draftu už jsi —
             vedoucí, kterým chybí lidi, si tam volné hráče hledají sami.
+            Doplň si profil, ať o tobě něco vědí.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <LinkButton href="/registrace" size="sm">
               Mám pozvánkový kód
             </LinkButton>
             <LinkButton href="/draft/profil" size="sm" variant="outline">
-              Nabídnout se v draftu
+              Doplnit profil v draftu
             </LinkButton>
           </div>
         </Card>
@@ -253,7 +254,11 @@ export function AccountClient() {
           <MenuSection title="Můj profil">
             <MenuRow href="/muj-profil" icon={<UserCog size={17} />} label="Upravit profil" desc="Jméno, telefon, číslo dresu" />
             <MenuRow href="/platby" icon={<CreditCard size={17} />} label="Platby" desc="Licence a poplatky" />
-            <MenuRow href="/draft/profil" icon={<Star size={17} />} label="Draft profil" desc="Zviditelni se pro vedoucí" />
+            {/* Hráč v týmu v draftu není a `POST /draft/profile` mu vrátí 400.
+                Odkaz proto vidí jen ten, koho se draft doopravdy týká. */}
+            {!player.teamId ? (
+              <MenuRow href="/draft/profil" icon={<Star size={17} />} label="Draft profil" desc="Co o tobě vedoucí uvidí" />
+            ) : null}
             <MenuRow href="/oznameni" icon={<Bell size={17} />} label="Oznámení" desc="Novinky a potvrzení plateb" />
           </MenuSection>
         ) : null}
