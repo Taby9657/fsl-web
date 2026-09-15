@@ -11,6 +11,7 @@ import {
   Newspaper,
   Network,
   Shield,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,6 +19,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={17} /> },
   { href: "/admin/tymy", label: "Týmy", icon: <Shield size={17} /> },
+  { href: "/admin/hraci", label: "Hráči", icon: <Users size={17} /> },
   { href: "/admin/zapasy", label: "Zápasy", icon: <CalendarCog size={17} /> },
   { href: "/admin/liga", label: "Liga", icon: <Layers size={17} /> },
   { href: "/admin/rozlosovani", label: "Rozlosování", icon: <Network size={17} /> },
