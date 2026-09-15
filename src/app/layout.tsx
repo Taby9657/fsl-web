@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SupportWidget } from "@/components/support-widget";
 import { OG_OBRAZEK } from "@/lib/og";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fslleague.cz"),
@@ -86,6 +87,7 @@ export default function RootLayout({
           </div>
           <SupportWidget />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
