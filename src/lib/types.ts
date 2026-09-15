@@ -445,6 +445,8 @@ export interface AdminPlayer {
   birthdate?: string | null;
   teamId?: string | null;
   createdAt?: string;
+  /** Účet, na kterém hráč visí. Hráč založený vedoucím přes pozvánku ho mít nemusí. */
+  user?: { email: string } | null;
   team?: {
     id: string;
     name: string;

@@ -5,8 +5,9 @@ import clsx from "clsx";
 import { LogOut, Shield, Trash2, UserPlus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { errMsg, supervisorApi } from "@/lib/api";
-import { positionLabel } from "@/lib/format";
+import { fmtDate, positionLabel } from "@/lib/format";
 import type { AdminPlayer, RosterSlot } from "@/lib/types";
+import { vekVLetech } from "@/lib/validation";
 import {
   Badge,
   Button,
@@ -22,6 +23,20 @@ import {
 import { Modal, SkeletonList } from "@/components/ui/feedback";
 import { Avatar, SearchInput } from "@/components/ui/data";
 import { toast } from "@/components/ui/toast";
+
+/**
+ * „4. 9. 2003 · 23 let". Věk se počítá dovršený, stejně jako u hranice 18+
+ * při registraci — supervisor u soupisky nepotřebuje datum přepočítávat
+ * v hlavě.
+ *
+ * Datum narození může chybět jen u účtů z doby, kdy bylo volitelné
+ * (do 11. 9. 2026). Nová registrace se bez něj nedokončí.
+ */
+function narozeni(h: AdminPlayer): string | null {
+  if (!h.birthdate) return null;
+  const let_ = vekVLetech(String(h.birthdate).slice(0, 10));
+  return `${fmtDate(h.birthdate)}${let_ === null ? "" : ` · ${let_} let`}`;
+}
 
 const FILTRY = [
   { id: "bezTymu", label: "Bez týmu" },
@@ -237,8 +252,28 @@ export function AdminPlayersClient() {
                     </p>
                     <p className="text-[13px] text-mu">
                       {positionLabel(h.draftProfile?.position ?? h.position)}
-                      {h.phone ? ` · ${h.phone}` : ""}
+                      {narozeni(h) ? ` · ${narozeni(h)}` : ""}
                     </p>
+                    {/* Kontakt patří supervisorovi na oči, ne do detailu za
+                        dvě kliknutí: tohle je obrazovka, ze které se lidem
+                        volá a píše. Odkazy, ať to jde rovnou z telefonu. */}
+                    {h.user?.email || h.phone ? (
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] text-di">
+                        {h.user?.email ? (
+                          <a
+                            href={`mailto:${h.user.email}`}
+                            className="truncate hover:text-go hover:underline"
+                          >
+                            {h.user.email}
+                          </a>
+                        ) : null}
+                        {h.phone ? (
+                          <a href={`tel:${h.phone}`} className="hover:text-go hover:underline">
+                            {h.phone}
+                          </a>
+                        ) : null}
+                      </p>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {h.team ? (
                         <Badge color="#8B5CF6">{h.team.name}</Badge>
