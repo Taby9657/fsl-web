@@ -20,6 +20,12 @@ import { notificationsApi } from "@/lib/api";
 import { useAuthStore, useHasAnyRole, useIsSupervisor } from "@/store/auth";
 import { Button, LinkButton } from "@/components/ui/primitives";
 
+/* Vodorovné menu se ukazuje až od `xl`, ne od `lg`. Mezi 1024 a 1279 px se
+   vedle sebe nevešlo logo, sedm odkazů a obě tlačítka: hlavička potřebovala
+   1080 px a stránka šla na iPadu na šířku táhnout do strany. Do `xl` je
+   místo odkazů tlačítko menu, které má stejné položky.
+   Měřeno 15. 9. 2026: `document.documentElement.scrollWidth` se teď rovná
+   šířce okna na 360, 375, 414, 640, 768, 1024, 1279, 1280 i 1440 px. */
 const NAV = [
   { href: "/zapasy", label: "Zápasy" },
   { href: "/tabulka", label: "Tabulka" },
@@ -87,7 +93,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden flex-1 items-center gap-1 lg:flex">
+        <nav className="hidden flex-1 items-center gap-1 xl:flex">
           {NAV.map((n) => (
             <Link
               key={n.href}
@@ -131,9 +137,21 @@ export function SiteHeader() {
           {/* „Přihláška do ligy", ne „Přihlásit tým": vedle tlačítka
               „Přihlásit se" do účtu by dvě věci se stejným slovesem splývaly
               v jednu, a jsou to dvě různé věci. */}
+          {/* Na `hidden` se u Buttonu ani LinkButtonu nedá spolehnout: obě
+              komponenty mají v základu `inline-flex`, clsx třídy jen slepí
+              (nemerguje je) a v CSS pak vyhraje ta základní. Do 15. 9. 2026
+              tu stálo `hidden sm:inline-flex`, tlačítko se ale neschovalo
+              nikdy — hlavička byla 438 px široká na displeji, který má 360,
+              stránka šla táhnout do strany a tlačítko menu bylo mimo
+              obrazovku. Kdo tu bude něco schovávat, obalí to divem.
+
+              Zlaté tlačítko zůstává vidět i na mobilu schválně: je to jediná
+              cesta do náboru, která je vidět bez otevření menu. Na úzkých
+              displejích se zkracuje popisek, ne tlačítko. */}
           {!loading && !maRoli ? (
-            <LinkButton href="/registrace" size="sm" className="hidden sm:inline-flex">
-              Přihláška do ligy
+            <LinkButton href="/registrace" size="sm">
+              <span className="sm:hidden">Přihláška</span>
+              <span className="hidden sm:inline">Přihláška do ligy</span>
             </LinkButton>
           ) : null}
 
@@ -200,14 +218,15 @@ export function SiteHeader() {
                jinak by hlavička přetekla; celá věta je v mobilním menu. */
             <LinkButton href="/prihlaseni" size="sm" variant="outline">
               <span className="hidden xl:inline">Přihlásit se nebo registrovat</span>
-              <span className="xl:hidden">Přihlásit / Registrovat</span>
+              <span className="hidden md:inline xl:hidden">Přihlásit / Registrovat</span>
+              <span className="md:hidden">Přihlásit</span>
             </LinkButton>
           )}
 
           <button
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
-            className="rounded-lg p-2 text-mu transition-colors hover:bg-c1 hover:text-wh lg:hidden"
+            className="rounded-lg p-2 text-mu transition-colors hover:bg-c1 hover:text-wh xl:hidden"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -215,7 +234,7 @@ export function SiteHeader() {
       </div>
 
       {open ? (
-        <div className="border-t border-bd bg-c1 lg:hidden">
+        <div className="border-t border-bd bg-c1 xl:hidden">
           <nav className="mx-auto grid max-w-7xl gap-1 px-4 py-3 sm:px-6">
             {NAV.map((n) => (
               <Link
