@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
-import { LogOut, Shield, UserPlus, Users } from "lucide-react";
+import { LogOut, Shield, Trash2, UserPlus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { errMsg, supervisorApi } from "@/lib/api";
 import { positionLabel } from "@/lib/format";
@@ -47,6 +47,8 @@ export function AdminPlayersClient() {
   const [dres, setDres] = useState("");
   const [slot, setSlot] = useState<RosterSlot>("FIELD");
   const [doPoolu, setDoPoolu] = useState(true);
+  const [mazu, setMazu] = useState<AdminPlayer | null>(null);
+  const [sUctem, setSUctem] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const q = useQuery({
@@ -127,6 +129,36 @@ export function AdminPlayersClient() {
       );
     } catch (e) {
       toast.error("Nešlo odvést", errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Smazání hráče — pro testovací registrace a pro toho, kdo o zrušení sám
+   * požádá. Backend odmítne každého, kdo už nastoupil nebo má zaplaceno;
+   * tady se tedy nic nekontroluje podruhé, jen se srozumitelně ukáže, proč
+   * to nešlo.
+   */
+  async function smaz() {
+    if (!mazu) return;
+    setBusy(true);
+    try {
+      const r = await supervisorApi.deletePlayer(mazu.id, sUctem);
+      await q.refetch();
+      const jmeno = `${mazu.firstName} ${mazu.lastName}`;
+      const ucet = r.data?.ucet;
+      setMazu(null);
+      toast.success(
+        "Smazáno",
+        ucet?.smazan
+          ? `${jmeno} i jeho účet jsou pryč.`
+          : ucet?.duvod
+            ? `${jmeno} je pryč, účet zůstal: ${ucet.duvod.toLowerCase()}.`
+            : `${jmeno} je pryč.`,
+      );
+    } catch (e) {
+      toast.error("Nešlo smazat", errMsg(e));
     } finally {
       setBusy(false);
     }
@@ -256,6 +288,17 @@ export function AdminPlayersClient() {
                         <UserPlus size={15} /> Zařadit
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`Smazat ${h.firstName} ${h.lastName}`}
+                      onClick={() => {
+                        setMazu(h);
+                        setSUctem(true);
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -359,6 +402,45 @@ export function AdminPlayersClient() {
             <span className="block text-[12px] leading-5 text-di">
               Objeví se v draftu a vedoucí dostanou oznámení. Nech vypnuté, když
               z ligy odchází.
+            </span>
+          </span>
+        </label>
+      </Modal>
+
+      <Modal
+        open={!!mazu}
+        onClose={() => setMazu(null)}
+        title={mazu ? `Smazat ${mazu.firstName} ${mazu.lastName}?` : ""}
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="subtle" onClick={() => setMazu(null)}>
+              Zrušit
+            </Button>
+            <Button variant="danger" onClick={smaz} loading={busy}>
+              Smazat
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[14px] leading-6 text-mu">
+          Smaže se hráčský profil, jeho soupiska, draft profil i předpis
+          licence. <span className="text-wh">Vrátit to nejde.</span> Kdo už
+          nastoupil k zápasu nebo má něco zaplaceného, smazat nejde — na tom
+          stojí statistiky a bankovní výpis.
+        </p>
+        <label className="mt-4 flex cursor-pointer items-start gap-2.5 text-[14px] text-wh">
+          <input
+            type="checkbox"
+            checked={sUctem}
+            onChange={(e) => setSUctem(e.target.checked)}
+            className={clsx("mt-0.5 h-4 w-4 cursor-pointer accent-go")}
+          />
+          <span>
+            Smazat i uživatelský účet
+            <span className="block text-[12px] leading-5 text-di">
+              Bez toho zůstane e-mail obsazený a znovu se s ním zaregistrovat
+              nejde. Účet vedoucího týmu nebo rozhodčího zůstane tak jako tak.
             </span>
           </span>
         </label>

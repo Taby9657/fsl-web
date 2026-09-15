@@ -511,6 +511,12 @@ export const supervisorApi = {
     api.put<AdminPlayer>(`/supervisor/players/${id}`, data),
   setPlayerTeam: (id: string, data: Record<string, unknown>) =>
     api.put<AdminPlayer>(`/supervisor/players/${id}/team`, data),
+  // `ucet: true` smaže i uživatelský účet. Bez toho zůstane e-mail obsazený
+  // a ten člověk se s ním nemá jak zaregistrovat znovu.
+  deletePlayer: (id: string, ucet = true) =>
+    api.delete<{ ok: true; ucet: { smazan: boolean; email?: string; duvod?: string } | null }>(
+      `/supervisor/players/${id}${ucet ? "?ucet=1" : ""}`,
+    ),
 
   divisions: () => api.get<DivisionRow[]>("/teams/divisions"),
   conferences: () => api.get<TeamLite[]>("/supervisor/conferences"),
