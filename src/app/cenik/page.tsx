@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   ...sdileni({
     title: "Ceník FSL 2026/27 — co stojí registrace týmu, licence a starty",
     description:
-      "Registrace klubu 3 000 Kč, hráčská licence 300 Kč a balíčky startů od 200 Kč. Za zápasy platí hráč, ne tým.",
+      "Registrace klubu 3 000 Kč, hráčská licence 300 Kč, vstup jednotlivce 800 Kč a balíčky startů od 200 Kč. Za zápasy platí hráč, ne tým.",
     path: "/cenik",
   }),
 };
@@ -53,6 +53,14 @@ const POPLATKY: Poplatek[] = [
     cena: 300,
     jednotka: "za sezónu",
   },
+  // Balík se do ceníku dostal 15. 9. 2026, tedy ve chvíli, kdy ho jde
+  // doopravdy zaplatit. Dřív by to byl slib bez tlačítka.
+  {
+    nazev: "Virtuální vedoucí",
+    kdo: "Pro toho, kdo nemá tým. Startovné 500 Kč a hráčská licence 300 Kč v jedné položce — ligu ti tým složí. Kdo už licenci má, platí 500 Kč.",
+    cena: 800,
+    jednotka: "za sezónu",
+  },
 ];
 
 type Balicek = { zapasu: number; cena: number; zaZapas: number; znacka?: string };
@@ -92,6 +100,10 @@ const PRAVIDLA = [
   {
     t: "Balíčky se nevracejí",
     d: "A nemusí — starty nepropadají. Peníze se vracejí jen tam, kde platba neměla vzniknout vůbec: dvojí platba, špatná částka.",
+  },
+  {
+    t: "Odstoupení",
+    d: "Kdo si zaplatí Virtuálního vedoucího a odstoupí dřív, než ho liga zařadí do týmu, dostane zpátky startovné 500 Kč. Licence se nevrací — je vystavená na jméno a platí celou sezónu.",
   },
   {
     t: "Košík",

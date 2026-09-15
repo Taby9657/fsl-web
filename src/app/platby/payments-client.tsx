@@ -14,6 +14,7 @@ import {
   Star,
   Trophy,
   Undo2,
+  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
 import { errMsg, paymentsApi } from "@/lib/api";
@@ -76,6 +77,9 @@ export function PaymentsClient() {
       : [];
 
   const playerId = pp?.playerId ?? user?.player?.id;
+  const openEntry = payments.data?.openEntry ?? null;
+  const openEntryOffer = payments.data?.openEntryOffer ?? null;
+  const sezona = payments.data?.currentSeason ?? pp?.season ?? null;
 
   /**
    * Jediná platba, která jde pořád mimo košík: pokuta za kontumaci.
@@ -104,7 +108,7 @@ export function PaymentsClient() {
     );
   }
 
-  const nothing = !pp && teamPayments.length === 0 && !isManager;
+  const nothing = !pp && teamPayments.length === 0 && !isManager && !openEntry && !openEntryOffer;
 
   return (
     <Page size="narrow">
@@ -129,6 +133,45 @@ export function PaymentsClient() {
       ) : null}
 
       <div className="space-y-4">
+        {/* Balík „Virtuální vedoucí" stojí nad licencí schválně: pro hráče
+            bez týmu je to vstup do soutěže a licence je uvnitř něj. Kdo tým
+            má, nabídku nedostane a platí jen licenci. */}
+        {openEntry || openEntryOffer ? (
+          <PaymentCard
+            icon={<UserPlus size={20} />}
+            color="#22C55E"
+            title="Virtuální vedoucí"
+            subtitle={`Vstup do otevřeného týmu${sezona ? ` · sezóna ${sezona}` : ""}`}
+            status={openEntry?.status ?? "PENDING"}
+            rows={[
+              ["Výše poplatku", czk(openEntry?.entryFee != null
+                ? openEntry.entryFee + openEntry.licFee
+                : (openEntryOffer?.amount ?? 800))],
+              [
+                "Co je uvnitř",
+                (openEntry ? openEntry.licFee > 0 : openEntryOffer?.licIncluded)
+                  ? "Startovné 500 Kč + hráčská licence 300 Kč"
+                  : "Startovné 500 Kč — licenci už máš zaplacenou",
+              ],
+              ...(openEntry?.paidAt
+                ? ([["Datum platby", fmtDate(openEntry.paidAt)]] as [string, string][])
+                : []),
+            ]}
+            payAction={
+              openEntryOffer ? (
+                <DoKosiku
+                  jeUvnitr={vKosiku(cart.data, "OPEN_ENTRY", playerId)}
+                  busy={pridat.isPending}
+                  onAdd={() => pridat.mutate({ kind: "OPEN_ENTRY" })}
+                />
+              ) : null
+            }
+            transfer={null}
+            open={openTransfer}
+            onToggle={setOpenTransfer}
+          />
+        ) : null}
+
         {pp ? (
           <PaymentCard
             icon={<CreditCard size={20} />}

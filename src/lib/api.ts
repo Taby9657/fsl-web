@@ -19,6 +19,7 @@ import type {
   LeagueTree,
   Match,
   MyStats,
+  OpenEntry,
   Player,
   PlayerPayment,
   Referee,
@@ -291,6 +292,14 @@ export const paymentsApi = {
       playerPayment: PlayerPayment | null;
       teamPayment: TeamPayment | TeamPayment[] | null;
       fines?: Fine[];
+      openEntry?: OpenEntry | null;
+      /** Nabídka balíku „Virtuální vedoucí". Null u toho, kdo má tým nebo už zaplatil. */
+      openEntryOffer?: {
+        amount: number;
+        entryFee: number;
+        licIncluded: boolean;
+      } | null;
+      currentSeason?: string | null;
     }>("/payments/me"),
   // Platby po jedné. Web je od 10. 9. 2026 **nevolá** — všechno jde přes
   // košík, aby se ušetřil pevný poplatek brány u každé další položky.

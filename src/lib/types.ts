@@ -118,7 +118,30 @@ export interface PacksOverview {
 }
 
 /** Co všechno jde dát do košíku. Pokuta za kontumaci ne — blokuje zápas. */
-export type CartItemKind = "PLAYER_LICENSE" | "SUPER_LICENSE" | "MATCH_PACK" | "TEAM_REG";
+export type CartItemKind =
+  | "PLAYER_LICENSE"
+  | "SUPER_LICENSE"
+  | "MATCH_PACK"
+  | "TEAM_REG"
+  /** Balík „Virtuální vedoucí" — vstup jednotlivce do otevřeného týmu. */
+  | "OPEN_ENTRY";
+
+/**
+ * Balík „Virtuální vedoucí": startovné 500 + hráčská licence 300.
+ * `licFee` je nula u toho, kdo licenci na sezónu už zaplatil — ten platí 500.
+ */
+export interface OpenEntry {
+  id: string;
+  playerId: string;
+  season: string;
+  slot: RosterSlot;
+  entryFee: number;
+  licFee: number;
+  status: PaymentStatus;
+  paidAmount: number;
+  paidAt?: string | null;
+  method?: string | null;
+}
 
 export interface CartItem {
   id: string;
