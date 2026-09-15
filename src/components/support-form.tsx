@@ -36,6 +36,11 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  // Přihlášení se pozná z uloženého tokenu, jenže ten může být neplatný —
+  // účet mezitím smazaný nebo token propadlý. Server pak řekne, že chce
+  // e-mail, a formulář na to musí umět zareagovat místo slepé uličky.
+  const [chceEmail, setChceEmail] = useState(false);
+  const ptatSeNaEmail = !user || chceEmail;
 
   async function submit() {
     setError(null);
@@ -45,7 +50,7 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
       setError("Napiš aspoň větu, ať víme, čeho se to týká.");
       return;
     }
-    if (!user && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+    if (ptatSeNaEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
       setEmailError("Vyplň e-mail, ať je ti kam odpovědět.");
       return;
     }
@@ -55,7 +60,7 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
       await requestsApi.create({
         type,
         body: body.trim(),
-        ...(user ? {} : { email: email.trim() }),
+        ...(ptatSeNaEmail ? { email: email.trim() } : {}),
         // Adresa stránky je u hlášení chyby to hlavní a člověk ji sám
         // nenapíše.
         page: typeof window === "undefined" ? undefined : window.location.pathname,
@@ -65,7 +70,13 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
       setBody("");
       onSent?.();
     } catch (e) {
-      setError(errMsg(e));
+      const kod = (e as { response?: { data?: { code?: string } } })?.response?.data?.code;
+      if (kod === "EMAIL_REQUIRED") {
+        setChceEmail(true);
+        setEmailError("Přihlášení vypršelo. Nech nám e-mail, ať je ti kam odpovědět.");
+      } else {
+        setError(errMsg(e));
+      }
     } finally {
       setBusy(false);
     }
@@ -76,7 +87,8 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
       <div className="space-y-3">
         <p className="text-[15px] font-semibold text-green">Zpráva odešla</p>
         <p className="text-[13px] leading-6 text-mu">
-          Ozveme se na {user?.email ?? email}. Díky, že jsi nám dal vědět.
+          Ozveme se na {ptatSeNaEmail ? email : user?.email}. Díky, že jsi nám dal
+          vědět.
         </p>
         <Button variant="outline" className="w-full" onClick={() => setSent(false)}>
           Napsat další
@@ -107,9 +119,9 @@ export function SupportForm({ onSent }: { onSent?: () => void }) {
         />
       </Field>
 
-      {user ? (
+      {!ptatSeNaEmail ? (
         <p className="text-[12px] text-di">
-          Odpovíme na {user.email}, tvůj přihlašovací e-mail.
+          Odpovíme na {user!.email}, tvůj přihlašovací e-mail.
         </p>
       ) : (
         <Field label="Tvůj e-mail" required error={emailError ?? undefined}>
