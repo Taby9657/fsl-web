@@ -75,6 +75,13 @@ export function SiteHeader() {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
+  /* Na přihlašovací stránce obě tlačítka vpravo nahoře jen vypadala, že
+     nefungují: „Přihlásit se nebo registrovat" vede na stránku, na které
+     člověk stojí, a „Přihláška do ligy" míří na /registrace za AuthGuardem,
+     který odhlášeného vrátí rovnou zpátky sem. Klik = nic. Od 15. 9. 2026
+     se proto na /prihlaseni neukazují. */
+  const naPrihlaseni = pathname === "/prihlaseni";
+
   const displayName =
     user?.player?.firstName ??
     user?.referee?.firstName ??
@@ -148,7 +155,7 @@ export function SiteHeader() {
               Zlaté tlačítko zůstává vidět i na mobilu schválně: je to jediná
               cesta do náboru, která je vidět bez otevření menu. Na úzkých
               displejích se zkracuje popisek, ne tlačítko. */}
-          {!loading && !maRoli ? (
+          {!loading && !maRoli && !naPrihlaseni ? (
             <LinkButton href="/registrace" size="sm">
               <span className="sm:hidden">Přihláška</span>
               <span className="hidden sm:inline">Přihláška do ligy</span>
@@ -211,7 +218,7 @@ export function SiteHeader() {
                 </div>
               ) : null}
             </div>
-          ) : (
+          ) : naPrihlaseni ? null : (
             /* Popisek říká obojí, protože na /prihlaseni se dá i založit
                účet — „Přihlásit se" samotné posílalo nováčky hledat
                registraci jinam. Na užších displejích je zkrácená varianta,
@@ -260,7 +267,7 @@ export function SiteHeader() {
             >
               Mobilní aplikace
             </Link>
-            {!maRoli ? (
+            {!maRoli && !naPrihlaseni ? (
               <Button
                 variant="gold"
                 className="mt-2"
@@ -269,7 +276,7 @@ export function SiteHeader() {
                 Přihláška do ligy — tým nebo sebe
               </Button>
             ) : null}
-            {!user ? (
+            {!user && !naPrihlaseni ? (
               <Button
                 variant="outline"
                 className="mt-2"
