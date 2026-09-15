@@ -131,7 +131,7 @@ const ROLES: {
     id: "manager",
     icon: <Shield size={22} />,
     title: "Jsem vedoucí týmu",
-    desc: "Vytvoříš tým, spravuješ soupisku, odesíláš sestavy před zápasem a platíš licence.",
+    desc: "Vytvoříš tým, spravuješ soupisku a odesíláš sestavy před zápasem.",
     badge: "Plná správa týmu",
     color: "#8B5CF6",
   },
@@ -873,9 +873,8 @@ export function OnboardingClient() {
               hráči, ne na týmu — bez profilu by vedoucí po zaplacení
               registrace nezaplatil nic dalšího. */}
           <p className="text-[13px] leading-6 text-mu">
-            Jako vedoucí jsi zároveň hráč týmu. Profil ti založíme rovnou, ať
-            můžeš zaplatit registraci i balíček startů najednou. Údaje si pak
-            kdykoli upravíš.
+            Jako vedoucí jsi zároveň hráč týmu. Profil ti založíme rovnou,
+            údaje si pak kdykoli upravíš.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Jméno" error={errors.mFirstName}>
