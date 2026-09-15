@@ -523,14 +523,18 @@ export function LoginClient() {
             className="w-full"
             onClick={() => {
               loginAsGuest();
-              router.push("/");
+              // Kdo sem přišel z rozdělané přihlášky, patří zpátky do ní, ne
+              // na úvodní stránku — ta ho z náboru odvede. Jiné `next` se
+              // nehonoruje: většina z nich je za `AuthGuard` a hosta by
+              // poslala rovnou sem zpátky.
+              router.push(next.startsWith("/registrace") ? next : "/");
             }}
           >
             Pokračovat bez přihlášení
           </Button>
           <p className="mt-3 text-[12px] leading-5 text-di">
-            Bez přihlášení si můžeš prohlížet tabulku, zápasy a statistiky. Správa týmu,
-            platby a draft vyžadují účet.
+            Bez přihlášení si můžeš prohlížet tabulku, zápasy, statistiky i celou
+            přihlášku do ligy. Odeslat ji, spravovat tým a platit jde až s účtem.
           </p>
 
           <p className="mt-8 text-[11px] leading-5 text-di">
