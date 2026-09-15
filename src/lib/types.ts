@@ -421,6 +421,47 @@ export interface DraftProfile {
   myTeamOffer?: DraftOffer | null;
 }
 
+/** Řádek soupisky, jak ho Správa hráčů potřebuje — bez vnořeného týmu. */
+export interface AdminPlayerRoster {
+  playerId: string;
+  teamId: string;
+  slot: RosterSlot;
+  isHome: boolean;
+}
+
+/**
+ * Hráč ve Správě hráčů. Proti veřejnému `Player` nese osobní údaje
+ * a hlavně `rosters` — bez nich nejde poznat, jestli je hráč doopravdy
+ * na soupisce sezóny, nebo jen má vyplněný `teamId`.
+ */
+export interface AdminPlayer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jersey: number;
+  position: string;
+  photoUrl?: string | null;
+  phone?: string | null;
+  birthdate?: string | null;
+  teamId?: string | null;
+  createdAt?: string;
+  team?: {
+    id: string;
+    name: string;
+    abbr: string;
+    isOpen?: boolean;
+    regStatus?: RegStatus;
+  } | null;
+  payment?: {
+    season: string;
+    licStatus: PaymentStatus;
+    superStatus: PaymentStatus;
+    superLic: boolean;
+  } | null;
+  draftProfile?: { isActive: boolean; position?: string | null } | null;
+  rosters: AdminPlayerRoster[];
+}
+
 export interface SupervisorRequest {
   id: string;
   type: RequestType;
