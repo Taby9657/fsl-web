@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/primitives";
 import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
+import { SEZONA, den } from "@/lib/sezona";
 import { toast } from "@/components/ui/toast";
 
 /**
@@ -625,6 +626,14 @@ export function OnboardingClient() {
               : "Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
           }
         />
+        {/* Termíny přímo u výběru role: tady se člověk rozhoduje, jestli do
+            toho jde, a potřebuje vědět dokdy to stihne a kdy se hraje. */}
+        <p className="mb-5 text-[13px] leading-6 text-mu">
+          Přihlášky do <strong className="font-semibold text-wh">{den(SEZONA.konecPrihlasek)} 23:59</strong>
+          {" · "}los {den(SEZONA.los)}
+          {" · "}start {den(SEZONA.start)}
+          {" · "}hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}
+        </p>
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
