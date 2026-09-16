@@ -83,7 +83,12 @@ export default function RootLayout({
         <Providers>
           <div className="relative z-10 flex min-h-screen flex-col">
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            {/* Spodni odsazeni kvuli plovoucimu „Napsat nam": tlacitko je
+                `fixed bottom-4 right-4`, takze bez rezervy sedelo na konci
+                obsahu a spodni roh posledniho prvku nesel na telefonu ťuknout
+                — na vyberu role zakryvalo odznak karty „Jsem vedouci tymu".
+                Padding je na <main>, protoze widget je globalni. */}
+            <main className="flex-1 pb-24 sm:pb-28">{children}</main>
             <SiteFooter />
           </div>
           <SupportWidget />
