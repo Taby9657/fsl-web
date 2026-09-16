@@ -779,27 +779,6 @@ export function OnboardingClient() {
               : "Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
           }
         />
-        {/* Termíny přímo u výběru role: tady se člověk rozhoduje, jestli do
-            toho jde, a potřebuje vědět dokdy to stihne a kdy se hraje.
-
-            Druhý odstavec je o penězích. Měření 16. 9. ukázalo, že tahle
-            obrazovka je dnes hlavní netěsnost — z 22 lidí, kteří přihlášku
-            otevřeli, si roli vybral jeden. Nejpravděpodobnější nevyslovená
-            otázka v tu chvíli je „kolik to bude a musím platit hned", a odpověď
-            na ni nikde nestála. Je to konstatování, ne pobídka — schválně bez
-            vykřičníku, bez odpočtu a bez „zaregistruj se teď". Platí pro
-            všechny čtyři cesty: rozhodčí neplatí nic, hráč bez týmu do draftu
-            taky ne, a vedoucí i hráč s kódem platí až z účtu.
-
-            Cesta „Nemám tým" je bez peněz doopravdy: licenci hráč platí, až
-            když ho někdo vezme do týmu. Návrh vybírat ji předem za vstup do
-            draftu padl týž den, kdy vznikl — viz
-            `fsl-draft-za-licenci-2026-09-16.md`. */}
-        <TerminyPasek className="mb-3" />
-        <p className="mb-5 text-[13px] leading-6 text-mu">
-          <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
-          Platba přijde na řadu až potom, ve tvém účtu.
-        </p>
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
@@ -826,6 +805,25 @@ export function OnboardingClient() {
             </a>
           ))}
         </div>
+        {/* Termíny a věta o penězích jsou **pod kartami schválně**.
+
+            Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
+            lidé na obrazovce stáli v mediánu 14 sekund a **medián scrollu byl
+            nula** — dívali se na nadpis a tabulku termínů a odešli, aniž by se
+            k volbě vůbec dostali. Na 667px displeji začínala první karta až na
+            445. pixelu a zbylé tři byly mimo obrazovku.
+
+            Informace se nezahazují, jen ustupují volbě: kdo se rozhoduje, má
+            mít nejdřív z čeho vybírat. Věta o penězích zůstává hned pod kartami,
+            protože odpovídá na nevyslovenou otázku „musím platit hned" — platí
+            pro všechny čtyři cesty a je to konstatování, ne pobídka.
+
+            Kdo tenhle blok vrátí nad karty, vrátí i tu nulu ve scrollu. */}
+        <TerminyPasek className="mt-6" />
+        <p className="mt-3 text-[13px] leading-6 text-mu">
+          <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
+          Platba přijde na řadu až potom, ve tvém účtu.
+        </p>
       </Page>
     );
   }

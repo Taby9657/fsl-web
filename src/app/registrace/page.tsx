@@ -69,11 +69,6 @@ function VyberRoleServerem() {
         title="Přihláška do ligy"
         subtitle="Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
       />
-      <TerminyPasek className="mb-3" />
-      <p className="mb-5 text-[13px] leading-6 text-mu">
-        <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
-        Platba přijde na řadu až potom, ve tvém účtu.
-      </p>
       <div className="space-y-3">
         {ROLES.map((r) => (
           <a
@@ -86,6 +81,25 @@ function VyberRoleServerem() {
           </a>
         ))}
       </div>
+      {/* Termíny a věta o penězích jsou **pod kartami schválně**.
+
+          Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
+          lidé na obrazovce stáli v mediánu 14 sekund a **medián scrollu byl
+          nula** — dívali se na nadpis a tabulku termínů a odešli, aniž by se
+          k volbě vůbec dostali. Na 667px displeji začínala první karta až na
+          445. pixelu a zbylé tři byly mimo obrazovku.
+
+          Informace se nezahazují, jen ustupují volbě: kdo se rozhoduje, má
+          mít nejdřív z čeho vybírat. Věta o penězích zůstává hned pod kartami,
+          protože odpovídá na nevyslovenou otázku „musím platit hned" — platí
+          pro všechny čtyři cesty a je to konstatování, ne pobídka.
+
+          Kdo tenhle blok vrátí nad karty, vrátí i tu nulu ve scrollu. */}
+      <TerminyPasek className="mt-6" />
+      <p className="mt-3 text-[13px] leading-6 text-mu">
+        <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
+        Platba přijde na řadu až potom, ve tvém účtu.
+      </p>
     </Page>
   );
 }
