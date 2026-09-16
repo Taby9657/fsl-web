@@ -743,12 +743,29 @@ export function OnboardingClient() {
           }
         />
         {/* Termíny přímo u výběru role: tady se člověk rozhoduje, jestli do
-            toho jde, a potřebuje vědět dokdy to stihne a kdy se hraje. */}
-        <p className="mb-5 text-[13px] leading-6 text-mu">
+            toho jde, a potřebuje vědět dokdy to stihne a kdy se hraje.
+
+            Druhý odstavec je o penězích. Měření 16. 9. ukázalo, že tahle
+            obrazovka je dnes hlavní netěsnost — z 22 lidí, kteří přihlášku
+            otevřeli, si roli vybral jeden. Nejpravděpodobnější nevyslovená
+            otázka v tu chvíli je „kolik to bude a musím platit hned", a odpověď
+            na ni nikde nestála. Je to konstatování, ne pobídka — schválně bez
+            vykřičníku, bez odpočtu a bez „zaregistruj se teď". Platí pro
+            všechny čtyři cesty: rozhodčí neplatí nic, hráč bez týmu do draftu
+            taky ne, a vedoucí i hráč s kódem platí až z účtu.
+
+            ⚠️ Kdyby se zapnulo pravidlo z `fsl-draft-za-licenci-2026-09-16.md`
+            (licence 300 Kč předem jako podmínka vstupu do draftu), přestane
+            ta věta pro cestu „Nemám tým" platit a musí se přepsat. */}
+        <p className="mb-2 text-[13px] leading-6 text-mu">
           Přihlášky do <strong className="font-semibold text-wh">{den(SEZONA.konecPrihlasek)} 23:59</strong>
           {" · "}los {den(SEZONA.los)}
           {" · "}start {den(SEZONA.start)}
           {" · "}hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}
+        </p>
+        <p className="mb-5 text-[13px] leading-6 text-mu">
+          <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
+          Platba přijde na řadu až potom, ve tvém účtu.
         </p>
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
