@@ -9,6 +9,7 @@ import {
   Flag,
   RotateCcw,
   Shield,
+  Ticket,
   User,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -85,6 +86,21 @@ const POSTUP: Record<Role, Krok[]> = {
 };
 
 /**
+ * Hráč bez týmu má kratší cestu — viz `fsl-trychtyr-registrace-2026-09-16.md`.
+ *
+ * Do 16. 9. 2026 začínala role „hráč" vždycky krokem „kod". Kdo přišel
+ * z reklamy, žádný pozvánkový kód neměl (jinak by ho zval vedoucí a reklamu
+ * nepotřeboval) a první, co po něm web chtěl, bylo pole, které nemohl
+ * vyplnit — úniková cesta „Chci do draftu" byla až pod ním. Ze 14 lidí,
+ * kteří na přihlášku došli, ji dokončil jeden.
+ *
+ * Krok „dres" tady chybí schválně: číslo dresu se hlídá v rámci týmu, takže
+ * bez týmu nemá co vyplňovat, a pozice se přesunula mezi doplňky. Zbývají
+ * dva kroky — jméno s datem narození a nepovinné doplňky.
+ */
+const POSTUP_BEZ_TYMU: Krok[] = ["jmeno", "doplnky"];
+
+/**
  * Krok z adresy ani z rozdělané registrace se nebere na slovo.
  *
  * `?krok=` se dřív jen přetypoval, takže neznámá hodnota vykreslila prázdnou
@@ -117,8 +133,18 @@ const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   hotovo: { titul: "Hotovo", popis: undefined },
 };
 
+/**
+ * Karty na výběru role. `klic` je unikátní (role „player" má dvě karty),
+ * `start` říká, kterým krokem karta začíná, a `bezTymu` zkracuje postup.
+ *
+ * Pořadí není náhodné: „Nemám tým" je první, protože přesně ten člověk
+ * chodí z propagace.
+ */
 const ROLES: {
+  klic: string;
   id: Role;
+  start?: Krok;
+  bezTymu?: boolean;
   icon: React.ReactNode;
   title: string;
   desc: string;
@@ -126,14 +152,28 @@ const ROLES: {
   color: string;
 }[] = [
   {
+    klic: "player-draft",
     id: "player",
+    start: "jmeno",
+    bezTymu: true,
     icon: <User size={22} />,
-    title: "Jsem hráč",
-    desc: "Máš kód od vedoucího? Zadáš ho a jsi na soupisce. Tým zatím nemáš? Založíš si profil a nabídneš se v draftu.",
-    badge: "S kódem i bez kódu",
+    title: "Nemám tým",
+    desc: "Založíš si profil a nabídneš se v draftu. Vedoucí, kterým chybí lidi do soupisky, ti pošlou nabídku. Nic to nestojí.",
+    badge: "Dva kroky, bez kódu",
     color: "#C9A140",
   },
   {
+    klic: "player-kod",
+    id: "player",
+    start: "kod",
+    icon: <Ticket size={22} />,
+    title: "Mám kód od vedoucího",
+    desc: "Zadáš kód z pozvánky a naskočíš rovnou na soupisku svého týmu.",
+    badge: "Rovnou na soupisku",
+    color: "#10B981",
+  },
+  {
+    klic: "manager",
     id: "manager",
     icon: <Shield size={22} />,
     title: "Jsem vedoucí týmu",
@@ -142,6 +182,7 @@ const ROLES: {
     color: "#8B5CF6",
   },
   {
+    klic: "referee",
     id: "referee",
     icon: <Flag size={22} />,
     title: "Chci být rozhodčí",
@@ -202,6 +243,9 @@ type Ulozene = {
   data: Data;
   team: Team | null;
   inviteCode: string | null;
+  /** Cesta bez týmu. Bez uložení by refresh vrátil člověka na krok s kódem,
+      který nikdy neviděl, a ukazatel postupu by počítal do čtyř. */
+  bezTymu?: boolean;
   ts: number;
 };
 
@@ -268,6 +312,7 @@ export function OnboardingClient() {
   const [errors, setErrors] = useState<Errors>({});
   const [team, setTeam] = useState<Team | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [bezTymu, setBezTymu] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -309,6 +354,7 @@ export function OnboardingClient() {
     setData(s.data);
     setTeam(s.team);
     setInviteCode(s.inviteCode);
+    setBezTymu(!!s.bezTymu);
     if (s.role) setRole(s.role);
     setObnoveno(vek(s.ts));
     // Kód z odkazu má přednost — člověk zrovna klikl na pozvánku.
@@ -323,8 +369,8 @@ export function OnboardingClient() {
   /* Uložení při každé změně. „hotovo" se neukládá — je dokončeno. */
   useEffect(() => {
     if (uzMaRoli || krok === "hotovo" || krok === "role") return;
-    uloz({ role, krok, data, team, inviteCode });
-  }, [role, krok, data, team, inviteCode, uzMaRoli]);
+    uloz({ role, krok, data, team, inviteCode, bezTymu });
+  }, [role, krok, data, team, inviteCode, bezTymu, uzMaRoli]);
 
   /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
      a tenhle efekt srovná stav komponenty. */
@@ -348,7 +394,13 @@ export function OnboardingClient() {
     return Object.keys(e).length === 0;
   };
 
-  const poradi = useMemo(() => (role ? POSTUP[role] : []), [role]);
+  const poradi = useMemo(() => {
+    if (!role) return [];
+    // Na kroku „dres" se drží plný postup i u cesty bez týmu — jinak by
+    // rozdělaná registrace uložená před touhle změnou spadla na index -1.
+    if (role === "player" && bezTymu && krok !== "dres") return POSTUP_BEZ_TYMU;
+    return POSTUP[role];
+  }, [role, bezTymu, krok]);
   const index = poradi.indexOf(krok);
   const celkem = poradi.length;
 
@@ -358,6 +410,7 @@ export function OnboardingClient() {
   }
 
   function zacniZnovu() {
+    setBezTymu(false);
     zapomen();
     setData(PRAZDNA);
     setTeam(null);
@@ -540,9 +593,10 @@ export function OnboardingClient() {
           jeRozhodci={jeRozhodci}
           kod={kodZOdkazu}
           dostupneRole={dostupneRole}
-          onVyberRole={(id) => {
-            setRole(id);
-            naKrok(POSTUP[id][0], id);
+          onVyberRole={(karta) => {
+            setRole(karta.id);
+            setBezTymu(!!karta.bezTymu);
+            naKrok(karta.start ?? POSTUP[karta.id][0], karta.id);
           }}
           onPripojen={async () => {
             await refreshUser();
@@ -572,10 +626,11 @@ export function OnboardingClient() {
         <div className="space-y-3">
           {ROLES.map((r) => (
             <button
-              key={r.id}
+              key={r.klic}
               onClick={() => {
                 setRole(r.id);
-                naKrok(POSTUP[r.id][0], r.id);
+                setBezTymu(!!r.bezTymu);
+                naKrok(r.start ?? POSTUP[r.id][0], r.id);
               }}
               className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
               style={{ borderLeft: `4px solid ${r.color}` }}
@@ -662,6 +717,7 @@ export function OnboardingClient() {
           onBezTymu={() => {
             setTeam(null);
             setInviteCode(null);
+            setBezTymu(true);
             naKrok("jmeno");
           }}
         />
@@ -726,7 +782,7 @@ export function OnboardingClient() {
                   birthdate: validateBirthdate(data.birthdate),
                 })
               ) {
-                naKrok("dres");
+                naKrok(bezTymu ? "doplnky" : "dres");
               }
             }}
           >
@@ -790,6 +846,20 @@ export function OnboardingClient() {
       {/* ── hráč: volitelné doplňky ── */}
       {krok === "doplnky" ? (
         <Card className="space-y-4 p-6">
+          {/* Bez týmu se sem stěhuje pozice z kroku „dres". Číslo dresu se
+              hlídá v rámci týmu, takže volnému hráči nemá co nastavit —
+              vybere si ho, až ho někdo draftuje. */}
+          {!team ? (
+            <Field label="Pozice">
+              <div className="flex flex-wrap gap-2">
+                {POSITIONS.map((pz) => (
+                  <Chip key={pz} active={data.position === pz} onClick={() => set("position", pz)}>
+                    {pz}
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+          ) : null}
           <Field label="Profilová fotka">
             <input
               type="file"
@@ -1164,7 +1234,7 @@ function HotovaRoleStep({
   jeRozhodci: boolean;
   kod: string;
   dostupneRole: typeof ROLES;
-  onVyberRole: (id: Role) => void;
+  onVyberRole: (karta: (typeof ROLES)[number]) => void;
   onPripojen: () => void;
 }) {
   const [code, setCode] = useState(kod);
@@ -1270,8 +1340,8 @@ function HotovaRoleStep({
           </p>
           {dostupneRole.map((r) => (
             <button
-              key={r.id}
-              onClick={() => onVyberRole(r.id)}
+              key={r.klic}
+              onClick={() => onVyberRole(r)}
               className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
               style={{ borderLeft: `4px solid ${r.color}` }}
             >
