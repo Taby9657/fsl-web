@@ -13,6 +13,7 @@ import {
   Card,
   Field,
   Input,
+  LinkButton,
   PageTitle,
   SectionTitle,
   Switch,
@@ -136,6 +137,35 @@ export function SettingsClient() {
             <Trash2 size={14} />
             Vymazat
           </Button>
+        </Card>
+      </section>
+
+      <section className="mb-8">
+        <SectionTitle>Souhlasy</SectionTitle>
+        <Card className="p-5">
+          {/* Odvolání souhlasu musí být stejně snadné jako jeho udělení
+              (čl. 7 odst. 3 GDPR). Dokud backend souhlasy u profilu
+              neeviduje, není co přepínat — odvolání proto vyřizuje liga
+              ručně přes žádost, která je o dvě kliknutí odsud. */}
+          <p className="text-[14px] text-wh">Fotky, videa a e-maily o lize</p>
+          <p className="mt-0.5 text-[12px] leading-5 text-mu">
+            V přihlášce jsi mohl/a povolit zveřejňování fotek a videí ze zápasů
+            a zasílání e-mailů o dění v lize. Obojí je dobrovolné a účast v lize
+            na tom nezávisí — odvolat to jde kdykoli. Co s údaji děláme, je
+            v{" "}
+            <Link href="/ochrana-osobnich-udaju" className="text-go hover:underline">
+              zásadách ochrany osobních údajů
+            </Link>
+            .
+          </p>
+          <LinkButton
+            href="/zadost"
+            variant="subtle"
+            size="sm"
+            className="mt-3"
+          >
+            Odvolat souhlas
+          </LinkButton>
         </Card>
       </section>
 
