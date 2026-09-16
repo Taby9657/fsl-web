@@ -5,6 +5,8 @@ import { publicFetch } from "@/lib/api";
 import type { TeamLite } from "@/lib/types";
 import { Page } from "@/components/layout/container";
 import { Card, EmptyState, PageTitle } from "@/components/ui/primitives";
+import { PredSezonou } from "@/components/pred-sezonou";
+import { predSezonou } from "@/lib/sezona";
 import { TeamBadge } from "@/components/ui/data";
 
 export const revalidate = 300;
@@ -29,7 +31,11 @@ export default async function TymyPage() {
       <PageTitle title="Týmy" subtitle="Kompletní přehled účastníků ligy" />
 
       {serazene.length === 0 ? (
-        <EmptyState icon={<Users size={40} />} title="Zatím žádné týmy" />
+        predSezonou() ? (
+          <PredSezonou titul="Seznam účastníků se plní přihláškami" popis="Zatím tu není nikdo. Tým, který se přihlásí jako první, se tady objeví hned — čekat na rozlosování nemusí." />
+        ) : (
+          <EmptyState icon={<Users size={40} />} title="Zatím žádné týmy" />
+        )
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {serazene.map((t) => {
