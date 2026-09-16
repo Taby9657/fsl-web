@@ -14,7 +14,15 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { errMsg, playersApi, refereesApi, requestsApi, seasonsApi, teamsApi } from "@/lib/api";
+import {
+  errMsg,
+  onboardingApi,
+  playersApi,
+  refereesApi,
+  requestsApi,
+  seasonsApi,
+  teamsApi,
+} from "@/lib/api";
 import {
   collectErrors,
   validateAbbr,
@@ -71,6 +79,20 @@ import { toast } from "@/components/ui/toast";
  * chybu a toast po 5,2 s zmizel, takže se člověk se třemi prázdnými poli
  * dozvěděl jednu a nevěděl kde. `collectErrors` vrací mapu pole → chyba.
  */
+
+/**
+ * Náhodné id jednoho průchodu přihláškou (jen pro měření, viz efekt níž).
+ *
+ * `crypto.randomUUID` chybí v nezabezpečeném kontextu (http bez TLS), kde by
+ * jinak spadlo celé vykreslení kvůli měření — proto ta náhrada. Formát musí
+ * projít kontrolou na backendu: šestnáct až šedesát čtyři znaků [0-9a-f-].
+ */
+function noveIdNavstevy(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 14)}`;
+}
 
 type Role = "player" | "manager" | "referee";
 
@@ -394,6 +416,27 @@ export function OnboardingClient() {
     if (uzMaRoli || krok === "hotovo" || krok === "role") return;
     uloz({ role, krok, data, team, inviteCode, bezTymu, souhlasy });
   }, [role, krok, data, team, inviteCode, bezTymu, souhlasy, uzMaRoli]);
+
+  /* Měření trychtýře: kam lidé v přihlášce došli.
+
+     Vzniklo 16. 9. 2026. Za 24 hodin otevřelo `/registrace` 192 lidí a
+     neodeslal ji nikdo — a ze síťových logů bylo vidět, že na registrační
+     cesty nepřišel jediný POST, takže nešlo o chybu, ale o odchod někde
+     uvnitř formuláře. Kde, nebylo jak zjistit.
+
+     Posílá se krok, role a `bezTymu`. **Nic vyplněného.** `navsteva` je
+     náhodné id, které vzniká tady v paměti, do prohlížeče se neukládá
+     a zavřením karty zaniká — nejde ho spojit s člověkem ani s příští
+     návštěvou, a proto to není osobní údaj a nepotřebuje souhlas.
+
+     Kdo už roli má, do trychtýře nepatří — vidí `HotovaRoleStep`, ne
+     formulář. */
+  const navsteva = useRef<string>("");
+  useEffect(() => {
+    if (uzMaRoli) return;
+    if (!navsteva.current) navsteva.current = noveIdNavstevy();
+    onboardingApi.krok({ navsteva: navsteva.current, role, krok, bezTymu });
+  }, [role, krok, bezTymu, uzMaRoli]);
 
   /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
      a tenhle efekt srovná stav komponenty. */
