@@ -30,6 +30,14 @@ export type Krok =
 export type KartaRole = {
   klic: string;
   id: Role;
+  /**
+   * Pro koho karta je — vykresluje se jako popisek nad názvem.
+   *
+   * Dvě karty mají „Pro hráče" schválně: hráč s kódem i hráč bez týmu jsou
+   * tatáž role, jen dvě cesty do ní, a bez popisku to z názvů („Nemám tým",
+   * „Mám kód od vedoucího") nepoznal nikdo, kdo web nezná.
+   */
+  pro: string;
   start?: Krok;
   bezTymu?: boolean;
   icon: ReactNode;
@@ -42,6 +50,7 @@ export type KartaRole = {
 export const ROLES: KartaRole[] = [
   {
     klic: "player-draft",
+    pro: "Pro hráče",
     id: "player",
     start: "jmeno",
     bezTymu: true,
@@ -53,6 +62,7 @@ export const ROLES: KartaRole[] = [
   },
   {
     klic: "player-kod",
+    pro: "Pro hráče",
     id: "player",
     start: "kod",
     icon: <Ticket size={22} />,
@@ -63,6 +73,7 @@ export const ROLES: KartaRole[] = [
   },
   {
     klic: "manager",
+    pro: "Pro vedoucí",
     id: "manager",
     icon: <Shield size={22} />,
     title: "Jsem vedoucí týmu",
@@ -72,6 +83,7 @@ export const ROLES: KartaRole[] = [
   },
   {
     klic: "referee",
+    pro: "Pro rozhodčí",
     id: "referee",
     icon: <Flag size={22} />,
     title: "Chci být rozhodčí",
@@ -96,7 +108,13 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
         {r.icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[17px] font-bold text-wh">{r.title}</span>
+        <span
+          className="block text-[11px] font-semibold uppercase tracking-wide"
+          style={{ color: r.color }}
+        >
+          {r.pro}
+        </span>
+        <span className="mt-0.5 block text-[17px] font-bold text-wh">{r.title}</span>
         <span className="mt-1 block text-[13px] leading-6 text-mu">{r.desc}</span>
         <span
           className="mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
