@@ -5,7 +5,7 @@ import { OnboardingClient } from "./onboarding-client";
 import { adresaKarty, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
 import { Page } from "@/components/layout/container";
 import { PageTitle } from "@/components/ui/primitives";
-import { SEZONA, den } from "@/lib/sezona";
+import { TerminyPasek } from "@/components/terminy-pasek";
 
 export const metadata: Metadata = {
   title: "Přihláška do ligy",
@@ -69,12 +69,7 @@ function VyberRoleServerem() {
         title="Přihláška do ligy"
         subtitle="Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
       />
-      <p className="mb-2 text-[13px] leading-6 text-mu">
-        Přihlášky do <strong className="font-semibold text-wh">{den(SEZONA.konecPrihlasek)} 23:59</strong>
-        {" · "}los {den(SEZONA.los)}
-        {" · "}start {den(SEZONA.start)}
-        {" · "}hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}
-      </p>
+      <TerminyPasek className="mb-3" />
       <p className="mb-5 text-[13px] leading-6 text-mu">
         <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
         Platba přijde na řadu až potom, ve tvém účtu.
