@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/primitives";
 import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
-import { SEZONA, den } from "@/lib/sezona";
+import { TerminyPasek } from "@/components/terminy-pasek";
 import {
   chybiPovinne,
   PRAZDNE_SOUHLASY,
@@ -710,12 +710,7 @@ export function OnboardingClient() {
             když ho někdo vezme do týmu. Návrh vybírat ji předem za vstup do
             draftu padl týž den, kdy vznikl — viz
             `fsl-draft-za-licenci-2026-09-16.md`. */}
-        <p className="mb-2 text-[13px] leading-6 text-mu">
-          Přihlášky do <strong className="font-semibold text-wh">{den(SEZONA.konecPrihlasek)} 23:59</strong>
-          {" · "}los {den(SEZONA.los)}
-          {" · "}start {den(SEZONA.start)}
-          {" · "}hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}
-        </p>
+        <TerminyPasek className="mb-3" />
         <p className="mb-5 text-[13px] leading-6 text-mu">
           <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
           Platba přijde na řadu až potom, ve tvém účtu.
