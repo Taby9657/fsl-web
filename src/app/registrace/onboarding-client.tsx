@@ -1,17 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  ChevronRight,
-  Copy,
-  Flag,
-  RotateCcw,
-  Shield,
-  Ticket,
-  User,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight, Copy, RotateCcw } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -34,6 +24,14 @@ import {
 } from "@/lib/validation";
 import type { Team } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
+import {
+  adresaKarty,
+  ObsahKarty,
+  ROLES,
+  TRIDY_KARTY,
+  type Krok,
+  type Role,
+} from "./role-karty";
 import { Page } from "@/components/layout/container";
 import {
   Button,
@@ -94,21 +92,6 @@ function noveIdNavstevy(): string {
   return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 14)}`;
 }
 
-type Role = "player" | "manager" | "referee";
-
-/** Slug kroku. Je součástí URL, takže se nepřejmenovává bezdůvodně. */
-type Krok =
-  | "role"
-  | "kod"
-  | "jmeno"
-  | "dres"
-  | "doplnky"
-  | "tym"
-  | "vzhled"
-  | "ja"
-  | "osobni"
-  | "kontrola"
-  | "hotovo";
 
 /** Pořadí kroků v každé roli. „role" a „hotovo" se do postupu nepočítají. */
 const POSTUP: Record<Role, Krok[]> = {
@@ -175,58 +158,6 @@ const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
  * Pořadí není náhodné: „Nemám tým" je první, protože přesně ten člověk
  * chodí z propagace.
  */
-const ROLES: {
-  klic: string;
-  id: Role;
-  start?: Krok;
-  bezTymu?: boolean;
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  badge: string;
-  color: string;
-}[] = [
-  {
-    klic: "player-draft",
-    id: "player",
-    start: "jmeno",
-    bezTymu: true,
-    icon: <User size={22} />,
-    title: "Nemám tým",
-    desc: "Založíš si profil a nabídneš se v draftu. Vedoucí, kterým chybí lidi do soupisky, ti pošlou nabídku. Nic to nestojí.",
-    badge: "Dva kroky, bez kódu",
-    color: "#C9A140",
-  },
-  {
-    klic: "player-kod",
-    id: "player",
-    start: "kod",
-    icon: <Ticket size={22} />,
-    title: "Mám kód od vedoucího",
-    desc: "Zadáš kód z pozvánky a naskočíš rovnou na soupisku svého týmu.",
-    badge: "Rovnou na soupisku",
-    color: "#10B981",
-  },
-  {
-    klic: "manager",
-    id: "manager",
-    icon: <Shield size={22} />,
-    title: "Jsem vedoucí týmu",
-    desc: "Vytvoříš tým, spravuješ soupisku a odesíláš sestavy před zápasem.",
-    badge: "Plná správa týmu",
-    color: "#8B5CF6",
-  },
-  {
-    klic: "referee",
-    id: "referee",
-    icon: <Flag size={22} />,
-    title: "Chci být rozhodčí",
-    desc: "Vyplníš jméno, kontakt a datum narození — nic víc. Supervisor tě do 48 h schválí.",
-    badge: "Čeká na schválení supervisorem",
-    color: "#3B82F6",
-  },
-];
-
 const POSITIONS = ["Útočník", "Obránce", "Brankář"];
 
 const TEAM_COLORS = [
@@ -353,7 +284,10 @@ export function OnboardingClient() {
   const [errors, setErrors] = useState<Errors>({});
   const [team, setTeam] = useState<Team | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [bezTymu, setBezTymu] = useState(false);
+  // `bezTymu` umí přijít i z adresy: na tom stojí odkazy ze serverové verze
+  // výběru role. Bez toho by hráč bez týmu spadl do čtyřkrokové cesty — přesně
+  // ta netěsnost, kvůli které se přihláška 16. 9. předělávala.
+  const [bezTymu, setBezTymu] = useState(params.get("bezTymu") === "1");
   const [souhlasy, setSouhlasy] = useState<Souhlasy>(PRAZDNE_SOUHLASY);
   /** Povinné souhlasy, které chyběly při posledním pokusu o odeslání. */
   const [chybiSouhlas, setChybiSouhlas] = useState<KlicSouhlasu[]>([]);
@@ -772,37 +706,26 @@ export function OnboardingClient() {
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
         <div className="space-y-3">
+          {/* Karta je odkaz, ne tlačítko. Serverová verze v `page.tsx` vykresluje
+              tytéž karty se stejným `href`, takže klik funguje i v tom prvním
+              okamžiku, než se stránka oživí JavaScriptem. Tady `onClick` přebírá
+              řízení a `preventDefault()` zabrání celému přenačtení stránky. */}
           {ROLES.map((r) => (
-            <button
+            <a
               key={r.klic}
-              onClick={() => {
+              href={adresaKarty(r, params.toString())}
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                e.preventDefault();
                 setRole(r.id);
                 setBezTymu(!!r.bezTymu);
                 naKrok(r.start ?? POSTUP[r.id][0], r.id);
               }}
-              className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
+              className={TRIDY_KARTY}
               style={{ borderLeft: `4px solid ${r.color}` }}
             >
-              <div className="flex items-start gap-4">
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${r.color}22`, color: r.color }}
-                >
-                  {r.icon}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[17px] font-bold text-wh">{r.title}</span>
-                  <span className="mt-1 block text-[13px] leading-6 text-mu">{r.desc}</span>
-                  <span
-                    className="mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                    style={{ backgroundColor: `${r.color}20`, color: r.color }}
-                  >
-                    {r.badge}
-                  </span>
-                </span>
-                <ChevronRight size={18} className="mt-1 shrink-0 text-di" />
-              </div>
-            </button>
+              <ObsahKarty r={r} />
+            </a>
           ))}
         </div>
       </Page>
