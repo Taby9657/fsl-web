@@ -387,6 +387,91 @@ export function OnboardingClient() {
     onboardingApi.krok({ navsteva: navsteva.current, role, krok, bezTymu });
   }, [role, krok, bezTymu, uzMaRoli]);
 
+  /* Druhá polovina měření: jak dlouho na kroku byl a jak z něj odešel.
+
+     Samotný počet průchodů na krok nerozliší dvě úplně různé věci. 16. 9.
+     došlo na výběr role 167 lidí a roli si vybralo 21 — a tahle čísla vypadají
+     stejně, ať už těch 146 odešlo do dvou sekund (nechtěný proklik z reklamy,
+     problém je v cílení), nebo si obrazovku přečetli a nekliknuli (problém je
+     v obrazovce). Rozliší to čas, scroll a to, kam klik mířil.
+
+     Že to nebylo pomalým načítáním, se ověřilo zvlášť: ping v efektu výš
+     odchází až ve chvíli, kdy je stránka živá, takže kdo odešel dřív, se do
+     těch 167 nezapočítal — a po opravě prázdné obrazovky (16:37) se poměr
+     nezlepšil.
+
+     Pořád **nic vyplněného**: jen čas, procento scrollu, výška okna a jedno
+     slovo o odchodu. Platí všechno, co je u efektu výš.
+
+     Odesílá se jednou za krok a backend navíc bere **první zprávu** — návrat
+     z bfcache tedy naměřené čtení nepřepíše. */
+  useEffect(() => {
+    if (uzMaRoli) return;
+    const id = navsteva.current;
+    if (!id) return;
+
+    const zacatek = Date.now();
+    let odchod: "klik" | "jinam" | null = null;
+    let poslano = false;
+
+    /** Kam až se člověk dostal, v procentech. Stránka na jednu obrazovku = 100. */
+    const procenta = () => {
+      const kam = document.documentElement.scrollHeight - window.innerHeight;
+      if (kam <= 0) return 100;
+      return Math.max(0, Math.min(100, Math.round((window.scrollY / kam) * 100)));
+    };
+    let maxScroll = procenta();
+
+    const priScrollu = () => {
+      const p = procenta();
+      if (p > maxScroll) maxScroll = p;
+    };
+
+    /* Karta role je od 16. 9. skutečný odkaz, takže klik na ni je celé
+       přenačtení stránky a další krok dostane nové id průchodu. Kam ten klik
+       mířil, se proto pozná **jenom tady**; ze záznamu dalšího průchodu už to
+       zpětně dohledat nejde. */
+    const priKliku = (e: MouseEvent) => {
+      const cil = e.target;
+      if (!(cil instanceof Element)) return;
+      const odkaz = cil.closest("a[href]");
+      if (!(odkaz instanceof HTMLAnchorElement)) return;
+      odchod = odkaz.pathname.startsWith("/registrace") ? "klik" : "jinam";
+    };
+
+    const posli = (jak: "klik" | "jinam" | "zavrel") => {
+      if (poslano) return;
+      poslano = true;
+      onboardingApi.konec({
+        navsteva: id,
+        krok,
+        sekundy: Math.round((Date.now() - zacatek) / 1000),
+        odchod: jak,
+        scroll: maxScroll,
+        vyskaOkna: window.innerHeight,
+      });
+    };
+
+    const priOdchodu = () => posli(odchod ?? "zavrel");
+
+    window.addEventListener("scroll", priScrollu, { passive: true });
+    // Zachytávací fáze schválně: kliky na kartách a tlačítkách zastavuje
+    // React dřív, než by bublina došla na `document`.
+    document.addEventListener("click", priKliku, true);
+    // `pagehide`, ne `beforeunload`: na mobilu je to jediná událost, která
+    // spolehlivě přijde i při přepnutí aplikace nebo zavření karty.
+    window.addEventListener("pagehide", priOdchodu);
+
+    return () => {
+      window.removeEventListener("scroll", priScrollu);
+      document.removeEventListener("click", priKliku, true);
+      window.removeEventListener("pagehide", priOdchodu);
+      // Úklid bez odchodu ze stránky znamená, že se krok změnil uvnitř
+      // přihlášky — tedy že člověk šel dál.
+      posli(odchod ?? "klik");
+    };
+  }, [krok, uzMaRoli]);
+
   /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
      a tenhle efekt srovná stav komponenty. */
   useEffect(() => {

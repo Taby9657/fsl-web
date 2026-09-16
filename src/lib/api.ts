@@ -614,4 +614,36 @@ export const onboardingApi = {
       // telemetrie nesmí být na formuláři vidět ani ho zdržet.
     });
   },
+
+  /**
+   * Konec kroku: jak dlouho byl vidět, jak hluboko člověk doscrolloval a jak
+   * odešel. Posílá se jednou, při opuštění kroku.
+   *
+   * Proč to existuje: trychtýř uměl říct „ze 167 lidí šel dál 21", ale ne
+   * jestli těch 146 odešlo do dvou sekund (nechtěný proklik z reklamy), nebo
+   * si obrazovku přečetli a stejně nekliknuli (špatná obrazovka). Každá
+   * z těch diagnóz se opravuje jinde.
+   *
+   * **Ne `navigator.sendBeacon`**, i když je to jeho učebnicový případ: beacon
+   * s `application/json` si vyžádá CORS preflight, který beacon neumí, a API
+   * běží na jiné doméně než web. `fetch` s `keepalive` přežije odchod ze
+   * stránky stejně dobře a jde stejnou cestou jako `krok` výš.
+   */
+  konec: (telo: {
+    navsteva: string;
+    krok: string;
+    sekundy: number;
+    odchod: "klik" | "jinam" | "zavrel";
+    scroll: number;
+    vyskaOkna: number;
+  }) => {
+    void fetch(`${API_URL}/onboarding/konec`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(telo),
+      keepalive: true,
+    }).catch(() => {
+      // Ticho ze stejného důvodu jako u `krok`.
+    });
+  },
 };
