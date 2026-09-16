@@ -575,3 +575,33 @@ export const requestsApi = {
     web?: string;
   }) => api.post<{ ok: boolean; id?: string }>("/requests", data),
 };
+
+/* ==================== MĚŘENÍ PŘIHLÁŠKY ==================== */
+
+/**
+ * Kam člověk došel v přihlášce. Posílá se **jen** krok, role a příznak
+ * zkrácené cesty — nic z vyplněných polí. Proč to existuje a proč to nesmí
+ * začít vozit obsah formuláře, je v `backend/src/routes/onboarding.js`.
+ */
+export const onboardingApi = {
+  krok: (telo: {
+    navsteva: string;
+    role: string | null;
+    krok: string;
+    bezTymu: boolean;
+  }) => {
+    // Vlastní `fetch` místo `api.post`: `keepalive` drží požadavek naživu,
+    // i když člověk mezitím odejde ze stránky. Poslední krok („hotovo") se
+    // jinak často neodešle — a to je zrovna ten, kvůli kterému se měří.
+    void fetch(`${API_URL}/onboarding/krok`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(telo),
+      keepalive: true,
+    }).catch(() => {
+      // Ticho je tady schválně. Jinde v projektu byl tichý `catch` chyba
+      // (upload loga), ale tohle je měření, ne funkce přihlášky: spadlá
+      // telemetrie nesmí být na formuláři vidět ani ho zdržet.
+    });
+  },
+};
