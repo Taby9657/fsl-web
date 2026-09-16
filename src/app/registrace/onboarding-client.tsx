@@ -436,7 +436,12 @@ export function OnboardingClient() {
    */
   const vyzadujUcet = useCallback(() => {
     if (user) return false;
-    uloz({ role, krok, data, team, inviteCode });
+    // `bezTymu` musí do uložení stejně jako zbytek stavu. Bez něj se hráč
+    // bez týmu vrátil od zakládání účtu do čtyřkrokové cesty: ukazatel psal
+    // „Krok 4 ze 4" místo „2 ze 2" a Zpět vedlo na krok s dresem, který
+    // nikdy neviděl. Tenhle zápis je poslední před odchodem na /prihlaseni,
+    // takže přebije i ten z automatického ukládání.
+    uloz({ role, krok, data, team, inviteCode, bezTymu });
     const q = new URLSearchParams();
     q.set("krok", krok);
     if (role) q.set("role", role);
@@ -445,7 +450,7 @@ export function OnboardingClient() {
     // kdo přišel z reklamy, účet skoro jistě nemá.
     router.push(`/prihlaseni?ucet=novy&next=${encodeURIComponent(cil)}`);
     return true;
-  }, [user, role, krok, data, team, inviteCode, router]);
+  }, [user, role, krok, data, team, inviteCode, bezTymu, router]);
 
   /** Vysvětlení u odesílacího tlačítka, dokud člověk účet nemá. */
   const poznamkaUcet = user ? null : (
