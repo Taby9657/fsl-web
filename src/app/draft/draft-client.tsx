@@ -1,12 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Phone, Timer, UserPlus, Users, Video } from "lucide-react";
+import { Lock, Phone, Timer, UserPlus, Users, Video } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { draftApi } from "@/lib/api";
 import { fullName, pluralOffer, positionLabel, timeLeft } from "@/lib/format";
 import { useAuthStore, useIsManager } from "@/store/auth";
+import { SEZONA, den, draftOtevren } from "@/lib/sezona";
 import { Page } from "@/components/layout/container";
 import {
   Card,
@@ -26,9 +27,12 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
   const user = useAuthStore((s) => s.user);
   const isManager = useIsManager();
   const canJoin = !!user?.player && !user.player.teamId;
+  // Do 1. 11. se seznam nezobrazuje a ani se nenačítá — viz `DraftZamceno`.
+  const otevreno = draftOtevren();
 
   const list = useQuery({
     queryKey: ["draft"],
+    enabled: otevreno,
     queryFn: async () => (await draftApi.list()).data,
   });
 
@@ -59,7 +63,9 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
 
       {uvod}
 
-      {list.isLoading ? (
+      {!otevreno ? (
+        <DraftZamceno canJoin={canJoin} maUvod={!!uvod} />
+      ) : list.isLoading ? (
         <SkeletonCards count={4} />
       ) : list.isError ? (
         <ErrorView onRetry={() => list.refetch()} />
@@ -136,5 +142,59 @@ export function DraftClient({ uvod }: { uvod?: ReactNode } = {}) {
         </div>
       )}
     </Page>
+  );
+}
+
+/**
+ * Zámek draft poolu do 1. 11. 2026.
+ *
+ * Hráči se přihlašují dál a draft profil si založí — jen ho zvenčí nikdo
+ * nevidí. Důvod je sportovní, ne technický: přihlášky končí 1. 11. a hned
+ * nato je los, takže dokud není jasné, kdo v soutěži je, nemají si vedoucí
+ * co rozebírat. Datum bere `SEZONA.otevreniDraftu`.
+ *
+ * Zamčený je web, ne API — poznámka u `draftOtevren()`.
+ */
+function DraftZamceno({
+  canJoin,
+  maUvod,
+}: {
+  canJoin: boolean;
+  /** Nepřihlášený má výzvu k přihlášce už v úvodu nad seznamem — druhá
+      hned pod ní by byla jen šum. */
+  maUvod: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-bd bg-c1/60 p-6 text-center">
+      <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-bd bg-go-soft text-go">
+        <Lock size={22} />
+      </div>
+      <h2 className="mt-4 text-[17px] font-bold text-wh">
+        Seznam volných hráčů se otevře {den(SEZONA.otevreniDraftu)}
+      </h2>
+      <p className="mx-auto mt-2 max-w-md text-[14px] leading-6 text-mu">
+        Přihlášky běží do {den(SEZONA.konecPrihlasek)} a hned po nich je los.
+        Do té doby se draft pool neukazuje, aby si vedoucí nerozebírali hráče
+        dřív, než je jasné, kdo do soutěže nastoupí.
+      </p>
+      <p className="mx-auto mt-3 max-w-md text-[13px] leading-6 text-di">
+        Přihlásit se ale můžeš hned — {den(SEZONA.otevreniDraftu)} se tvůj
+        profil objeví v seznamu mezi prvními.
+      </p>
+      {canJoin ? (
+        <div className="mt-5 flex justify-center">
+          <LinkButton href="/draft/profil" size="md">
+            <UserPlus size={15} />
+            Doplnit profil
+          </LinkButton>
+        </div>
+      ) : maUvod ? null : (
+        <div className="mt-5 flex justify-center">
+          <LinkButton href="/registrace" size="md">
+            Přihlásit se do ligy
+          </LinkButton>
+        </div>
+      )}
+    </div>
   );
 }
