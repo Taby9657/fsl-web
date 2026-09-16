@@ -8,6 +8,8 @@ import { statsApi } from "@/lib/api";
 import { useDivisions, useSeasons } from "@/hooks/use-league";
 import { useQueryState } from "@/hooks/use-query-state";
 import { Card, Chip, ChipRow, EmptyState } from "@/components/ui/primitives";
+import { PredSezonou } from "@/components/pred-sezonou";
+import { predSezonou } from "@/lib/sezona";
 import { ErrorView, SkeletonList } from "@/components/ui/feedback";
 import { TeamDot } from "@/components/ui/data";
 
@@ -63,11 +65,15 @@ export function TableClient() {
       ) : query.isError ? (
         <ErrorView message="Nepodařilo se načíst tabulku" onRetry={() => query.refetch()} />
       ) : !query.data?.length ? (
+        predSezonou() ? (
+        <PredSezonou titul="Tabulka se zaplní prvním kolem" />
+      ) : (
         <EmptyState
           icon={<Trophy size={40} />}
           title="Tabulka zatím prázdná"
           description="Zobrazí se po odehrání prvních zápasů."
         />
+      )
       ) : (
         <Card className="overflow-hidden">
           <div className="min-w-full overflow-x-auto">
