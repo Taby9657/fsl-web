@@ -2,13 +2,14 @@ import {
   ArrowRight,
   BarChart3,
   CalendarDays,
+  ClipboardList,
   Pin,
   PlayCircle,
   Trophy,
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { SEZONA, den, prihlaskyOtevrene } from "@/lib/sezona";
+import { SEZONA, den, draftOtevren, prihlaskyOtevrene } from "@/lib/sezona";
 import { publicFetch } from "@/lib/api";
 import type { Highlight, Match, TableRow, TeamLite } from "@/lib/types";
 import { fmtDate } from "@/lib/format";
@@ -17,6 +18,7 @@ import { MatchCard } from "@/components/match-card";
 import { Card, LinkButton, SectionTitle } from "@/components/ui/primitives";
 import { LiveBadge } from "@/components/ui/feedback";
 import { TeamDot } from "@/components/ui/data";
+import { TerminyPasek } from "@/components/terminy-pasek";
 
 export const revalidate = 30;
 
@@ -67,23 +69,11 @@ export default async function HomePage() {
               </p>
               {/* Tři údaje, podle kterých se člověk rozhoduje, jestli se přihlásí:
                   dokdy to stihne, kdy se začne hrát a jestli se mu to vejde do
-                  týdne. Do 16. 9. 2026 nestály nikde na webu. */}
-              <p className="mt-4 text-[14px] leading-7 text-mu">
-                {prihlaskyOtevrene() ? (
-                  <>
-                    Přihlášky <strong className="font-semibold text-wh">do {den(SEZONA.konecPrihlasek)} 23:59</strong>
-                    {" · "}los {den(SEZONA.los)}
-                    {" · "}start {den(SEZONA.start)}
-                    <br className="hidden sm:block" />
-                    Hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}.
-                  </>
-                ) : (
-                  <>
-                    Los {den(SEZONA.los)} · start {den(SEZONA.start)} · hraje se{" "}
-                    {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}.
-                  </>
-                )}
-              </p>
+                  týdne. Do 16. 9. 2026 nestály nikde na webu, pak tu stály jako
+                  věta oddělená tečkami — a v ní vypadal termín uzávěrky stejně
+                  důležitě jako místo konání. `TerminyPasek` je stejný jako
+                  v přihlášce, takže kdo klikne dál, vidí tytéž termíny stejně. */}
+              <TerminyPasek className="mt-6 max-w-md" />
               {/* První tlačítko musí být vstup do ligy, ne výsledky.
                   Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
                   a na registraci nevedl z úvodní stránky odkaz žádný. */}
@@ -104,11 +94,14 @@ export default async function HomePage() {
             {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to
                 informace pro vedení, ne pro návštěvníky webu. */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {/* Dokud rozpis nestojí, ukazuje dlaždice start sezóny místo
+              {/* Dokud rozpis nestojí, ukazuje dlaždice stav přihlášek místo
                   pomlčky: „—" u prvního čísla na stránce vypadá, že liga
                   neběží. Naměřeno 16. 9. 2026 — z 209 návštěvníků za 24 h
                   se na přihlášku dostalo 14. Že za to může tahle dlaždice,
-                  ověřené není; je to jen jedno z prázdných míst nad ní. */}
+                  ověřené není; je to jen jedno z prázdných míst nad ní.
+
+                  Datum startu tady dřív bylo taky, ale od zavedení
+                  `TerminyPasek` vedle by stálo na jedné obrazovce dvakrát. */}
               {upcoming?.length ? (
                 <HeroStat
                   icon={<CalendarDays size={20} />}
@@ -117,9 +110,9 @@ export default async function HomePage() {
                 />
               ) : (
                 <HeroStat
-                  icon={<CalendarDays size={20} />}
-                  label="Start základní části"
-                  value={den(SEZONA.start)}
+                  icon={<ClipboardList size={20} />}
+                  label="Přihlášky"
+                  value={prihlaskyOtevrene() ? "Otevřené" : "Uzavřené"}
                 />
               )}
               <HeroStat
@@ -127,7 +120,15 @@ export default async function HomePage() {
                 label="Statistiky"
                 value="Live"
               />
-              <HeroStat icon={<Users size={20} />} label="Draft volných hráčů" value="Otevřen" />
+              {/* Dlaždice tvrdila „Otevřen" i teď, kdy je veřejný výpis volných
+                  hráčů zamčený do 1. 11. — viz `draftOtevren()` v `lib/sezona`.
+                  Hráč bez týmu se do draftu normálně přihlásí, jen ho zvenčí
+                  nikdo nevidí, takže datum je tu i pozvánka, nejen omezení. */}
+              <HeroStat
+                icon={<Users size={20} />}
+                label="Draft volných hráčů"
+                value={draftOtevren() ? "Otevřen" : `Od ${den(SEZONA.otevreniDraftu)}`}
+              />
             </div>
           </div>
         </Container>
