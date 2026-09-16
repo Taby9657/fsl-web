@@ -23,6 +23,17 @@ import { toast } from "@/components/ui/toast";
 const POSITIONS = ["Útočník", "Obránce", "Brankář", "Univerzál"];
 const MAX_VIDEOS = 5;
 
+/**
+ * Strop na velikost videa. **Musí sedět s `LIMIT_VIDEO`
+ * v `backend/src/utils/fileUpload.js`.**
+ *
+ * Kontroluje se tady schválně, i když to hlídá i server: velké video se
+ * nahrává i čtvrt hodiny a odmítnutí by přišlo až na konci. Říct to hned
+ * při výběru souboru je rozdíl mezi „vyber kratší" a patnácti minutami
+ * čekání na chybu.
+ */
+const MAX_VIDEO_MB = 500;
+
 export function DraftProfileClient() {
   const router = useRouter();
   const [form, setForm] = useState({ bio: "", pubSkill: "", position: "" });
@@ -77,6 +88,15 @@ export function DraftProfileClient() {
   async function upload(file: File) {
     if (videos.length >= MAX_VIDEOS) {
       toast.error("Limit", `Maximálně ${MAX_VIDEOS} videí na profil.`);
+      return;
+    }
+    if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      toast.error(
+        "Video je moc velké",
+        `Zkrať ho v telefonu na pár nejlepších vteřin a zkus to znovu — `
+          + `kratší sestřih si stejně spíš někdo pustí. Vejde se video zhruba `
+          + `do ${MAX_VIDEO_MB} MB.`,
+      );
       return;
     }
     if (!hasProfile) {

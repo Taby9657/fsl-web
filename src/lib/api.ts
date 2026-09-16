@@ -48,6 +48,16 @@ export const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+/**
+ * Kolik času dostane nahrání videa.
+ *
+ * Backend pustí video do 500 MB (`backend/src/utils/fileUpload.js`). Půl
+ * gigabajtu se přes mobilní data za pět minut nenahraje, takže krátký
+ * timeout by zvednutý limit zase zahodil — člověk by místo srozumitelné
+ * hlášky o velikosti dostal „vypršel čas" a nedozvěděl se nic.
+ */
+const VIDEO_TIMEOUT = 900_000; // 15 minut
+
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -386,7 +396,7 @@ export const highlightsApi = {
     form.append("video", file);
     return api.post<Highlight>(`/highlights/${id}/video`, form, {
       headers: { "Content-Type": "multipart/form-data" },
-      timeout: 300_000,
+      timeout: VIDEO_TIMEOUT,
     });
   },
 };
@@ -406,7 +416,7 @@ export const draftApi = {
     form.append("video", file);
     return api.post<{ id: string; url: string }>("/draft/profile/video", form, {
       headers: { "Content-Type": "multipart/form-data" },
-      timeout: 300_000,
+      timeout: VIDEO_TIMEOUT,
     });
   },
   deleteVideo: (videoId: string) => api.delete(`/draft/video/${videoId}`),
