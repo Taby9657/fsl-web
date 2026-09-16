@@ -9,6 +9,8 @@ import type { RefereeStatRow, ScorerRow } from "@/lib/types";
 import { useDivisions, useSeasons } from "@/hooks/use-league";
 import { useQueryState } from "@/hooks/use-query-state";
 import { Card, Chip, ChipRow, EmptyState } from "@/components/ui/primitives";
+import { PredSezonou } from "@/components/pred-sezonou";
+import { predSezonou } from "@/lib/sezona";
 import { ErrorView, SkeletonList } from "@/components/ui/feedback";
 import { StarRow, TeamDot } from "@/components/ui/data";
 
@@ -100,7 +102,11 @@ export function StatsClient() {
       ) : query.isError ? (
         <ErrorView onRetry={() => query.refetch()} />
       ) : !query.data?.length ? (
-        <EmptyState icon={<BarChart3 size={40} />} title="Zatím žádná data" />
+        predSezonou() ? (
+          <PredSezonou titul="Statistiky začnou vznikat prvním zápasem" popis="Góly, asistence a kanadské bodování se počítají ze zápisů, které vedou týmy ze střídačky. První zápis přijde s prvním kolem." />
+        ) : (
+          <EmptyState icon={<BarChart3 size={40} />} title="Zatím žádná data" />
+        )
       ) : active === "rozhodci" ? (
         <RefereeBoard rows={query.data as RefereeStatRow[]} />
       ) : (
