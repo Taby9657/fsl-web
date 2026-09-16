@@ -21,7 +21,7 @@ export default function PrivacyPage() {
     <Page size="narrow">
       <PageTitle
         title="Zásady ochrany osobních údajů"
-        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 15. 9. 2026"
+        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 16. 9. 2026"
       />
       <Prose>
         <h2>1. Správce údajů</h2>
@@ -53,6 +53,13 @@ export default function PrivacyPage() {
           <li>
             stav plateb licencí a registračních poplatků včetně variabilního symbolu,
           </li>
+          <li>
+            fotografie a videozáznamy ze zápasů, na kterých můžete být zachyceni —
+            pouze pokud jste k tomu dali souhlas (viz bod 5),
+          </li>
+          <li>
+            záznam o udělených souhlasech — co, kdy a jaké znění jste odsouhlasili,
+          </li>
           <li>push token zařízení pro zasílání notifikací (jen v mobilní aplikaci).</li>
         </ul>
 
@@ -63,6 +70,12 @@ export default function PrivacyPage() {
           na fungování soutěže a pro plnění právních povinností souvisejících s vyplácením
           odměn rozhodčím. Zasílání notifikací je dobrovolné a lze jej kdykoli vypnout.
         </p>
+        <p>
+          Na <strong>souhlasu</strong> (čl. 6 odst. 1 písm. a GDPR) stojí jen dvě věci:
+          zveřejňování fotografií a videí ze zápasů k propagaci ligy (bod 5) a zasílání
+          e-mailů o dění v lize. Obojí je dobrovolné, účast v soutěži na tom nezávisí
+          a souhlas lze kdykoli odvolat — odvolání nemá vliv na zpracování do té doby.
+        </p>
 
         <h2>4. Veřejně dostupné údaje</h2>
         <p>
@@ -71,7 +84,30 @@ export default function PrivacyPage() {
           Kontaktní údaje, datum narození, rodné číslo ani bankovní spojení veřejné nejsou.
         </p>
 
-        <h2>5. Předávání třetím stranám</h2>
+        <h2>5. Fotografie a videa ze zápasů</h2>
+        <p>
+          Ze zápasů pořizujeme fotografie a videozáznamy a zveřejňujeme je na webu,
+          v aplikaci a na sociálních sítích ligy (Instagram, Facebook) za účelem
+          propagace soutěže. Děje se tak <strong>pouze na základě vašeho souhlasu</strong>,
+          který udělujete v přihlášce do ligy a který zároveň představuje svolení
+          s užitím podobizny podle § 84 a násl. občanského zákoníku.
+        </p>
+        <p>
+          Souhlas je dobrovolný — <strong>bez něj hrát můžete</strong> a přihlášku to
+          nijak neovlivní. Odvolat ho lze kdykoli e-mailem na{" "}
+          <a href="mailto:info@fslleague.cz">info@fslleague.cz</a> nebo přes formulář
+          &bdquo;Napsat nám&ldquo;. Po odvolání přestaneme nové záběry zveřejňovat a už zveřejněné
+          na požádání stáhneme z vlastních kanálů; u obsahu, který mezitím sdílel někdo
+          další, to zaručit nemůžeme.
+        </p>
+        <p>
+          Záznamy ukládáme u zpracovatele Cloudinary (viz bod 6). Bez souhlasu je
+          nepoužíváme k propagaci; pokud se objevíte na záběru ze zápasu jako součást
+          dění na hřišti a souhlas jste nedali, takový záběr nezveřejníme nebo vás
+          v něm znečitelníme.
+        </p>
+
+        <h2>6. Předávání třetím stranám</h2>
         <p>
           Osobní údaje neprodáváme a nesdílíme pro komerční účely. Využíváme tyto zpracovatele:
         </p>
@@ -85,25 +121,25 @@ export default function PrivacyPage() {
           <li>Sentry — sledování chyb aplikace.</li>
         </ul>
 
-        <h2>6. Doba uchování</h2>
+        <h2>7. Doba uchování</h2>
         <p>
           Údaje uchováváme po dobu aktivního účtu a dále po dobu nezbytnou pro historii
           soutěže. Na požádání účet i osobní údaje smažeme — herní statistiky mohou zůstat v
           anonymizované podobě.
         </p>
 
-        <h2>7. Zabezpečení</h2>
+        <h2>8. Zabezpečení</h2>
         <p>
           Veškerá komunikace probíhá přes HTTPS. Hesla neukládáme v čitelné podobě, ale
           výhradně jako nevratný otisk; přihlásit se lze i přes Google nebo Apple. Přístup
           k citlivým údajům rozhodčích má pouze supervisor ligy.
         </p>
 
-        <h2>8. Vaše práva</h2>
+        <h2>9. Vaše práva</h2>
         <p>
           Máte právo na přístup ke svým údajům, jejich opravu, výmaz, omezení zpracování a na
           přenositelnost. Žádosti posílejte na{" "}
-          <a href="mailto:info@fslleague.cz">info@fslleague.cz</a>. Máte také právo
+          <a href="mailto:info@fslleague.cz">info@fslleague.cz</a>. Máte také právo odvolat udělené souhlasy a
           podat stížnost u Úřadu pro ochranu osobních údajů.
         </p>
       </Prose>
