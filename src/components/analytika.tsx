@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useParams, usePathname, useSearchParams } from "next/navigation";
-import { computeRoute } from "@vercel/analytics";
+import { computeRoute, type BeforeSendEvent } from "@vercel/analytics";
 import { Analytics } from "@vercel/analytics/react";
 
 /**
@@ -32,6 +32,22 @@ import { Analytics } from "@vercel/analytics/react";
  * Dotaz v adrese se **nechává** (UTM). Záložka *UTM Parameters* je sice na plánu
  * Hobby zamčená, ale data se sbírají — po případném povýšení plánu budou vidět.
  */
+
+/**
+ * Dotaz (UTM) se do adresy vrací až tady, ne přes `path`.
+ *
+ * Kdyby šel rovnou v `path`, skript ho zakóduje **do cesty** (`…vzhled%3Futm_…`)
+ * a záložka *Pages* se rozpadne na řádek pro každou kombinaci UTM. Ověřeno na
+ * produkci 16. 9. 2026: přišlo `/registrace/manager/vzhled%3Futm_source=…`.
+ * `beforeSend` naproti tomu dostane hotovou adresu a smí ji přepsat, takže se
+ * dotaz připojí jako dotaz.
+ */
+function sDotazem(event: BeforeSendEvent): BeforeSendEvent {
+  if (typeof window === "undefined") return event;
+  const dotaz = window.location.search;
+  if (!dotaz || event.url.includes("?")) return event;
+  return { ...event, url: event.url + dotaz };
+}
 function Mereni() {
   const cesta = usePathname();
   const dotaz = useSearchParams();
@@ -54,8 +70,7 @@ function Mereni() {
     path = role ? `/registrace/${role}/${krok}` : `/registrace/${krok}`;
   }
 
-  const q = dotaz.toString();
-  return <Analytics route={route} path={q ? `${path}?${q}` : path} />;
+  return <Analytics route={route} path={path} beforeSend={sDotazem} />;
 }
 
 /** `useSearchParams()` potřebuje hranici Suspense, jinak spadne build. */
