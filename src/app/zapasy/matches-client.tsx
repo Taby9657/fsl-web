@@ -7,6 +7,8 @@ import type { MatchStatus } from "@/lib/types";
 import { useDivisions, useSeasons } from "@/hooks/use-league";
 import { useQueryState } from "@/hooks/use-query-state";
 import { Chip, ChipRow, EmptyState } from "@/components/ui/primitives";
+import { PredSezonou } from "@/components/pred-sezonou";
+import { predSezonou } from "@/lib/sezona";
 import { ErrorView, SkeletonCards } from "@/components/ui/feedback";
 import { MatchCard } from "@/components/match-card";
 
@@ -99,7 +101,11 @@ export function MatchesClient() {
       ) : query.isError ? (
         <ErrorView onRetry={() => query.refetch()} />
       ) : !query.data?.length ? (
-        <EmptyState icon={empty.icon} title={empty.title} description={empty.desc} />
+        predSezonou() ? (
+          <PredSezonou titul="Rozpis se skládá z přihlášených týmů" />
+        ) : (
+          <EmptyState icon={empty.icon} title={empty.title} description={empty.desc} />
+        )
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {query.data.map((m) => (
