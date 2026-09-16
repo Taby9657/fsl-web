@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
+  Lock,
   Pencil,
   Phone,
   PlayCircle,
@@ -17,6 +18,7 @@ import { useState } from "react";
 import { draftApi, errMsg } from "@/lib/api";
 import { fullName, pluralOffer, positionLabel, timeLeft } from "@/lib/format";
 import { useAuthStore, useIsManager } from "@/store/auth";
+import { SEZONA, den, draftOtevren } from "@/lib/sezona";
 import { Page } from "@/components/layout/container";
 import {
   Button,
@@ -36,6 +38,10 @@ export function DraftDetailClient({ playerId }: { playerId: string }) {
   const refreshUser = useAuthStore((s) => s.refreshUser);
   const isManager = useIsManager();
   const isOwn = user?.player?.id === playerId;
+  // Zámek draft poolu platí i na jednotlivé karty — jinak by stačilo znát
+  // adresu a seznam by byl zamčený jen na oko. Vlastní kartu si člověk
+  // otevřít smí, ta o nikom jiném nic neprozradí.
+  const otevreno = draftOtevren() || isOwn;
 
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -45,10 +51,28 @@ export function DraftDetailClient({ playerId }: { playerId: string }) {
 
   const q = useQuery({
     queryKey: ["draft", playerId],
+    enabled: otevreno,
     queryFn: async () => (await draftApi.getProfile(playerId)).data,
   });
 
   const p = q.data;
+
+  if (!otevreno) {
+    return (
+      <Page size="narrow">
+        <EmptyState
+          icon={<Lock size={44} />}
+          title={`Draft pool se otevře ${den(SEZONA.otevreniDraftu)}`}
+          description={`Karty volných hráčů se do té doby neukazují. Přihlášky do ligy běží do ${den(SEZONA.konecPrihlasek)}`}
+          action={
+            <Link href="/draft" className="text-go hover:underline">
+              Zpět na draft
+            </Link>
+          }
+        />
+      </Page>
+    );
+  }
 
   if (q.isLoading) {
     return (
