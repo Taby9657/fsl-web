@@ -8,6 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { SEZONA, den, prihlaskyOtevrene } from "@/lib/sezona";
 import { publicFetch } from "@/lib/api";
 import type { Highlight, Match, TableRow, TeamLite } from "@/lib/types";
 import { fmtDate } from "@/lib/format";
@@ -62,7 +63,26 @@ export default async function HomePage() {
               <p className="mt-5 max-w-xl text-[16px] leading-7 text-mu">
                 Nová amatérská liga v Praze. Živé výsledky, tabulka, statistiky
                 hráčů, soupisky týmů a draft volných hráčů — celá liga na jednom
-                místě. Registrace do sezóny 2026/27 je otevřená.
+                místě. Registrace do sezóny {SEZONA.nazev} je otevřená.
+              </p>
+              {/* Tři údaje, podle kterých se člověk rozhoduje, jestli se přihlásí:
+                  dokdy to stihne, kdy se začne hrát a jestli se mu to vejde do
+                  týdne. Do 16. 9. 2026 nestály nikde na webu. */}
+              <p className="mt-4 text-[14px] leading-7 text-mu">
+                {prihlaskyOtevrene() ? (
+                  <>
+                    Přihlášky <strong className="font-semibold text-wh">do {den(SEZONA.konecPrihlasek)} 23:59</strong>
+                    {" · "}los {den(SEZONA.los)}
+                    {" · "}start {den(SEZONA.start)}
+                    <br className="hidden sm:block" />
+                    Hraje se {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}.
+                  </>
+                ) : (
+                  <>
+                    Los {den(SEZONA.los)} · start {den(SEZONA.start)} · hraje se{" "}
+                    {SEZONA.hraciDny} {SEZONA.hraciCas}, {SEZONA.mesto}.
+                  </>
+                )}
               </p>
               {/* První tlačítko musí být vstup do ligy, ne výsledky.
                   Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
@@ -99,7 +119,7 @@ export default async function HomePage() {
                 <HeroStat
                   icon={<CalendarDays size={20} />}
                   label="Start základní části"
-                  value="Listopad"
+                  value={den(SEZONA.start)}
                 />
               )}
               <HeroStat
@@ -162,8 +182,8 @@ export default async function HomePage() {
                   Rozpis se skládá z přihlášených týmů
                 </p>
                 <p className="mx-auto mt-2 max-w-[42ch] text-[14px] leading-6 text-mu">
-                  Základní část startuje v listopadu. Čím dřív se tým přihlásí,
-                  tím dřív bude v rozpisu.
+                  Přihlášky běží do {den(SEZONA.konecPrihlasek)}, losuje se{" "}
+                  {den(SEZONA.los)} a první kolo se hraje {den(SEZONA.start)}
                 </p>
                 <Link
                   href="/registrace"
