@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { errMsg, playersApi, refereesApi, seasonsApi, teamsApi } from "@/lib/api";
+import { errMsg, playersApi, refereesApi, requestsApi, seasonsApi, teamsApi } from "@/lib/api";
 import {
   collectErrors,
   validateAbbr,
@@ -40,6 +40,15 @@ import {
 import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
 import { SEZONA, den } from "@/lib/sezona";
+import {
+  chybiPovinne,
+  PRAZDNE_SOUHLASY,
+  vypisSouhlasu,
+  zaznamSouhlasu,
+  type KlicSouhlasu,
+  type Souhlasy,
+} from "@/lib/souhlasy";
+import { SouhlasyPole } from "@/components/souhlasy";
 import { toast } from "@/components/ui/toast";
 
 /**
@@ -125,7 +134,10 @@ const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   kod: { titul: "Pozvánkový kód", popis: "Dostaneš ho od vedoucího svého týmu." },
   jmeno: { titul: "Jak se jmenuješ?", popis: "Pod tímhle jménem tě uvidí liga. Hrát smí jen od 18 let." },
   dres: { titul: "Číslo a pozice", popis: "Číslo dresu musí být v týmu volné." },
-  doplnky: { titul: "Ještě něco?", popis: "Všechno tady je volitelné — jde to doplnit později." },
+  doplnky: {
+    titul: "Ještě něco?",
+    popis: "Fotka a telefon jsou volitelné. Souhlasy pod nimi ne.",
+  },
   tym: { titul: "Nový tým", popis: "Začneme názvem. Zbytek za chvíli." },
   vzhled: { titul: "Jak má tým vypadat?", popis: "Volitelné. Doplnit se to dá kdykoli." },
   ja: { titul: "Ty jako hráč", popis: "Vedoucí je zároveň hráč týmu." },
@@ -247,6 +259,12 @@ type Ulozene = {
   /** Cesta bez týmu. Bez uložení by refresh vrátil člověka na krok s kódem,
       který nikdy neviděl, a ukazatel postupu by počítal do čtyř. */
   bezTymu?: boolean;
+  /** Zaškrtnutá políčka souhlasů. Ukládají se ze stejného důvodu jako
+      zbytek formuláře: cesta k účtu vede přes /prihlaseni a člověk se sem
+      vrací. Není to předzaškrtnutí — je to jeho vlastní zaškrtnutí, které
+      po návratu nezmizí. Znění se mezitím změnit nemůže, protože starší
+      než den se rozdělaná přihláška neobnovuje vůbec. */
+  souhlasy?: Souhlasy;
   ts: number;
 };
 
@@ -314,6 +332,9 @@ export function OnboardingClient() {
   const [team, setTeam] = useState<Team | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [bezTymu, setBezTymu] = useState(false);
+  const [souhlasy, setSouhlasy] = useState<Souhlasy>(PRAZDNE_SOUHLASY);
+  /** Povinné souhlasy, které chyběly při posledním pokusu o odeslání. */
+  const [chybiSouhlas, setChybiSouhlas] = useState<KlicSouhlasu[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -356,6 +377,7 @@ export function OnboardingClient() {
     setTeam(s.team);
     setInviteCode(s.inviteCode);
     setBezTymu(!!s.bezTymu);
+    if (s.souhlasy) setSouhlasy({ ...PRAZDNE_SOUHLASY, ...s.souhlasy });
     if (s.role) setRole(s.role);
     setObnoveno(vek(s.ts));
     // Kód z odkazu má přednost — člověk zrovna klikl na pozvánku.
@@ -370,8 +392,8 @@ export function OnboardingClient() {
   /* Uložení při každé změně. „hotovo" se neukládá — je dokončeno. */
   useEffect(() => {
     if (uzMaRoli || krok === "hotovo" || krok === "role") return;
-    uloz({ role, krok, data, team, inviteCode, bezTymu });
-  }, [role, krok, data, team, inviteCode, bezTymu, uzMaRoli]);
+    uloz({ role, krok, data, team, inviteCode, bezTymu, souhlasy });
+  }, [role, krok, data, team, inviteCode, bezTymu, souhlasy, uzMaRoli]);
 
   /* URL je zdroj pravdy: zpětné tlačítko prohlížeče změní `?krok=`
      a tenhle efekt srovná stav komponenty. */
@@ -412,6 +434,8 @@ export function OnboardingClient() {
 
   function zacniZnovu() {
     setBezTymu(false);
+    setSouhlasy(PRAZDNE_SOUHLASY);
+    setChybiSouhlas([]);
     zapomen();
     setData(PRAZDNA);
     setTeam(null);
@@ -442,7 +466,7 @@ export function OnboardingClient() {
     // „Krok 4 ze 4" místo „2 ze 2" a Zpět vedlo na krok s dresem, který
     // nikdy neviděl. Tenhle zápis je poslední před odchodem na /prihlaseni,
     // takže přebije i ten z automatického ukládání.
-    uloz({ role, krok, data, team, inviteCode, bezTymu });
+    uloz({ role, krok, data, team, inviteCode, bezTymu, souhlasy });
     const q = new URLSearchParams();
     q.set("krok", krok);
     if (role) q.set("role", role);
@@ -451,7 +475,7 @@ export function OnboardingClient() {
     // kdo přišel z reklamy, účet skoro jistě nemá.
     router.push(`/prihlaseni?ucet=novy&next=${encodeURIComponent(cil)}`);
     return true;
-  }, [user, role, krok, data, team, inviteCode, bezTymu, router]);
+  }, [user, role, krok, data, team, inviteCode, bezTymu, souhlasy, router]);
 
   /** Vysvětlení u odesílacího tlačítka, dokud člověk účet nemá. */
   const poznamkaUcet = user ? null : (
@@ -461,9 +485,49 @@ export function OnboardingClient() {
     </p>
   );
 
+  /* ---------- souhlasy ---------- */
+
+  const nastavSouhlas = (k: KlicSouhlasu, v: boolean) => {
+    setSouhlasy((p) => ({ ...p, [k]: v }));
+    setChybiSouhlas((p) => (v ? p.filter((x) => x !== k) : p));
+  };
+
+  /**
+   * Hlídá jen povinné položky. Fotky a novinky zůstat nezaškrtnuté smí —
+   * podmiňovat účast souhlasem je podle čl. 7 odst. 4 GDPR neplatné.
+   */
+  function overSouhlasy() {
+    const chybi = chybiPovinne(souhlasy);
+    setChybiSouhlas(chybi);
+    return chybi.length === 0;
+  }
+
+  /**
+   * Doložení souhlasu (čl. 7 odst. 1 GDPR: správce musí umět souhlas
+   * doložit). Backend zatím u hráče pole pro souhlasy nemá, takže záznam
+   * jde do žádostí — typ `REGISTRATION` a tělo začínající „SOUHLASY", aby
+   * se dal v přehledu odfiltrovat. Je to náhradní řešení do doby, než to
+   * `fsl-backhand` bude umět u profilu; zápis proto nikdy neblokuje ani
+   * neshazuje přihlášku, která už prošla.
+   */
+  async function zapisSouhlasy(r: Role) {
+    try {
+      await requestsApi.create({
+        type: "REGISTRATION",
+        body: `${zaznamSouhlasu(r)}\n${vypisSouhlasu(souhlasy)}`,
+        page: "/registrace",
+      });
+    } catch {
+      /* záznam se nepovedl — přihláška je hotová a člověka to nesmí zdržet */
+    }
+  }
+
   /* ---------- odeslání ---------- */
 
   async function odesliHrace() {
+    // Souhlasy se kontrolují dřív než účet: jinak by člověka přihláška
+    // poslala zakládat účet a teprve po návratu mu řekla o zaškrtávátku.
+    if (!overSouhlasy()) return;
     if (vyzadujUcet()) return;
     setBusy(true);
     try {
@@ -485,6 +549,7 @@ export function OnboardingClient() {
           toast.error("Fotka se nenahrála", "Profil je hotový, fotku zkus přidat v Můj profil.");
         }
       }
+      void zapisSouhlasy("player");
       zapomen();
       await refreshUser();
       naKrok("hotovo");
@@ -496,6 +561,9 @@ export function OnboardingClient() {
   }
 
   async function odesliTym() {
+    // Souhlasy se kontrolují dřív než účet: jinak by člověka přihláška
+    // poslala zakládat účet a teprve po návratu mu řekla o zaškrtávátku.
+    if (!overSouhlasy()) return;
     if (vyzadujUcet()) return;
     setBusy(true);
     try {
@@ -522,6 +590,7 @@ export function OnboardingClient() {
         }
       }
       setInviteCode(res.data.inviteCode);
+      void zapisSouhlasy("manager");
       zapomen();
       await refreshUser();
       naKrok("hotovo");
@@ -533,6 +602,9 @@ export function OnboardingClient() {
   }
 
   async function odesliRozhodciho() {
+    // Souhlasy se kontrolují dřív než účet: jinak by člověka přihláška
+    // poslala zakládat účet a teprve po návratu mu řekla o zaškrtávátku.
+    if (!overSouhlasy()) return;
     if (vyzadujUcet()) return;
     setBusy(true);
     try {
@@ -542,6 +614,7 @@ export function OnboardingClient() {
         phone: data.rPhone,
         birthdate: new Date(data.rBirthdate).toISOString(),
       });
+      void zapisSouhlasy("referee");
       zapomen();
       await refreshUser();
       naKrok("hotovo");
@@ -892,6 +965,11 @@ export function OnboardingClient() {
               placeholder="+420 601 234 567"
             />
           </Field>
+          <SouhlasyPole
+            hodnoty={souhlasy}
+            onZmena={nastavSouhlas}
+            chybi={chybiSouhlas}
+          />
           {poznamkaUcet}
           <Button
             className="w-full"
@@ -1060,6 +1138,11 @@ export function OnboardingClient() {
             Jméno nechat prázdné jde — doplníme ho z tvého e-mailu a upravíš si
             ho v profilu. Datum narození je povinné: do FSL smí jen od 18 let.
           </p>
+          <SouhlasyPole
+            hodnoty={souhlasy}
+            onZmena={nastavSouhlas}
+            chybi={chybiSouhlas}
+          />
           {poznamkaUcet}
           <Button
             className="w-full"
@@ -1160,6 +1243,11 @@ export function OnboardingClient() {
             jakmile bude vyřízena. Rodné číslo, adresu a bankovní spojení pro
             výplatu odměn budeš vyplňovat až na smlouvě.
           </div>
+          <SouhlasyPole
+            hodnoty={souhlasy}
+            onZmena={nastavSouhlas}
+            chybi={chybiSouhlas}
+          />
           {poznamkaUcet}
           <Button className="w-full" loading={busy} onClick={() => void odesliRozhodciho()}>
             Odeslat registraci
