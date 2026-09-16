@@ -84,11 +84,24 @@ export default async function HomePage() {
             {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to
                 informace pro vedení, ne pro návštěvníky webu. */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <HeroStat
-                icon={<CalendarDays size={20} />}
-                label="Nadcházejících zápasů"
-                value={upcoming?.length ? `${upcoming.length}+` : "—"}
-              />
+              {/* Dokud rozpis nestojí, ukazuje dlaždice start sezóny místo
+                  pomlčky: „—" u prvního čísla na stránce vypadá, že liga
+                  neběží. Naměřeno 16. 9. 2026 — z 209 návštěvníků za 24 h
+                  se na přihlášku dostalo 14. Že za to může tahle dlaždice,
+                  ověřené není; je to jen jedno z prázdných míst nad ní. */}
+              {upcoming?.length ? (
+                <HeroStat
+                  icon={<CalendarDays size={20} />}
+                  label="Nadcházejících zápasů"
+                  value={`${upcoming.length}+`}
+                />
+              ) : (
+                <HeroStat
+                  icon={<CalendarDays size={20} />}
+                  label="Start základní části"
+                  value="Listopad"
+                />
+              )}
               <HeroStat
                 icon={<BarChart3 size={20} />}
                 label="Statistiky"
@@ -145,7 +158,19 @@ export default async function HomePage() {
             ) : (
               <Card className="px-6 py-12 text-center">
                 <CalendarDays size={32} className="mx-auto mb-3 text-di" />
-                <p className="text-[15px] text-mu">Žádné nadcházející zápasy</p>
+                <p className="text-[15px] font-semibold text-wh">
+                  Rozpis se skládá z přihlášených týmů
+                </p>
+                <p className="mx-auto mt-2 max-w-[42ch] text-[14px] leading-6 text-mu">
+                  Základní část startuje v listopadu. Čím dřív se tým přihlásí,
+                  tím dřív bude v rozpisu.
+                </p>
+                <Link
+                  href="/registrace"
+                  className="mt-4 inline-block text-[14px] font-semibold text-go hover:underline"
+                >
+                  Přihlásit tým nebo sebe →
+                </Link>
               </Card>
             )}
 
@@ -256,8 +281,16 @@ export default async function HomePage() {
                   </Link>
                 ))
               ) : (
-                <div className="px-6 py-10 text-center text-[14px] text-mu">
-                  Tabulka zatím prázdná
+                <div className="px-6 py-10 text-center">
+                  <p className="text-[14px] leading-6 text-mu">
+                    Tabulka se zaplní prvním kolem.
+                  </p>
+                  <Link
+                    href="/registrace"
+                    className="mt-2 inline-block text-[14px] font-semibold text-go hover:underline"
+                  >
+                    Přihlásit tým →
+                  </Link>
                 </div>
               )}
             </Card>
