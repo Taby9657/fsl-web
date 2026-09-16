@@ -10,6 +10,8 @@ import type { Match } from "@/lib/types";
 import { useDivisions, useSeasons } from "@/hooks/use-league";
 import { useQueryState } from "@/hooks/use-query-state";
 import { Card, Chip, ChipRow, EmptyState } from "@/components/ui/primitives";
+import { PredSezonou } from "@/components/pred-sezonou";
+import { predSezonou } from "@/lib/sezona";
 import { ErrorView, LiveBadge, SkeletonCards } from "@/components/ui/feedback";
 import { TeamDot } from "@/components/ui/data";
 
@@ -72,11 +74,15 @@ export function BracketClient() {
       ) : query.isError ? (
         <ErrorView onRetry={() => query.refetch()} />
       ) : !rounds.length ? (
+        predSezonou() ? (
+        <PredSezonou titul="Do play-off postupují všechny týmy" popis="Základní část rozhoduje jen o nasazení. Pavouk se začne plnit, až bude odehraná." />
+      ) : (
         <EmptyState
           icon={<Trophy size={44} />}
           title="Žádné play-off zápasy"
           description="Zápasy s nastaveným číslem kola se zobrazí zde."
         />
+      )
       ) : (
         <div className="no-scrollbar overflow-x-auto pb-4">
           <div className="flex gap-4">
