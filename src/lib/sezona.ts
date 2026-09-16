@@ -19,6 +19,15 @@ export const SEZONA = {
   los: new Date("2026-11-02T00:00:00+01:00"),
   /** První zápasy základní části. */
   start: new Date("2026-11-09T00:00:00+01:00"),
+  /**
+   * Kdy se otevře veřejný výpis volných hráčů (draft pool).
+   *
+   * Do té doby se hráči bez týmu **normálně přihlašují** a profil v draftu
+   * si založí — jen ho nikdo zvenčí nevidí. Vedoucí si tak nemůžou
+   * rozebrat hráče dřív, než se ví, kdo vlastně v soutěži je: přihlášky
+   * končí 1. 11. a hned nato je los.
+   */
+  otevreniDraftu: new Date("2026-11-01T00:00:00+01:00"),
   hraciDny: "pondělí až čtvrtek",
   hraciCas: "18:00–22:00",
   mesto: "Praha",
@@ -57,4 +66,15 @@ export function prihlaskyOtevrene(ted: Date = new Date()) {
 /** Kolik celých dní zbývá do konce přihlášek. Záporné číslo = po termínu. */
 export function dnuDoKoncePrihlasek(ted: Date = new Date()) {
   return Math.ceil((SEZONA.konecPrihlasek.getTime() - ted.getTime()) / 86_400_000);
+}
+
+/**
+ * Veřejný výpis volných hráčů je do 1. 11. 2026 zavřený.
+ *
+ * Pozor: je to **zámek ve webu, ne v API**. Endpoint `/draft` zůstává
+ * veřejný, takže kdo ho zná, seznam si vytáhne. Na rozebírání hráčů
+ * dopředu to stačí, na utajení ne — to by musel umět backend.
+ */
+export function draftOtevren(ted: Date = new Date()) {
+  return ted.getTime() >= SEZONA.otevreniDraftu.getTime();
 }
