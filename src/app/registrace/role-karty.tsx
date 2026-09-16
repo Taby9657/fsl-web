@@ -20,6 +20,8 @@ export type Krok =
   | "jmeno"
   | "dres"
   | "doplnky"
+  /// Text do draft profilu. Jen v cestě hráče bez týmu.
+  | "draft"
   | "tym"
   | "vzhled"
   | "ja"

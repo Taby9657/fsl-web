@@ -42,6 +42,7 @@ import {
   LinkButton,
   PageTitle,
   Spinner,
+  Textarea,
 } from "@/components/ui/primitives";
 import { BirthdatePicker } from "@/components/ui/birthdate";
 import { TeamBadge } from "@/components/ui/data";
@@ -113,7 +114,7 @@ const POSTUP: Record<Role, Krok[]> = {
  * bez týmu nemá co vyplňovat, a pozice se přesunula mezi doplňky. Zbývají
  * dva kroky — jméno s datem narození a nepovinné doplňky.
  */
-const POSTUP_BEZ_TYMU: Krok[] = ["jmeno", "doplnky"];
+const POSTUP_BEZ_TYMU: Krok[] = ["jmeno", "doplnky", "draft"];
 
 /**
  * Krok z adresy ani z rozdělané registrace se nebere na slovo.
@@ -129,8 +130,15 @@ function platnaRole(r: string | null | undefined): Role | null {
 function platnyKrok(k: string | null | undefined, r: Role | null): Krok | null {
   if (!k) return null;
   if (k === "role" || k === "hotovo") return k;
-  if (r && (POSTUP[r] as string[] | undefined)?.includes(k)) return k as Krok;
-  return null;
+  if (!r) return null;
+  // Krok „draft" je jen v cestě hráče bez týmu, takže v `POSTUP` schválně
+  // není — jinak by ho dostal i hráč s pozvánkovým kódem, který do draftu
+  // nejde. Proto se prohledávají obě cesty.
+  const znamy = [
+    ...((POSTUP[r] as string[] | undefined) ?? []),
+    ...(r === "player" ? (POSTUP_BEZ_TYMU as string[]) : []),
+  ];
+  return znamy.includes(k) ? (k as Krok) : null;
 }
 
 const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
@@ -146,6 +154,10 @@ const NADPISY: Record<Krok, { titul: string; popis?: string }> = {
   doplnky: {
     titul: "Ještě něco?",
     popis: "Fotka a telefon jsou volitelné. Souhlasy pod nimi ne.",
+  },
+  draft: {
+    titul: "Čím zaujmeš",
+    popis: "Nepovinné — ale vedoucí si vybírají právě podle tohohle.",
   },
   tym: { titul: "Nový tým", popis: "Začneme názvem. Zbytek za chvíli." },
   vzhled: { titul: "Jak má tým vypadat?", popis: "Volitelné. Doplnit se to dá kdykoli." },
@@ -178,6 +190,9 @@ type Data = {
   position: string;
   phone: string;
   birthdate: string;
+  // draft (jen hráč bez týmu)
+  bio: string;
+  pubSkill: string;
   // tým
   name: string;
   abbr: string;
@@ -196,6 +211,7 @@ type Data = {
 
 const PRAZDNA: Data = {
   firstName: "", lastName: "", jersey: "", position: "Útočník", phone: "", birthdate: "",
+  bio: "", pubSkill: "",
   name: "", abbr: "", color: "#C9A140",
   mFirstName: "", mLastName: "", mJersey: "", mBirthdate: "",
   rFirstName: "", rLastName: "", rPhone: "", rBirthdate: "",
@@ -604,7 +620,7 @@ export function OnboardingClient() {
 
   /* ---------- odeslání ---------- */
 
-  async function odesliHrace() {
+  async function odesliHrace(vynechatDraft = false) {
     // Souhlasy se kontrolují dřív než účet: jinak by člověka přihláška
     // poslala zakládat účet a teprve po návratu mu řekla o zaškrtávátku.
     if (!overSouhlasy()) return;
@@ -620,7 +636,18 @@ export function OnboardingClient() {
         birthdate: data.birthdate ? new Date(data.birthdate).toISOString() : undefined,
         ...(team
           ? { teamId: team.id, ...(inviteCode ? { inviteCode } : {}) }
-          : { bezTymu: true }),
+          : {
+              bezTymu: true,
+              // Prázdné pole se schválně neposílá jako prázdný řetězec:
+              // `upsert` v `draftPool` nechává `undefined` být, takže se tím
+              // nepřepíše text, který v profilu případně už je.
+              ...(vynechatDraft
+                ? {}
+                : {
+                    bio: data.bio.trim() || undefined,
+                    pubSkill: data.pubSkill.trim() || undefined,
+                  }),
+            }),
       });
       if (photo) {
         try {
@@ -1045,34 +1072,116 @@ export function OnboardingClient() {
               placeholder="+420 601 234 567"
             />
           </Field>
+          {/* Hráč bez týmu tady nekončí — pokračuje na krok „draft".
+
+              Souhlasy a odeslání proto musí zůstat na **posledním** kroku
+              každé cesty: `overSouhlasy()` zvýrazňuje chybějící zaškrtávátka,
+              a kdyby zůstala o krok zpátky, člověk by po kliknutí na
+              „Dokončit" neviděl vůbec nic a nevěděl by proč. */}
+          {bezTymu ? (
+            <>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  if (zkontroluj({ phone: validatePhone(data.phone) })) naKrok("draft");
+                }}
+              >
+                Pokračovat
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setPhoto(null);
+                  set("phone", "");
+                  naKrok("draft");
+                }}
+              >
+                Přeskočit
+              </Button>
+            </>
+          ) : (
+            <>
+              <SouhlasyPole
+                hodnoty={souhlasy}
+                onZmena={nastavSouhlas}
+                chybi={chybiSouhlas}
+              />
+              {poznamkaUcet}
+              <Button
+                className="w-full"
+                loading={busy}
+                onClick={() => {
+                  if (zkontroluj({ phone: validatePhone(data.phone) })) {
+                    void odesliHrace();
+                  }
+                }}
+              >
+                Dokončit
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full"
+                disabled={busy}
+                onClick={() => {
+                  // Datum narození se schválně nemaže — je povinné a vyplňuje
+                  // se o krok dřív. Přeskakují se jen fotka a telefon.
+                  setPhoto(null);
+                  set("phone", "");
+                  void odesliHrace();
+                }}
+              >
+                Přeskočit a dokončit
+              </Button>
+            </>
+          )}
+        </Card>
+      ) : null}
+
+      {/* ── hráč bez týmu: čím zaujme v draftu ── */}
+      {krok === "draft" ? (
+        <Card className="space-y-4 p-6">
+          <Field label="O sobě">
+            <Textarea
+              value={data.bio}
+              onChange={(e) => set("bio", e.target.value)}
+              placeholder="Zkušenosti, styl hry, co hledáš…"
+              className="min-h-[110px]"
+            />
+          </Field>
+          <Field label="Pub skill / Selling point">
+            <p className="mb-2 text-[12px] leading-5 text-di">
+              Největší skill, trik nebo kontroverzní výrok. Čím víc osobitosti, tím líp.
+            </p>
+            <Textarea
+              value={data.pubSkill}
+              onChange={(e) => set("pubSkill", e.target.value)}
+              placeholder="„Největší sekera v české florbalové historii“"
+              className="min-h-[80px]"
+            />
+          </Field>
+          {/* Video a další fotky až po dokončení, a není to kosmetika:
+              nahrávají se na účet, který v tuhle chvíli ještě nemusí
+              existovat, a kdyby se soubor vybral teď, přesměrování na
+              přihlášení (u Googlu dokonce pryč z webu) by ho z paměti
+              smazalo. Soubory se do rozdělané registrace neukládají. */}
+          <p className="text-[12px] leading-5 text-di">
+            Video a další fotky přidáš hned po dokončení, na svém profilu v draftu.
+          </p>
           <SouhlasyPole
             hodnoty={souhlasy}
             onZmena={nastavSouhlas}
             chybi={chybiSouhlas}
           />
           {poznamkaUcet}
-          <Button
-            className="w-full"
-            loading={busy}
-            onClick={() => {
-              if (zkontroluj({ phone: validatePhone(data.phone) })) {
-                void odesliHrace();
-              }
-            }}
-          >
+          <Button className="w-full" loading={busy} onClick={() => void odesliHrace()}>
             Dokončit
           </Button>
           <Button
             variant="ghost"
             className="w-full"
             disabled={busy}
-            onClick={() => {
-              // Datum narození se schválně nemaže — je povinné a vyplňuje
-              // se o krok dřív. Přeskakují se jen fotka a telefon.
-              setPhoto(null);
-              set("phone", "");
-              void odesliHrace();
-            }}
+            onClick={() => void odesliHrace(true)}
           >
             Přeskočit a dokončit
           </Button>
@@ -1711,7 +1820,7 @@ function DoneStep({
         ? "Tvoje registrace rozhodčího čeká na schválení supervisorem."
         : maTym
           ? "Jsi teď součástí týmu."
-          : "Jsi v draftu volných hráčů — vedoucí tě vidí a můžou ti poslat nabídku.";
+          : "Jsi v draftu volných hráčů. Teď přidej video a fotky — vedoucí si vybírají hlavně podle nich.";
 
   // Hráč bez týmu dřív skončil `router.push("/draft")` bez jakéhokoli
   // potvrzení — obrazovku „Registrace dokončena" nikdy neviděl, kdežto
@@ -1731,7 +1840,11 @@ function DoneStep({
               { label: "Můj účet", href: "/muj-ucet" },
             ]
           : [
-              { label: "Doplnit profil v draftu", href: "/draft/profil" },
+              // Nahrávání je až tady schválně: v přihlášce účet ještě nemusí
+              // existovat a vybraný soubor by se ztratil při přesměrování na
+              // přihlášení. Odkaz je proto první a pojmenovaný tím, co má
+              // člověk udělat, ne kam ho to zavede.
+              { label: "Přidat video a fotky", href: "/draft/profil" },
               { label: "Zaplatit licenci", href: "/platby" },
             ];
 
