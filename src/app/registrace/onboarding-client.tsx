@@ -754,9 +754,10 @@ export function OnboardingClient() {
             všechny čtyři cesty: rozhodčí neplatí nic, hráč bez týmu do draftu
             taky ne, a vedoucí i hráč s kódem platí až z účtu.
 
-            ⚠️ Kdyby se zapnulo pravidlo z `fsl-draft-za-licenci-2026-09-16.md`
-            (licence 300 Kč předem jako podmínka vstupu do draftu), přestane
-            ta věta pro cestu „Nemám tým" platit a musí se přepsat. */}
+            Cesta „Nemám tým" je bez peněz doopravdy: licenci hráč platí, až
+            když ho někdo vezme do týmu. Návrh vybírat ji předem za vstup do
+            draftu padl týž den, kdy vznikl — viz
+            `fsl-draft-za-licenci-2026-09-16.md`. */}
         <p className="mb-2 text-[13px] leading-6 text-mu">
           Přihlášky do <strong className="font-semibold text-wh">{den(SEZONA.konecPrihlasek)} 23:59</strong>
           {" · "}los {den(SEZONA.los)}
