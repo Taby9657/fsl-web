@@ -47,7 +47,7 @@ export function SiteHeader() {
   const loading = useAuthStore((s) => s.loading);
   const logout = useAuthStore((s) => s.logout);
   const isSupervisor = useIsSupervisor();
-  // Registrace je jediná cesta do ligy, ale do 11. 9. 2026 na ni ze žádné
+  // Přihláška je jediná cesta do ligy, ale do 11. 9. 2026 na ni ze žádné
   // veřejné stránky kromě draftu a pozvánky nevedl odkaz — vedoucí týmu,
   // na kterého míří celý nábor, neměl kam kliknout. Komu už nějaká role
   // patří, tomu by tlačítko jen překáželo.
@@ -75,11 +75,14 @@ export function SiteHeader() {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-  /* Na přihlašovací stránce obě tlačítka vpravo nahoře jen vypadala, že
-     nefungují: „Přihlásit se nebo registrovat" vede na stránku, na které
-     člověk stojí, a „Přihláška do ligy" míří na /registrace za AuthGuardem,
-     který odhlášeného vrátí rovnou zpátky sem. Klik = nic. Od 15. 9. 2026
-     se proto na /prihlaseni neukazují. */
+  /* Na přihlašovací stránce se skrývá jen „Přihlásit se" — vede na stránku,
+     na které člověk stojí, takže klik = nic.
+
+     „Přihláška do ligy" se tu naopak ukazuje schválně. Do 15. 9. 2026 mířila
+     na /registrace za AuthGuardem, který odhlášeného vrátil rovnou sem, takže
+     se skrývala taky. AuthGuard je od té doby pryč, přihláška jde vyplnit i
+     bez účtu — a pro toho, kdo se na přihlašovací stránku dostal omylem, je
+     tohle jediná cesta zpátky do náboru, která po něm nechce účet. */
   const naPrihlaseni = pathname === "/prihlaseni";
 
   const displayName =
@@ -219,18 +222,32 @@ export function SiteHeader() {
                 </div>
               ) : null}
             </div>
-          ) : naPrihlaseni ? null : (
-            /* Dvě tlačítka, dvě věci. Jedno „Přihlásit se nebo registrovat"
-               říkalo obojí najednou a nováček nevěděl, kam patří; registrace
-               míří rovnou na `?ucet=novy`, takže mu formulář rovnou nabídne
-               zakládání účtu, ne přihlašování. */
+          ) : (
+            /* Napřed role v lize, teprve pak účet.
+
+               Do 16. 9. 2026 tu stálo zlaté „Registrace" mířící na
+               `/prihlaseni?ucet=novy`, tedy na zakládání účtu. Dávalo to smysl,
+               dokud byla `/registrace` za AuthGuardem — účet byl stejně
+               podmínka. Jenže ten 15. 9. padl a přihláška se od té doby dá
+               vyplnit bez účtu (`registrace/page.tsx` říká proč), takže
+               hlavička jako jediná posílala nováčky pořád do zdi: klik na
+               nejnápadnější tlačítko na stránce = „založ si účet", dřív než se
+               člověk dozvěděl cenu, formát a kdy se hraje.
+
+               Zlaté tlačítko proto vede na přihlášku. Účet se zakládá až při
+               jejím odeslání, kdy už má člověk důvod ho chtít, a `goAfterAuth`
+               ho pak vrátí zpátky do vyplněné přihlášky. Kdo chce jen účet,
+               dojde si pro něj přes „Přihlásit se" a záložku Vytvořit účet. */
             <>
-              <LinkButton href="/prihlaseni?ucet=novy" size="sm">
-                Registrace
+              <LinkButton href="/registrace" size="sm">
+                <span className="sm:hidden">Přihláška</span>
+                <span className="hidden sm:inline">Přihláška do ligy</span>
               </LinkButton>
-              <LinkButton href="/prihlaseni" size="sm" variant="outline">
-                Přihlásit se
-              </LinkButton>
+              {naPrihlaseni ? null : (
+                <LinkButton href="/prihlaseni" size="sm" variant="outline">
+                  Přihlásit se
+                </LinkButton>
+              )}
             </>
           )}
 
@@ -280,22 +297,24 @@ export function SiteHeader() {
                 Přihláška do ligy — tým nebo sebe
               </Button>
             ) : null}
-            {!user && !naPrihlaseni ? (
+            {!user ? (
               <>
                 <Button
                   variant="gold"
                   className="mt-2"
-                  onClick={() => router.push("/prihlaseni?ucet=novy")}
+                  onClick={() => router.push("/registrace")}
                 >
-                  Registrace
+                  Přihláška do ligy — tým nebo sebe
                 </Button>
-                <Button
-                  variant="outline"
-                  className="mt-2"
-                  onClick={() => router.push("/prihlaseni")}
-                >
-                  Přihlásit se
-                </Button>
+                {naPrihlaseni ? null : (
+                  <Button
+                    variant="outline"
+                    className="mt-2"
+                    onClick={() => router.push("/prihlaseni")}
+                  >
+                    Přihlásit se
+                  </Button>
+                )}
               </>
             ) : null}
           </nav>
