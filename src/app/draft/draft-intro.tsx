@@ -2,6 +2,7 @@
 
 import { ClipboardList, Send, Timer, UserPlus } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
+import { draftOtevren } from "@/lib/sezona";
 import { Page } from "@/components/layout/container";
 import { Card, CardBody, LinkButton, Spinner } from "@/components/ui/primitives";
 import { DraftClient } from "./draft-client";
@@ -104,10 +105,15 @@ function DraftUvod() {
         </div>
       </div>
 
-      <p className="mt-5 text-[13px] leading-6 text-di">
-        U hráčů níž vidíš pozici, popis a sestřihy. Telefon a další kontakty
-        veřejné nejsou — dostane je jen vedoucí týmu, který hráče hledá.
-      </p>
+      {/* Dokud je draft pool zamčený, žádní hráči níž nejsou — věta by
+          lhala. Po otevření je naopak potřeba: říká, co je a co není
+          veřejné. */}
+      {draftOtevren() ? (
+        <p className="mt-5 text-[13px] leading-6 text-di">
+          U hráčů níž vidíš pozici, popis a sestřihy. Telefon a další kontakty
+          veřejné nejsou — dostane je jen vedoucí týmu, který hráče hledá.
+        </p>
+      ) : null}
     </div>
   );
 }
