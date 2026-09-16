@@ -44,7 +44,10 @@ const COLS = [
 export function SiteFooter() {
   return (
     <footer className="relative z-10 mt-20 border-t border-bd bg-c1/50">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      {/* Spodni rezerva kvuli plovoucimu „Napsat nam" — na telefonu jinak
+          sedelo na posledni radce tirazi. Viz layout.tsx, kde ma <main>
+          stejny duvod. */}
+      <div className="mx-auto max-w-7xl px-4 pb-28 pt-12 sm:px-6 sm:pb-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5">
