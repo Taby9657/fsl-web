@@ -51,10 +51,20 @@ export function BirthdatePicker({
   onChange,
   /** Nejstarší nabízený ročník. Starší hráče liga nemá a `validateBirthdate` je stejně odmítne. */
   odRoku = 1920,
+  /**
+   * Nejmladší nabízený ročník. Výchozí je poslední, který může mít 18 let.
+   *
+   * Do 16. 9. 2026 seznam začínal aktuálním rokem, takže nahoře stálo osmnáct
+   * ročníků, které `validateBirthdate` stejně odmítne — a výchozí pohled na
+   * mobilu ukazoval jen je. Třicetiletý odroloval o osmnáct položek víc, než
+   * bylo potřeba.
+   */
+  doRoku = new Date().getFullYear() - 18,
 }: {
   value: string;
   onChange: (v: string) => void;
   odRoku?: number;
+  doRoku?: number;
 }) {
   const [casti, setCasti] = useState<Casti>(() => rozlozit(value));
 
@@ -67,8 +77,7 @@ export function BirthdatePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const letos = new Date().getFullYear();
-  const roky = Array.from({ length: letos - odRoku + 1 }, (_, i) => letos - i);
+  const roky = Array.from({ length: doRoku - odRoku + 1 }, (_, i) => doRoku - i);
   const dnu = dniVMesici(casti.rok, casti.mesic);
 
   function uprav(zmena: Partial<Casti>) {
