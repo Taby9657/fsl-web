@@ -122,10 +122,14 @@ const POSTUP_BEZ_TYMU: Krok[] = ["jmeno", "doplnky"];
  * stránku. Od zrušení kroku „vyplata" (přihláška rozhodčího je jen základní
  * profil) na něj navíc míří staré odkazy i uložené rozdělané registrace.
  */
+function platnaRole(r: string | null | undefined): Role | null {
+  return r === "player" || r === "manager" || r === "referee" ? r : null;
+}
+
 function platnyKrok(k: string | null | undefined, r: Role | null): Krok | null {
   if (!k) return null;
   if (k === "role" || k === "hotovo") return k;
-  if (r && (POSTUP[r] as string[]).includes(k)) return k as Krok;
+  if (r && (POSTUP[r] as string[] | undefined)?.includes(k)) return k as Krok;
   return null;
 }
 
@@ -274,7 +278,12 @@ export function OnboardingClient() {
   const next = params.get("next") || "/muj-ucet";
   const kodZOdkazu = (params.get("kod") ?? "").trim().toUpperCase();
   const krokZUrl = params.get("krok") as Krok | null;
-  const roleZUrl = params.get("role") as Role | null;
+  // Role z adresy se stejně jako krok **nebere na slovo**. Přetypování tu
+  // dřív stačilo na to, aby `?role=cokoliv` shodilo celou komponentu na
+  // `POSTUP[role].includes` — a od chvíle, kdy stránku vykresluje server,
+  // by po tom pádu zůstala prázdná stránka, tedy přesně ten stav, kvůli
+  // kterému se výběr role předělával.
+  const roleZUrl = platnaRole(params.get("role"));
 
   const [role, setRole] = useState<Role | null>(roleZUrl ?? (kodZOdkazu ? "player" : null));
   const [krok, setKrokState] = useState<Krok>(
@@ -308,16 +317,22 @@ export function OnboardingClient() {
 
   /** Krok mění i adresu, aby fungovalo zpětné tlačítko prohlížeče a refresh. */
   const naKrok = useCallback(
-    (k: Krok, r: Role | null = role) => {
+    (k: Krok, r: Role | null = role, bt: boolean = bezTymu) => {
       setKrokState(k);
       setErrors({});
       const q = new URLSearchParams(params.toString());
       q.set("krok", k);
       if (r) q.set("role", r);
       else q.delete("role");
+      // `bezTymu` se z adresy při startu čte, takže v ní nesmí zůstat viset
+      // po tom, co se cesta změní. Jinak refresh bez rozdělané registrace
+      // obnoví zkrácenou cestu u kroku, který do ní nepatří. Bez role nemá
+      // co dělat v adrese vůbec — na výběru role žádná cesta neběží.
+      if (bt && r) q.set("bezTymu", "1");
+      else q.delete("bezTymu");
       router.replace(`/registrace?${q.toString()}`, { scroll: false });
     },
-    [params, role, router],
+    [params, role, bezTymu, router],
   );
 
   /* Obnovení rozdělané registrace. Jen jednou, při prvním vykreslení —
@@ -396,10 +411,13 @@ export function OnboardingClient() {
 
   const poradi = useMemo(() => {
     if (!role) return [];
-    // Na kroku „dres" se drží plný postup i u cesty bez týmu — jinak by
-    // rozdělaná registrace uložená před touhle změnou spadla na index -1.
-    if (role === "player" && bezTymu && krok !== "dres") return POSTUP_BEZ_TYMU;
-    return POSTUP[role];
+    // Zkrácená cesta platí jen na krocích, které do ní patří. Dřív tu stál
+    // výčet výjimek („kromě kroku dres"), takže každý další krok mimo ni
+    // spadl na index -1 a ukazatel psal „Krok 0 ze 2".
+    if (role === "player" && bezTymu && (POSTUP_BEZ_TYMU as string[]).includes(krok)) {
+      return POSTUP_BEZ_TYMU;
+    }
+    return POSTUP[role] ?? [];
   }, [role, bezTymu, krok]);
   const index = poradi.indexOf(krok);
   const celkem = poradi.length;
@@ -652,7 +670,7 @@ export function OnboardingClient() {
           onVyberRole={(karta) => {
             setRole(karta.id);
             setBezTymu(!!karta.bezTymu);
-            naKrok(karta.start ?? POSTUP[karta.id][0], karta.id);
+            naKrok(karta.start ?? POSTUP[karta.id][0], karta.id, !!karta.bezTymu);
           }}
           onPripojen={async () => {
             await refreshUser();
@@ -719,7 +737,7 @@ export function OnboardingClient() {
                 e.preventDefault();
                 setRole(r.id);
                 setBezTymu(!!r.bezTymu);
-                naKrok(r.start ?? POSTUP[r.id][0], r.id);
+                naKrok(r.start ?? POSTUP[r.id][0], r.id, !!r.bezTymu);
               }}
               className={TRIDY_KARTY}
               style={{ borderLeft: `4px solid ${r.color}` }}
@@ -789,7 +807,7 @@ export function OnboardingClient() {
             setTeam(null);
             setInviteCode(null);
             setBezTymu(true);
-            naKrok("jmeno");
+            naKrok("jmeno", role, true);
           }}
         />
       ) : null}
