@@ -1,4 +1,5 @@
-import { ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 /**
  * Karty s rolemi a jejich vnitřek — **záměrně mimo `onboarding-client.tsx`**.
@@ -120,46 +121,31 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
 }
 
 /**
- * „Nevíš, co vybrat?" — nápověda pod kartami.
+ * „Nevíš, co vybrat?" — odkaz pro nerozhodnuté.
  *
  * Kdo přijde z reklamy, často neví, do které ze čtyř cest patří, a bez
- * odpovědi stránku zavře. Odpověď se proto rozbalí **na místě**: nikam
- * neodkazuje a nikoho z přihlášky neposílá pryč.
+ * odpovědi stránku zavře.
  *
- * Je to `<details>`, ne stav v Reactu — funguje i v serverové náhradě, tedy
- * dřív, než se stránka oživí JavaScriptem. Safari kreslí u `summary` vlastní
- * trojúhelníček, který `list-none` nezruší; na to je
- * `[&::-webkit-details-marker]:hidden`.
+ * **Bylo to rozbalovací `<details>` a 17. 9. 2026 to padlo:** na telefonu
+ * nebylo z ničeho poznat, že se to má rozbalit — vypadalo to jako pátý,
+ * jen jinak zabalený blok, a zavřené to navíc leželo pod ohybem. Odpověď,
+ * kterou nikdo neotevře, není odpověď.
+ *
+ * Teď je to **obyčejný odkaz na úvodní stránku**, kde je liga vysvětlená
+ * celá. Vypadá jako odkaz (zlatý, podtržený, se šipkou), takže je z jednoho
+ * pohledu jasné, co udělá. Je vysoký 44 px kvůli prstu na telefonu.
  */
 export function NevimCoVybrat({ className = "" }: { className?: string }) {
   return (
-    <details className={`group rounded-xl border border-bd bg-c1/60 ${className}`}>
-      <summary className="cursor-pointer list-none px-4 py-3 text-[14px] font-semibold text-wh [&::-webkit-details-marker]:hidden">
-        Nevíš, co vybrat?
-        <span className="ml-1.5 font-normal text-mu group-open:hidden">Poradíme →</span>
-      </summary>
-      <div className="space-y-2.5 border-t border-bd px-4 py-3 text-[13px] leading-6 text-mu">
-        <p>
-          <strong className="font-semibold text-wh">Hraješ, ale nemáš partu.</strong>{" "}
-          Vyber „Nemám tým“. Přihlásíš se sám, vedoucí si tě najdou v draftu
-          a nic za to neplatíš.
-        </p>
-        <p>
-          <strong className="font-semibold text-wh">Někdo tě už zve.</strong>{" "}
-          Když máš kód z pozvánky, jdi cestou „Mám kód od vedoucího“ —
-          naskočíš rovnou na soupisku.
-        </p>
-        <p>
-          <strong className="font-semibold text-wh">Máte partu.</strong>{" "}
-          Jeden z vás přihlásí tým jako vedoucí a ostatní pozve kódem. Soupiska
-          začíná na devíti hráčích a brankáři, nahoru není omezená.
-        </p>
-        <p>
-          <strong className="font-semibold text-wh">Chceš u toho být, ale nehrát.</strong>{" "}
-          Liga shání rozhodčí — stačí jméno, kontakt a datum narození.
-        </p>
-      </div>
-    </details>
+    <div className={`text-center ${className}`}>
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 text-[14px] font-semibold text-go underline underline-offset-4 transition-colors hover:text-wh"
+      >
+        Nevíš, co vybrat? Jak liga funguje
+        <ArrowRight size={16} className="shrink-0" />
+      </Link>
+    </div>
   );
 }
 

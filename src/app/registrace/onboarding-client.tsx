@@ -833,7 +833,7 @@ export function OnboardingClient() {
             </a>
           ))}
         </div>
-        <NevimCoVybrat className="mt-3" />
+        <NevimCoVybrat className="mt-4" />
         {/* Termíny a věta o penězích jsou **pod kartami schválně**.
 
             Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
