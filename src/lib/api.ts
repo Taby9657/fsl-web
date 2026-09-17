@@ -518,6 +518,19 @@ export const supervisorApi = {
   updateTeam: (id: string, data: Record<string, unknown>) =>
     api.put<Team>(`/supervisor/teams/${id}`, data),
   deleteTeam: (id: string) => api.delete(`/supervisor/teams/${id}`),
+  /**
+   * Logo týmu. `teamsApi.uploadLogo` to umí jen vedoucímu toho týmu, takže
+   * tým bez vedoucího — typicky otevřený — logo jinak nedostane vůbec.
+   */
+  uploadTeamLogo: (id: string, file: File) => {
+    const form = new FormData();
+    form.append("logo", file);
+    return api.post<{ logoUrl: string }>(`/supervisor/teams/${id}/logo`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  removeTeamLogo: (id: string) =>
+    api.delete<{ logoUrl: string | null }>(`/supervisor/teams/${id}/logo`),
   approveTeam: (id: string, note?: string) =>
     api.put<Team>(`/supervisor/teams/${id}/approve`, { note }),
   rejectTeam: (id: string, reason: string) =>

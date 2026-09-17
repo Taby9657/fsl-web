@@ -80,6 +80,9 @@ export function AdminTeamsClient() {
   const [note, setNote] = useState("");
   const [deleting, setDeleting] = useState<Team | null>(null);
   const [busy, setBusy] = useState(false);
+  // Soubor se drží mimo `form`: logo se nahrává až po uložení týmu, protože
+  // nový tým do té chvíle nemá `id`, pod které by se dalo nahrát.
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const q = useQuery({
     queryKey: ["supervisor", "teams", regStatus, payStatus],
@@ -103,6 +106,7 @@ export function AdminTeamsClient() {
   function openCreate() {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setLogoFile(null);
     setFormOpen(true);
   }
 
@@ -117,6 +121,7 @@ export function AdminTeamsClient() {
       color: t.color ?? "#C9A140",
       isOpen: t.isOpen ?? false,
     });
+    setLogoFile(null);
     setFormOpen(true);
   }
 
@@ -140,10 +145,24 @@ export function AdminTeamsClient() {
         color: form.color,
         isOpen: form.isOpen,
       };
-      if (editing) await supervisorApi.updateTeam(editing.id, payload);
-      else await supervisorApi.createTeam(payload);
+      const ulozeny = editing
+        ? (await supervisorApi.updateTeam(editing.id, payload)).data
+        : (await supervisorApi.createTeam(payload)).data;
+
+      // Logo až teď — nový tým dostane `id` teprve uložením. Když se nahrání
+      // nepovede, tým zůstane uložený a řekne se to zvlášť: přijít o vyplněný
+      // formulář kvůli obrázku by bylo horší než tým bez loga.
+      if (logoFile) {
+        try {
+          await supervisorApi.uploadTeamLogo(ulozeny.id, logoFile);
+        } catch (e) {
+          toast.error("Tým uložen, logo ne", errMsg(e));
+        }
+      }
+
       await q.refetch();
       setFormOpen(false);
+      setLogoFile(null);
       toast.success(editing ? "Tým upraven" : "Tým vytvořen");
     } catch (e) {
       toast.error("Chyba", errMsg(e));
@@ -336,7 +355,12 @@ export function AdminTeamsClient() {
       >
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <TeamBadge abbr={form.abbr || "??"} color={form.color} size={48} />
+            <TeamBadge
+              abbr={form.abbr || "??"}
+              color={form.color}
+              logoUrl={editing?.logoUrl}
+              size={48}
+            />
             <div className="min-w-0">
               <p className="truncate text-[15px] font-bold text-wh">
                 {form.name || "Název týmu"}
@@ -396,6 +420,48 @@ export function AdminTeamsClient() {
               ))}
             </div>
           </Field>
+
+          {/* Logo se nahrává tudy, ne přes `POST /teams/:id/logo` — tamta
+              cesta patří vedoucímu týmu a tým bez vedoucího by logo nedostal
+              nikdy. Soubor se posílá až po uložení týmu, viz `saveTeam`. */}
+          <Field label="Logo týmu">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-[13px] text-mu file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-c2 file:px-3 file:py-2 file:text-[13px] file:text-wh"
+            />
+            <p className="mt-1.5 text-[12px] leading-5 text-mu">
+              {logoFile
+                ? `Vybráno: ${logoFile.name} — nahraje se po uložení.`
+                : editing?.logoUrl
+                  ? "Tým logo má. Nový soubor ho přepíše."
+                  : "Bez loga se ukáže zkratka na barevném podkladu."}
+            </p>
+          </Field>
+
+          {editing?.logoUrl && !logoFile ? (
+            <Button
+              variant="subtle"
+              className="w-full"
+              loading={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await supervisorApi.removeTeamLogo(editing.id);
+                  await q.refetch();
+                  setEditing({ ...editing, logoUrl: null });
+                  toast.success("Logo odebráno");
+                } catch (e) {
+                  toast.error("Chyba", errMsg(e));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Odebrat logo
+            </Button>
+          ) : null}
 
           {/* Otevřený tým: žádný živý vedoucí, hráče do něj zařazuje
               supervisor ve Správě hráčů. Registraci 3 000 Kč neplatí —
