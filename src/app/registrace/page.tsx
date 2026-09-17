@@ -78,7 +78,6 @@ function VyberRoleServerem() {
             key={r.klic}
             href={adresaKarty(r)}
             className={TRIDY_KARTY}
-            style={{ borderLeft: `4px solid ${r.color}` }}
           >
             <ObsahKarty r={r} />
           </a>

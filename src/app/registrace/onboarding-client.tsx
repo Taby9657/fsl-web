@@ -824,7 +824,6 @@ export function OnboardingClient() {
                 naKrok(r.start ?? POSTUP[r.id][0], r.id, !!r.bezTymu);
               }}
               className={TRIDY_KARTY}
-              style={{ borderLeft: `4px solid ${r.color}` }}
             >
               <ObsahKarty r={r} />
             </a>
@@ -1644,7 +1643,6 @@ function HotovaRoleStep({
               key={r.klic}
               onClick={() => onVyberRole(r)}
               className={TRIDY_KARTY}
-              style={{ borderLeft: `4px solid ${r.color}` }}
             >
               <ObsahKarty r={r} />
             </button>

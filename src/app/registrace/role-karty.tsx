@@ -44,8 +44,6 @@ export type KartaRole = {
   bezTymu?: boolean;
   title: string;
   desc: string;
-  /** Jediná barva na kartě — proužek vlevo. Nic jiného se jí neobarvuje. */
-  color: string;
 };
 
 export const ROLES: KartaRole[] = [
@@ -57,7 +55,6 @@ export const ROLES: KartaRole[] = [
     bezTymu: true,
     title: "Nemám tým",
     desc: "Založíš si profil a nabídneš se v draftu. Vedoucí ti pošlou nabídku. Nic to nestojí.",
-    color: "#C9A140",
   },
   {
     klic: "player-kod",
@@ -66,7 +63,6 @@ export const ROLES: KartaRole[] = [
     start: "kod",
     title: "Mám kód od vedoucího",
     desc: "Zadáš kód z pozvánky a naskočíš rovnou na soupisku svého týmu.",
-    color: "#10B981",
   },
   {
     klic: "manager",
@@ -74,7 +70,6 @@ export const ROLES: KartaRole[] = [
     id: "manager",
     title: "Jsem vedoucí týmu",
     desc: "Vytvoříš tým, spravuješ soupisku a odesíláš sestavy před zápasem.",
-    color: "#8B5CF6",
   },
   {
     klic: "referee",
@@ -82,7 +77,6 @@ export const ROLES: KartaRole[] = [
     id: "referee",
     title: "Chci být rozhodčí",
     desc: "Vyplníš jméno, kontakt a datum narození — nic víc. Supervisor tě do 48 h schválí.",
-    color: "#3B82F6",
   },
 ];
 
@@ -98,10 +92,14 @@ export const TRIDY_KARTY =
  * prvků pod sebou. Na telefonu z toho byly čtyři bloky přes celou obrazovku,
  * mezi kterými se nedalo vybírat, protože každý křičel stejně hlasitě.
  *
- * Zbyl **popisek role, název a jedna věta**. Jediná barva je proužek vlevo:
- * odliší karty od sebe a nic nepřekřičí. Štítky („Dva kroky, bez kódu",
+ * Zbyl **popisek role, název a jedna věta**. Štítky („Dva kroky, bez kódu",
  * „Rovnou na soupisku") zmizely — buď to říkala už věta pod názvem, nebo to
  * v okamžiku výběru nikoho nezajímalo.
+ *
+ * **Barevný proužek vlevo je od 17. 9. 2026 večer taky pryč.** Čtyři karty
+ * ve čtyřech barvách vypadaly jako čtyři různé věci, přitom jsou to čtyři
+ * cesty do téhož. Karty odlišuje jejich text, ne duha po straně — a barvy
+ * v FSL něco znamenají (tým, stav platby), tak ať neznačí i tohle.
  *
  * **Od 17. 9. 2026 večer je text na střed a šipka vpravo je pryč.** Šipka
  * u centrovaného textu táhne oko doprava a rozbíjí osu; buď by zabírala
