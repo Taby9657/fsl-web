@@ -57,13 +57,21 @@ export function PageTitle({
   title,
   subtitle,
   action,
+  center,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
+  /** Nadpis na střed — používá ho výběr role v přihlášce. */
+  center?: boolean;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div
+      className={clsx(
+        "mb-6 flex flex-wrap items-end gap-4",
+        center ? "justify-center text-center" : "justify-between",
+      )}
+    >
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-wh sm:text-[28px]">
           {title}

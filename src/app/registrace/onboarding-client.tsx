@@ -798,18 +798,15 @@ export function OnboardingClient() {
 
   if (krok === "role") {
     return (
-      <Page size="narrow">
-        <PageTitle
-          title={NADPISY.role.titul}
-          subtitle={
-            user
-              ? NADPISY.role.popis
-              : "Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
-          }
-        />
+      <Page size="narrow" className="text-center">
+        {/* Bez podnadpisu — viz `page.tsx`. `NADPISY.role.popis` zůstává
+            v mapě nadpisů kvůli ostatním krokům, tenhle krok ho nebere. */}
+        <PageTitle title={NADPISY.role.titul} center />
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
+        {/* Nápověda nad kartami — viz `page.tsx`. */}
+        <NevimCoVybrat className="mb-5" />
         <div className="space-y-3">
           {/* Karta je odkaz, ne tlačítko. Serverová verze v `page.tsx` vykresluje
               tytéž karty se stejným `href`, takže klik funguje i v tom prvním
@@ -833,7 +830,6 @@ export function OnboardingClient() {
             </a>
           ))}
         </div>
-        <NevimCoVybrat className="mt-4" />
         {/* Termíny a věta o penězích jsou **pod kartami schválně**.
 
             Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
@@ -848,7 +844,7 @@ export function OnboardingClient() {
             pro všechny čtyři cesty a je to konstatování, ne pobídka.
 
             Kdo tenhle blok vrátí nad karty, vrátí i tu nulu ve scrollu. */}
-        <TerminyPasek className="mt-6" />
+        <TerminyPasek className="mx-auto mt-6 max-w-md text-left" />
         <p className="mt-3 text-[13px] leading-6 text-mu">
           <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
           Platba přijde na řadu až potom, ve tvém účtu.

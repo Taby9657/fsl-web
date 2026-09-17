@@ -64,11 +64,14 @@ export const metadata: Metadata = {
  */
 function VyberRoleServerem() {
   return (
-    <Page size="narrow">
-      <PageTitle
-        title="Přihláška do ligy"
-        subtitle="Řekni, kdo jsi, a vyplň přihlášku. Účet si založíš až na konci."
-      />
+    <Page size="narrow" className="text-center">
+      {/* Bez podnadpisu. Vysvětloval, co člověk v tu chvíli stejně vidí —
+          čtyři karty s rolemi — a odsouval je níž po obrazovce. */}
+      <PageTitle title="Přihláška do ligy" center />
+      {/* Nápověda stojí **nad** kartami: nerozhodnutý člověk ji má potkat
+          dřív, než se začne rozhodovat, ne až když projde všechny čtyři
+          a žádná mu nesedla. */}
+      <NevimCoVybrat className="mb-5" />
       <div className="space-y-3">
         {ROLES.map((r) => (
           <a
@@ -81,7 +84,6 @@ function VyberRoleServerem() {
           </a>
         ))}
       </div>
-      <NevimCoVybrat className="mt-4" />
       {/* Termíny a věta o penězích jsou **pod kartami schválně**.
 
           Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
@@ -96,7 +98,7 @@ function VyberRoleServerem() {
           pro všechny čtyři cesty a je to konstatování, ne pobídka.
 
           Kdo tenhle blok vrátí nad karty, vrátí i tu nulu ve scrollu. */}
-      <TerminyPasek className="mt-6" />
+      <TerminyPasek className="mx-auto mt-6 max-w-md text-left" />
       <p className="mt-3 text-[13px] leading-6 text-mu">
         <strong className="font-semibold text-wh">V přihlášce se neplatí.</strong>{" "}
         Platba přijde na řadu až potom, ve tvém účtu.

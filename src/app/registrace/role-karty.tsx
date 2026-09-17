@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 /**
@@ -88,7 +88,7 @@ export const ROLES: KartaRole[] = [
 
 /** Společné třídy obalu, ať se serverová a klientská karta neliší ani o pixel. */
 export const TRIDY_KARTY =
-  "block w-full cursor-pointer rounded-xl border border-bd bg-c1 p-4 text-left transition-colors hover:border-bd-strong hover:bg-c2/60";
+  "block w-full cursor-pointer rounded-xl border border-bd bg-c1 p-4 text-center transition-colors hover:border-bd-strong hover:bg-c2/60";
 
 /**
  * Vnitřek karty. Stejný na serveru i v prohlížeči.
@@ -103,20 +103,23 @@ export const TRIDY_KARTY =
  * „Rovnou na soupisku") zmizely — buď to říkala už věta pod názvem, nebo to
  * v okamžiku výběru nikoho nezajímalo.
  *
+ * **Od 17. 9. 2026 večer je text na střed a šipka vpravo je pryč.** Šipka
+ * u centrovaného textu táhne oko doprava a rozbíjí osu; buď by zabírala
+ * místo a text by stál o její pixely vlevo, nebo by musela plavat nad ním
+ * a narážet do dlouhého řádku. Že je karta klikací, říká celá její plocha
+ * a barevný proužek vlevo.
+ *
  * **Kdo sem bude vracet ikony, vrátí i ty čtyři bloky přes celou obrazovku.**
  */
 export function ObsahKarty({ r }: { r: KartaRole }) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-wide text-di">
-          {r.pro}
-        </span>
-        <span className="mt-0.5 block text-[16px] font-bold text-wh">{r.title}</span>
-        <span className="mt-1 block text-[13px] leading-5 text-mu">{r.desc}</span>
+    <>
+      <span className="block text-[11px] font-semibold uppercase tracking-wide text-di">
+        {r.pro}
       </span>
-      <ChevronRight size={18} className="mt-3 shrink-0 text-di" />
-    </div>
+      <span className="mt-0.5 block text-[16px] font-bold text-wh">{r.title}</span>
+      <span className="mt-1 block text-[13px] leading-5 text-mu">{r.desc}</span>
+    </>
   );
 }
 
