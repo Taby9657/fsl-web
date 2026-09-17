@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { sdileni } from "@/lib/og";
 import { OnboardingClient } from "./onboarding-client";
-import { adresaKarty, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
+import { adresaKarty, NevimCoVybrat, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
 import { Page } from "@/components/layout/container";
 import { PageTitle } from "@/components/ui/primitives";
 import { TerminyPasek } from "@/components/terminy-pasek";
@@ -81,6 +81,7 @@ function VyberRoleServerem() {
           </a>
         ))}
       </div>
+      <NevimCoVybrat className="mt-3" />
       {/* Termíny a věta o penězích jsou **pod kartami schválně**.
 
           Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:

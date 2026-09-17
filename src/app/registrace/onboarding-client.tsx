@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowLeft, CheckCircle2, ChevronRight, Copy, RotateCcw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, RotateCcw } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -26,6 +26,7 @@ import type { Team } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import {
   adresaKarty,
+  NevimCoVybrat,
   ObsahKarty,
   ROLES,
   TRIDY_KARTY,
@@ -832,6 +833,7 @@ export function OnboardingClient() {
             </a>
           ))}
         </div>
+        <NevimCoVybrat className="mt-3" />
         {/* Termíny a věta o penězích jsou **pod kartami schválně**.
 
             Do 16. 9. večer byly nad nimi a měření ukázalo, proč to byla chyba:
@@ -1645,22 +1647,10 @@ function HotovaRoleStep({
             <button
               key={r.klic}
               onClick={() => onVyberRole(r)}
-              className="w-full cursor-pointer rounded-xl border border-bd bg-c1 p-5 text-left transition-colors hover:border-bd-strong hover:bg-c2/60"
+              className={TRIDY_KARTY}
               style={{ borderLeft: `4px solid ${r.color}` }}
             >
-              <div className="flex items-start gap-4">
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${r.color}22`, color: r.color }}
-                >
-                  {r.icon}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[17px] font-bold text-wh">{r.title}</span>
-                  <span className="mt-1 block text-[13px] leading-6 text-mu">{r.desc}</span>
-                </span>
-                <ChevronRight size={18} className="mt-1 shrink-0 text-di" />
-              </div>
+              <ObsahKarty r={r} />
             </button>
           ))}
         </div>
