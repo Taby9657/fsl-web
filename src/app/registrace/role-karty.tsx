@@ -131,15 +131,16 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
  * jen jinak zabalený blok, a zavřené to navíc leželo pod ohybem. Odpověď,
  * kterou nikdo neotevře, není odpověď.
  *
- * Teď je to **obyčejný odkaz na úvodní stránku**, kde je liga vysvětlená
- * celá. Vypadá jako odkaz (zlatý, podtržený, se šipkou), takže je z jednoho
+ * Teď je to **obyčejný odkaz na sekci „Jak liga funguje" na titulce**,
+ * kde je formát soutěže vysvětlený celý a odkud se tlačítkem dole vrací
+ * sem na výběr role. Vypadá jako odkaz (zlatý, podtržený, se šipkou), takže je z jednoho
  * pohledu jasné, co udělá. Je vysoký 44 px kvůli prstu na telefonu.
  */
 export function NevimCoVybrat({ className = "" }: { className?: string }) {
   return (
     <div className={`text-center ${className}`}>
       <Link
-        href="/"
+        href="/#jak-to-funguje"
         className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 text-[14px] font-semibold text-go underline underline-offset-4 transition-colors hover:text-wh"
       >
         Nevíš, co vybrat? Jak liga funguje

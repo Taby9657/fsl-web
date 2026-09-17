@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ArrowRight,
   BarChart3,
   CalendarDays,
@@ -51,101 +52,194 @@ export default async function HomePage() {
               "radial-gradient(40rem 24rem at 20% 0%, rgba(201,161,64,0.16), transparent 65%), radial-gradient(36rem 22rem at 85% 20%, rgba(139,92,246,0.18), transparent 65%)",
           }}
         />
-        <Container className="relative py-10 sm:py-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold label-caps uppercase text-go">
-                Sezóna {season}
-              </span>
-              <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-wh sm:text-5xl lg:text-6xl">
-                Floorball
-                <br />
-                <span className="text-go">Stars Liga</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-[16px] leading-7 text-mu">
-                Nová amatérská liga v Praze. Živé výsledky, tabulka, statistiky
-                hráčů, soupisky týmů a draft volných hráčů — celá liga na jednom
-                místě. Registrace do sezóny {SEZONA.nazev} je otevřená.
-              </p>
-              {/* Tři údaje, podle kterých se člověk rozhoduje, jestli se přihlásí:
-                  dokdy to stihne, kdy se začne hrát a jestli se mu to vejde do
-                  týdne. Do 16. 9. 2026 nestály nikde na webu, pak tu stály jako
-                  věta oddělená tečkami — a v ní vypadal termín uzávěrky stejně
-                  důležitě jako místo konání. `TerminyPasek` je stejný jako
-                  v přihlášce, takže kdo klikne dál, vidí tytéž termíny stejně. */}
-              {/* Na telefonu stojí pásek termínů až pod tlačítky — je 189 px
-                  vysoký a Safari na iPhonu ukáže jen ~664 px z 844. S ním nad
-                  tlačítky začínalo „Přihlásit tým nebo sebe" na 630 px, na
-                  375px iPhonu na 658, tedy pod ohybem: dva ze tří iPhonů
-                  hlavní tlačítko po příchodu z reklamy vůbec neukázaly.
-                  Pod tlačítky se nad ohyb vejde obojí. Naměřeno 17. 9. 2026.
+        {/* Hero je jeden sloupec na střed, ne dva vedle sebe.
+            Do 17. 9. 2026 stál text vlevo a dlaždice vedle něj; na telefonu
+            se stejně skládaly pod sebe, takže dvousloupcová mřížka nedělala
+            nic než že držela text u levého kraje. **96 % návštěvníků chodí
+            z iPhonu**, takže rozhoduje, jak to vypadá na šířku 390 px. */}
+        <Container className="relative py-10 sm:py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold label-caps uppercase text-go">
+              Sezóna {season}
+            </span>
+            <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-wh sm:text-5xl lg:text-6xl">
+              Floorball
+              <br />
+              <span className="text-go">Stars Liga</span>
+            </h1>
+            {/* **Slovo „florbalová" tu musí padnout.** Do 17. 9. 2026 tu stálo
+                „Nová amatérská liga v Praze. Živé výsledky, tabulka,
+                statistiky hráčů…" — to popisuje **web**, ne soutěž, a člověk,
+                který o lize nikdy neslyšel, se z titulky nedozvěděl ani to,
+                jaký sport se hraje. Název „Floorball Stars Liga" to nezachrání:
+                anglicky a jako jméno, ne jako popis. */}
+            <p className="mt-5 text-[18px] leading-8 text-mu sm:text-[20px] sm:leading-9">
+              <strong className="font-semibold text-wh">
+                Amatérská florbalová liga v Praze.
+              </strong>{" "}
+              Hraje se od listopadu do března, pondělí až čtvrtek večer.
+              Přihlásit se může celý tým i jeden hráč bez party.
+            </p>
+            {/* První tlačítko musí být vstup do ligy, ne výsledky.
+                Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
+                a na registraci nevedl z úvodní stránky odkaz žádný. */}
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <LinkButton href="/registrace" size="lg">
+                Přihlásit tým nebo sebe
+                <ArrowRight size={18} />
+              </LinkButton>
+              <LinkButton href="/cenik" variant="outline" size="lg">
+                Co to stojí
+              </LinkButton>
+              <LinkButton href="#jak-to-funguje" variant="ghost" size="lg">
+                Jak liga funguje
+              </LinkButton>
+            </div>
+            {/* Tři údaje, podle kterých se člověk rozhoduje, jestli se přihlásí:
+                dokdy to stihne, kdy se začne hrát a jestli se mu to vejde do
+                týdne. `TerminyPasek` je stejný jako v přihlášce, takže kdo
+                klikne dál, vidí tytéž termíny stejně.
 
-                  Vykresluje se dvakrát se vzájemně vylučujícími třídami, ne
-                  přes `order` ve flexu: rodič drží i odznak sezóny, a ten by
-                  se ve flexu roztáhl přes celou šířku. Komponenta je bez
-                  stavu a bez efektů, takže druhý výskyt nic nestojí.
-                  Na sm+ zůstává pořadí z 16. 9. 2026 beze změny. */}
-              <TerminyPasek className="mt-6 hidden max-w-md sm:block" />
-              {/* První tlačítko musí být vstup do ligy, ne výsledky.
-                  Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
-                  a na registraci nevedl z úvodní stránky odkaz žádný. */}
-              <div className="mt-8 flex flex-wrap gap-3">
-                <LinkButton href="/registrace" size="lg">
-                  Přihlásit tým nebo sebe
-                  <ArrowRight size={18} />
-                </LinkButton>
-                <LinkButton href="/cenik" variant="outline" size="lg">
-                  Co to stojí
-                </LinkButton>
-                <LinkButton href="/zapasy" variant="ghost" size="lg">
-                  Zápasy a výsledky
-                </LinkButton>
-              </div>
-              <TerminyPasek className="mt-8 max-w-md sm:hidden" />
+                **Stojí pod tlačítky, ne nad nimi.** Je 189 px vysoký a Safari
+                na iPhonu ukáže jen ~664 px z 844 — s ním nad tlačítky
+                začínalo „Přihlásit tým nebo sebe" na 630. pixelu, na 375px
+                iPhonu na 658, tedy pod ohybem. Naměřeno 17. 9. 2026. Uvnitř
+                pásku zůstává text zarovnaný doleva, protože datum má vpravo
+                svůj sloupec. */}
+            <TerminyPasek className="mx-auto mt-8 max-w-md text-left" />
+          </div>
+
+          {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to
+              informace pro vedení, ne pro návštěvníky webu. */}
+          <div className="mx-auto mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3">
+            {/* Dokud rozpis nestojí, ukazuje dlaždice stav přihlášek místo
+                pomlčky: „—" u prvního čísla na stránce vypadá, že liga
+                neběží. Naměřeno 16. 9. 2026 — z 209 návštěvníků za 24 h
+                se na přihlášku dostalo 14. */}
+            {upcoming?.length ? (
+              <HeroStat
+                icon={<CalendarDays size={20} />}
+                label="Nadcházejících zápasů"
+                value={`${upcoming.length}+`}
+              />
+            ) : (
+              <HeroStat
+                icon={<ClipboardList size={20} />}
+                label="Přihlášky"
+                value={prihlaskyOtevrene() ? "Otevřené" : "Uzavřené"}
+              />
+            )}
+            <HeroStat
+              icon={<BarChart3 size={20} />}
+              label="Statistiky"
+              value="Live"
+            />
+            {/* Dlaždice tvrdila „Otevřen" i teď, kdy je veřejný výpis volných
+                hráčů zamčený do 1. 11. — viz `draftOtevren()` v `lib/sezona`. */}
+            <HeroStat
+              icon={<Users size={20} />}
+              label="Draft volných hráčů"
+              value={draftOtevren() ? "Otevřen" : `Od ${den(SEZONA.otevreniDraftu)}`}
+            />
+          </div>
+        </Container>
+      </section>
+
+      {/* ---------- JAK LIGA FUNGUJE ---------- */}
+      {/* Cíl odkazu „Nevíš, co vybrat?" z přihlášky — proto to `id`.
+          Celá smyčka: `/registrace` → sem → tlačítkem dole zpátky na výběr
+          role. Do 17. 9. 2026 neříkala titulka o fungování soutěže vůbec nic:
+          sekce byly živé zápasy, rozpis, aktuality, tabulka a rozcestník,
+          tedy samé **výsledky** — a ty zajímají člověka, který v lize už je,
+          ne toho, kdo se rozhoduje, jestli do ní vstoupí.
+
+          **Kdo bude tuhle sekci upravovat, ať to srovná s
+          `fsl-pravidla-souteze.md`.** Je to jediné místo na webu, kde je
+          formát soutěže napsaný celý. */}
+      <section id="jak-to-funguje" className="scroll-mt-20 border-b border-bd bg-c1/30">
+        <Container className="py-12 sm:py-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-2xl font-black tracking-tight text-wh sm:text-3xl">
+              Jak liga funguje
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-[16px] leading-7 text-mu">
+              Amatérský florbal pro party kamarádů i pro jednotlivce, kteří tým
+              nemají. Tohle je celý formát soutěže na jednom místě.
+            </p>
+
+            <div className="mt-10 space-y-8">
+              <Pravidlo nadpis="Na hřišti 5 + 1">
+                Pět hráčů do pole a brankář. Střídá se průběžně, takže do
+                zápasu se hlásí <strong className="font-semibold text-wh">8 + 1 až 18 + 2</strong> hráčů
+                — bez osmi v poli a gólmana se zápas nezahájí.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Tři třetiny po 15 minutách">
+                Základní část a předkolo se hrají na{" "}
+                <strong className="font-semibold text-wh">hrubý čas</strong> — hodiny se při
+                přerušení nezastavují a zápas má předvídatelnou délku.{" "}
+                <strong className="font-semibold text-wh">Od čtvrtfinále na čistý čas</strong>,
+                tedy se zastavováním. Čím dál se jde, tím víc se hraje o výsledek.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Základní část: 15 až 20 kol">
+                Kolik přesně, se ukáže podle počtu přihlášených týmů — proto je
+                to rozsah, ne číslo. Hraje se od listopadu do března, pondělí až
+                čtvrtek mezi 18:00 a 22:00, v Praze.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Do play-off jde každý tým">
+                Základní částí nikomu sezóna nekončí — rozhoduje jen o nasazení.{" "}
+                <strong className="font-semibold text-wh">Předkolo a čtvrtfinále</strong> se
+                hrají na dvě vítězná utkání,{" "}
+                <strong className="font-semibold text-wh">semifinále a finále</strong> na tři.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Soupiska od 9 + 1, nahoru bez omezení">
+                Devět hráčů do pole a brankář je minimum, se kterým tým do
+                soutěže projde. Kolik jich přiberete navíc, je na vás — strop
+                žádný není. Doporučujeme dva gólmany: s jedním je tým bez brankáře
+                zhruba každý třetí zápas.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Nemáš tým? Přihlas se sám">
+                Hráč bez party se přihlásí do draftu volných hráčů a vedoucí,
+                kterým chybí lidi do soupisky, mu pošlou nabídku. Za přihlášku
+                do draftu se neplatí nic.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Od 18 let">
+                Platí pro hráče, vedoucí týmů i rozhodčí. Věk se počítá ke dni
+                registrace.
+              </Pravidlo>
+
+              <Pravidlo nadpis="Co to stojí">
+                Tým platí <strong className="font-semibold text-wh">registraci 3 000 Kč</strong>{" "}
+                na sezónu a nic dalšího — poplatky za zápasy po hráčích neshání.
+                Hráč si platí <strong className="font-semibold text-wh">licenci 300 Kč</strong>{" "}
+                a balíček startů, ze kterého se každý odehraný zápas jeden odečte;
+                ve dvacetizápasovém balíčku vychází start na 150 Kč.{" "}
+                <Link href="/cenik" className="font-semibold text-go underline underline-offset-4 hover:text-wh">
+                  Celý ceník
+                </Link>
+              </Pravidlo>
             </div>
 
-            {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to
-                informace pro vedení, ne pro návštěvníky webu. */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {/* Dokud rozpis nestojí, ukazuje dlaždice stav přihlášek místo
-                  pomlčky: „—" u prvního čísla na stránce vypadá, že liga
-                  neběží. Naměřeno 16. 9. 2026 — z 209 návštěvníků za 24 h
-                  se na přihlášku dostalo 14. Že za to může tahle dlaždice,
-                  ověřené není; je to jen jedno z prázdných míst nad ní.
-
-                  Datum startu tady dřív bylo taky, ale od zavedení
-                  `TerminyPasek` vedle by stálo na jedné obrazovce dvakrát. */}
-              {upcoming?.length ? (
-                <HeroStat
-                  icon={<CalendarDays size={20} />}
-                  label="Nadcházejících zápasů"
-                  value={`${upcoming.length}+`}
-                />
-              ) : (
-                <HeroStat
-                  icon={<ClipboardList size={20} />}
-                  label="Přihlášky"
-                  value={prihlaskyOtevrene() ? "Otevřené" : "Uzavřené"}
-                />
-              )}
-              <HeroStat
-                icon={<BarChart3 size={20} />}
-                label="Statistiky"
-                value="Live"
-              />
-              {/* Dlaždice tvrdila „Otevřen" i teď, kdy je veřejný výpis volných
-                  hráčů zamčený do 1. 11. — viz `draftOtevren()` v `lib/sezona`.
-                  Hráč bez týmu se do draftu normálně přihlásí, jen ho zvenčí
-                  nikdo nevidí, takže datum je tu i pozvánka, nejen omezení. */}
-              <HeroStat
-                icon={<Users size={20} />}
-                label="Draft volných hráčů"
-                value={draftOtevren() ? "Otevřen" : `Od ${den(SEZONA.otevreniDraftu)}`}
-              />
+            {/* Konec smyčky: odsud se vrací na výběr role v přihlášce.
+                Kdo si sem přišel pro odpověď, nemá ji hledat zpátky sám. */}
+            <div className="mt-12">
+              <LinkButton href="/registrace" size="lg">
+                <ArrowLeft size={18} />
+                Zpět na výběr role
+              </LinkButton>
+              <p className="mt-3 text-[13px] text-di">
+                Přihláška zabere pár minut. Účet si založíš až na konci.
+              </p>
             </div>
           </div>
         </Container>
       </section>
+
 
       <Container className="py-12 sm:py-16">
         {/* ---------- LIVE ---------- */}
@@ -417,5 +511,15 @@ function QuickLink({
       </span>
       <ArrowRight size={16} className="text-di" />
     </Link>
+  );
+}
+
+/** Jedno pravidlo v sekci „Jak liga funguje" — nadpis a vysvětlení pod ním. */
+function Pravidlo({ nadpis, children }: { nadpis: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-[19px] font-bold text-wh sm:text-[20px]">{nadpis}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-[16px] leading-7 text-mu">{children}</p>
+    </div>
   );
 }
