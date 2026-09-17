@@ -50,6 +50,15 @@ export interface TeamLite {
 
 export interface Team extends TeamLite {
   venue?: string | null;
+  /**
+   * Otevřený tým — skládá se z jednotlivců a nemá živého vedoucího.
+   *
+   * **Chodí jen ze supervisorských rout.** Ve veřejných datech
+   * (`VEREJNY_TYM` v backendu) schválně není: do 2. 11. 2026 se nikde venku
+   * nesmí objevit, že je tým poskládaný z jednotlivců. Kdo ho bude
+   * vykreslovat, ať to dělá výhradně v `/admin`.
+   */
+  isOpen?: boolean;
   regStatus?: RegStatus;
   regNote?: string | null;
   regAppeal?: string | null;

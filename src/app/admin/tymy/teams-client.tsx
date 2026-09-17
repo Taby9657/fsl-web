@@ -57,6 +57,7 @@ type FormState = {
   conference: string;
   venue: string;
   color: string;
+  isOpen: boolean;
 };
 
 const EMPTY_FORM: FormState = {
@@ -66,6 +67,7 @@ const EMPTY_FORM: FormState = {
   conference: "",
   venue: "",
   color: "#C9A140",
+  isOpen: false,
 };
 
 export function AdminTeamsClient() {
@@ -113,6 +115,7 @@ export function AdminTeamsClient() {
       conference: t.conference ?? "",
       venue: t.venue ?? "",
       color: t.color ?? "#C9A140",
+      isOpen: t.isOpen ?? false,
     });
     setFormOpen(true);
   }
@@ -135,6 +138,7 @@ export function AdminTeamsClient() {
         conference: form.conference.trim() || null,
         venue: form.venue.trim() || null,
         color: form.color,
+        isOpen: form.isOpen,
       };
       if (editing) await supervisorApi.updateTeam(editing.id, payload);
       else await supervisorApi.createTeam(payload);
@@ -251,6 +255,7 @@ export function AdminTeamsClient() {
                               {t.name}
                             </span>
                             <Badge color={REG_STATUS_COLOR[st]}>{REG_STATUS_LABEL[st]}</Badge>
+                            {t.isOpen ? <Badge color="#0891B2">Otevřený</Badge> : null}
                             {pay ? (
                               <Badge
                                 color={
@@ -391,6 +396,32 @@ export function AdminTeamsClient() {
               ))}
             </div>
           </Field>
+
+          {/* Otevřený tým: žádný živý vedoucí, hráče do něj zařazuje
+              supervisor ve Správě hráčů. Registraci 3 000 Kč neplatí —
+              tahle cesta žádný předpis nezakládá.
+
+              **Ven se to nesmí dostat do 2. 11. 2026.** `isOpen` proto není
+              ve veřejných datech a nikde mimo `/admin` se nevykresluje: než
+              se losuje, nikdo zvenku nemá vědět, který tým je poskládaný
+              z jednotlivců. */}
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-bd bg-c2 p-3.5">
+            <input
+              type="checkbox"
+              checked={form.isOpen}
+              onChange={(e) => setForm({ ...form, isOpen: e.target.checked })}
+              className="mt-0.5 size-5 shrink-0 cursor-pointer accent-go"
+            />
+            <span className="min-w-0">
+              <span className="block text-[15px] font-medium text-wh">
+                Otevřený tým (virtuální vedoucí)
+              </span>
+              <span className="mt-0.5 block text-[13px] leading-5 text-mu">
+                Nemá vedoucího ani pozvánkový kód — hráče do něj zařadíš ve
+                Správě hráčů. Registraci 3 000 Kč neplatí. Venku to vidět není.
+              </span>
+            </span>
+          </label>
 
           <Button className="w-full" onClick={saveTeam} loading={busy}>
             {editing ? "Uložit změny" : "Vytvořit tým"}
