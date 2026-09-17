@@ -325,8 +325,14 @@ export function Label({
   );
 }
 
+/* 16 px, ne 15. Safari na iOS automaticky priblizi stranku, jakmile clovek
+   tukne do pole s pismem mensim nez 16 px — a zpatky se uz neoddali. Zbytek
+   prihlasky se pak vyplnuje na zvetsene a vodorovne posunute strance, kde
+   tlacitko „Pokracovat" casto neni videt. Namereno 17. 9. 2026 na produkci:
+   melo to kazde pole v celem trychtyri. Obvykle „reseni" `maximum-scale=1`
+   ve viewportu se nedela — zakazalo by lidem zvetsit si web prsty. */
 const fieldBase =
-  "w-full rounded-xl border border-bd bg-c2 px-3.5 py-2.5 text-[15px] text-wh outline-none transition-colors placeholder:text-di focus:border-go/60 disabled:opacity-50";
+  "w-full rounded-xl border border-bd bg-c2 px-3.5 py-2.5 text-[16px] text-wh outline-none transition-colors placeholder:text-di focus:border-go/60 disabled:opacity-50";
 
 export function Input({
   className,

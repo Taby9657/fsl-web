@@ -940,6 +940,7 @@ export function OnboardingClient() {
                     firstName: validateName(data.firstName, "Jméno") ?? "",
                   }))
                 }
+                autoComplete="given-name"
                 placeholder="Jan"
                 autoFocus
               />
@@ -954,6 +955,7 @@ export function OnboardingClient() {
                     lastName: validateName(data.lastName, "Příjmení") ?? "",
                   }))
                 }
+                autoComplete="family-name"
                 placeholder="Novák"
               />
             </Field>
@@ -1069,6 +1071,9 @@ export function OnboardingClient() {
               onBlur={() =>
                 setErrors((p) => ({ ...p, phone: validatePhone(data.phone) ?? "" }))
               }
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="+420 601 234 567"
             />
           </Field>
@@ -1298,6 +1303,7 @@ export function OnboardingClient() {
               <Input
                 value={data.mFirstName}
                 onChange={(e) => set("mFirstName", e.target.value)}
+                autoComplete="given-name"
                 placeholder="Jan"
                 autoFocus
               />
@@ -1306,6 +1312,7 @@ export function OnboardingClient() {
               <Input
                 value={data.mLastName}
                 onChange={(e) => set("mLastName", e.target.value)}
+                autoComplete="family-name"
                 placeholder="Novák"
               />
             </Field>
@@ -1360,6 +1367,7 @@ export function OnboardingClient() {
               <Input
                 value={data.rFirstName}
                 onChange={(e) => set("rFirstName", e.target.value)}
+                autoComplete="given-name"
                 placeholder="Jan"
                 autoFocus
               />
@@ -1368,6 +1376,7 @@ export function OnboardingClient() {
               <Input
                 value={data.rLastName}
                 onChange={(e) => set("rLastName", e.target.value)}
+                autoComplete="family-name"
                 placeholder="Novák"
               />
             </Field>
@@ -1376,6 +1385,9 @@ export function OnboardingClient() {
             <Input
               value={data.rPhone}
               onChange={(e) => set("rPhone", e.target.value)}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="+420 601 234 567"
             />
           </Field>

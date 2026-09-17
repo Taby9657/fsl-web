@@ -51,7 +51,7 @@ export default async function HomePage() {
               "radial-gradient(40rem 24rem at 20% 0%, rgba(201,161,64,0.16), transparent 65%), radial-gradient(36rem 22rem at 85% 20%, rgba(139,92,246,0.18), transparent 65%)",
           }}
         />
-        <Container className="relative py-16 sm:py-24">
+        <Container className="relative py-10 sm:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold label-caps uppercase text-go">
@@ -73,7 +73,19 @@ export default async function HomePage() {
                   věta oddělená tečkami — a v ní vypadal termín uzávěrky stejně
                   důležitě jako místo konání. `TerminyPasek` je stejný jako
                   v přihlášce, takže kdo klikne dál, vidí tytéž termíny stejně. */}
-              <TerminyPasek className="mt-6 max-w-md" />
+              {/* Na telefonu stojí pásek termínů až pod tlačítky — je 189 px
+                  vysoký a Safari na iPhonu ukáže jen ~664 px z 844. S ním nad
+                  tlačítky začínalo „Přihlásit tým nebo sebe" na 630 px, na
+                  375px iPhonu na 658, tedy pod ohybem: dva ze tří iPhonů
+                  hlavní tlačítko po příchodu z reklamy vůbec neukázaly.
+                  Pod tlačítky se nad ohyb vejde obojí. Naměřeno 17. 9. 2026.
+
+                  Vykresluje se dvakrát se vzájemně vylučujícími třídami, ne
+                  přes `order` ve flexu: rodič drží i odznak sezóny, a ten by
+                  se ve flexu roztáhl přes celou šířku. Komponenta je bez
+                  stavu a bez efektů, takže druhý výskyt nic nestojí.
+                  Na sm+ zůstává pořadí z 16. 9. 2026 beze změny. */}
+              <TerminyPasek className="mt-6 hidden max-w-md sm:block" />
               {/* První tlačítko musí být vstup do ligy, ne výsledky.
                   Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
                   a na registraci nevedl z úvodní stránky odkaz žádný. */}
@@ -89,6 +101,7 @@ export default async function HomePage() {
                   Zápasy a výsledky
                 </LinkButton>
               </div>
+              <TerminyPasek className="mt-8 max-w-md sm:hidden" />
             </div>
 
             {/* Počet týmů se tu vědomě neukazuje — dokud liga roste, je to

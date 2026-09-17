@@ -20,6 +20,14 @@ export function SupportWidget() {
   // V administraci ne — supervisor píše sám sobě.
   if (pathname?.startsWith("/admin")) return null;
 
+  // A v přihlášce ani na přihlášení ne. Tlačítko je `fixed bottom-4 right-4`
+  // a na telefonu měří 158 × 51 px, tedy přesně přes „Pokračovat" i
+  // „Dokončit" — naměřeno 17. 9. 2026 na 390 px: widget na 598, tlačítko na
+  // 634. Na monitoru je vpravo dole prázdno, proto se to dlouho neprojevilo.
+  // Když 96 % lidí chodí z iPhonu, je to překryv na hlavní cestě webu.
+  if (pathname?.startsWith("/registrace") || pathname?.startsWith("/prihlaseni"))
+    return null;
+
   return (
     <>
       {/* Zlatá výplň, ne obtažení: v decentní variantě si tlačítka nikdo
