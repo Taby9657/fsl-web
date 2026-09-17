@@ -80,9 +80,18 @@ export const ROLES: KartaRole[] = [
   },
 ];
 
-/** Společné třídy obalu, ať se serverová a klientská karta neliší ani o pixel. */
+/**
+ * Společné třídy obalu, ať se serverová a klientská karta neliší ani o pixel.
+ *
+ * **Vzdušnější od 17. 9. 2026 večer.** Větší zaoblení, tišší rámeček a víc
+ * místa uvnitř. Výška karty se tím zvedla ze 121 na 138 px — a **to je
+ * strop**: nad ohybem iPhonu (390 × 664 v Safari) končí třetí karta na
+ * 655. pixelu, tedy o devět pixelů dřív. `py-5` místo `py-4` ji utne.
+ * Vejít se musí tři, jinak se vrací přesně ta chyba, kvůli které se
+ * přihláška 17. 9. přestavovala. **Kdo sem sáhne, ať si to na 390 px změří.**
+ */
 export const TRIDY_KARTY =
-  "block w-full cursor-pointer rounded-xl border border-bd bg-c1 p-4 text-center transition-colors hover:border-bd-strong hover:bg-c2/60";
+  "block w-full cursor-pointer rounded-2xl border border-bd/70 bg-c1/70 px-5 py-4 text-center transition-colors hover:border-bd-strong hover:bg-c1";
 
 /**
  * Vnitřek karty. Stejný na serveru i v prohlížeči.
@@ -112,11 +121,20 @@ export const TRIDY_KARTY =
 export function ObsahKarty({ r }: { r: KartaRole }) {
   return (
     <>
-      <span className="block text-[11px] font-semibold uppercase tracking-wide text-di">
+      {/* Popisek role ustoupil: menší písmo, širší prostrkání, tlumená barva.
+          Je to zařazení, ne nadpis — nemá soutěžit s názvem cesty. */}
+      <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-di">
         {r.pro}
       </span>
-      <span className="mt-0.5 block text-[16px] font-bold text-wh">{r.title}</span>
-      <span className="mt-1 block text-[13px] leading-5 text-mu">{r.desc}</span>
+      <span className="mt-2 block text-[18px] font-bold tracking-tight text-wh">
+        {r.title}
+      </span>
+      {/* `max-w-[34ch]` drží rozumnou délku řádku i na širokém displeji —
+          věta přes celou šířku karty se na monitoru čte špatně a vycentrovaný
+          text to zhoršuje. */}
+      <span className="mx-auto mt-2 block max-w-[34ch] text-[14px] leading-6 text-mu">
+        {r.desc}
+      </span>
     </>
   );
 }
