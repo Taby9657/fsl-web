@@ -206,33 +206,6 @@ export default function CenikPage() {
         </p>
       </div>
 
-      {/* ── Pokuta ──
-          Podmínky použití odkazují na ceník („její výše je uvedena
-          v ceníku"), takže tady stát musí. Formulace ale zůstává věcná:
-          nemá vyhrožovat lidem, kteří se sestavou zápasí. */}
-      <div className="mt-10">
-        <SectionTitle>Pokuta za kontumaci</SectionTitle>
-        <Card className="border-l-2 border-l-red">
-          <CardBody className="sm:p-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h3 className="text-[15px] font-semibold text-wh">
-                Tým nenastoupil k zápasu
-              </h3>
-              <div className="text-2xl font-bold tracking-tight text-wh tabular-nums">
-                {czk(3000)}
-              </div>
-            </div>
-            <p className="mt-3 text-[13px] leading-6 text-mu">
-              Zápas skončí 5:0 pro soupeře. Pokutu platí tým a{" "}
-              <strong className="font-semibold text-wh">
-                do jejího uhrazení nerozehraje další zápas
-              </strong>
-              . Soupeři, který k zápasu přišel, se starty vrátí do balíčku.
-            </p>
-          </CardBody>
-        </Card>
-      </div>
-
       {/* ── Pravidla plateb ── */}
       <div className="mt-10">
         <SectionTitle>Pravidla plateb</SectionTitle>

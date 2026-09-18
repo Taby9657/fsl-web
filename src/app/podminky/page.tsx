@@ -78,11 +78,6 @@ export default function TermsPage() {
           hradí organizaci soutěže.
         </p>
         <p>
-          Nenastoupí-li tým k zápasu, může pořadatel zápas kontumovat a předepsat týmu pokutu;
-          její výše je uvedena v ceníku. Do jejího uhrazení nemusí být týmu umožněno nastoupit
-          k dalšímu zápasu.
-        </p>
-        <p>
           Zaplacené poplatky se nevracejí. <strong>Nevyčerpané starty z balíčku ale
           nepropadají</strong> — přenášejí se do play-off a do následující sezóny, pokud si
           v ní hráč zaplatí licenci. Zruší-li se zápas, start se nezapočítá a zůstává
