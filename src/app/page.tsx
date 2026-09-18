@@ -77,12 +77,25 @@ export default async function HomePage() {
                 který o lize nikdy neslyšel, se z titulky nedozvěděl ani to,
                 jaký sport se hraje. Název „Floorball Stars Liga" to nezachrání:
                 anglicky a jako jméno, ne jako popis. */}
+            {/* **„Hraje se od listopadu do března" je nepřesné** a 18. 9. 2026
+                to zadavatel opravil: listopad až březen je **základní část**,
+                po ní teprve přijde play-off. Bez toho rozlišení to čte jako
+                by sezóna v březnu končila.
+
+                Formát sérií tu stojí schválně, i když je i v „Jak liga
+                funguje" níž: kdo se rozhoduje, jestli se přihlásí, potřebuje
+                vědět, že play-off není jeden vyřazovací zápas. Odstavec tím
+                narostl o řádek — **kdo sem bude přidávat dál, ať si na
+                390 × 664 ověří, že „Přihlásit tým nebo sebe" zůstalo nad
+                ohybem** (viz komentář u `TerminyPasek` níž). */}
             <p className="mt-5 text-[18px] leading-8 text-mu sm:text-[20px] sm:leading-9">
               <strong className="font-semibold text-wh">
                 Amatérská florbalová liga v Praze.
               </strong>{" "}
-              Hraje se od listopadu do března, pondělí až čtvrtek večer.
-              Přihlásit se může celý tým i jeden hráč bez party.
+              Základní část od listopadu do března, pondělí až čtvrtek večer.
+              Pak <strong className="font-semibold text-wh">play-off, do kterého jde každý tým</strong>{" "}
+              — předkolo a čtvrtfinále na dvě vítězná utkání, semifinále
+              a finále na tři. Přihlásit se může celý tým i jeden hráč bez party.
             </p>
             {/* První tlačítko musí být vstup do ligy, ne výsledky.
                 Do 11. 9. 2026 vedlo na Zápasy — tedy na prázdný rozpis —
