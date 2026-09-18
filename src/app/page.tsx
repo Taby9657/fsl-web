@@ -240,6 +240,19 @@ export default async function HomePage() {
                 registrace.
               </Pravidlo>
 
+              {/* Doplněno 18. 9. 2026 na pokyn zadavatele. Je to **hlavní
+                  důvod, proč se vedoucímu vyplatí hrát tady a ne si udělat
+                  turnaj sám**, a do té doby to na webu nebylo nikde — ani
+                  v závazných pravidlech. Stojí schválně těsně před cenou:
+                  „tohle všechno je v tom" a hned za tím, co to stojí. */}
+              <Pravidlo nadpis="Zápasy organizuje liga">
+                Halu, termín, pořadatelskou službu i zdravotnický dozor
+                zajišťuje liga. Vedoucí nic z toho{" "}
+                <strong className="font-semibold text-wh">neshání ani nedomlouvá</strong>{" "}
+                — zbude na něj jen zápis v aplikaci:{" "}
+                <strong className="font-semibold text-wh">góly a tresty</strong>, nic víc.
+              </Pravidlo>
+
               <Pravidlo nadpis="Co to stojí">
                 Tým platí <strong className="font-semibold text-wh">registraci 3 000 Kč</strong>{" "}
                 na sezónu a nic dalšího — poplatky za zápasy po hráčích neshání.
