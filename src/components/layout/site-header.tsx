@@ -94,13 +94,28 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-bd bg-bg/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-go text-[13px] font-black tracking-tight text-go">
-            FSL
-          </span>
-          <span className="hidden text-[15px] font-bold tracking-tight text-wh sm:block">
-            Floorball Stars Liga
-          </span>
+        {/* Značka je **jen slovní název**, bez znaku vedle.
+
+            18. 9. 2026 tu chvíli stálo FSL z loga (zlaté F a L, fialové S)
+            místo staršího zlatého kolečka. V hlavičce vysoké 32 px z toho
+            byla široká, tmavá a nevýrazná skvrna vedle bílého textu —
+            zadavatel to shrnul „nevypadá to moc dobře, radši bez toho".
+            Kdo bude znak vracet, ať ho nejdřív porovná na telefonu proti
+            samotnému textu; logo samo o sobě je v pořádku, na 32 px se ale
+            ztrácí.
+
+            Text je proto viditelný **vždycky**, i na telefonu — dokud tu byl
+            znak, mobil ukazoval jen jeho a název byl schovaný (`sm:block`).
+            Bez znaku by tak odkaz na titulku zůstal prázdný. Na úzkém
+            displeji se zkracuje na „FSL": plný název je ~155 px a hlavička
+            se na 360px displeji už jednou přetáhla mimo obrazovku (viz
+            komentář u tlačítka Přihláška níž). */}
+        <Link
+          href="/"
+          className="flex shrink-0 items-center text-[15px] font-bold tracking-tight text-wh"
+        >
+          <span className="sm:hidden">FSL</span>
+          <span className="hidden sm:inline">Floorball Stars Liga</span>
         </Link>
 
         <nav className="hidden flex-1 items-center gap-1 xl:flex">
