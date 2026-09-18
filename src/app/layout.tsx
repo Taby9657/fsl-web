@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SupportWidget } from "@/components/support-widget";
 import { MetaPixel } from "@/components/meta-pixel";
+import { CookieLista } from "@/components/cookie-lista";
 import { OG_OBRAZEK } from "@/lib/og";
 import { Analytika } from "@/components/analytika";
 
@@ -95,6 +96,7 @@ export default function RootLayout({
         </Providers>
         <Analytika />
         <MetaPixel />
+        <CookieLista />
       </body>
     </html>
   );

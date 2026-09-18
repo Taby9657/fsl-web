@@ -659,4 +659,33 @@ export const onboardingApi = {
       // Ticho ze stejného důvodu jako u `krok`.
     });
   },
+
+  /**
+   * Serverová kopie konverze pro Metu — protiváha k pixelu v prohlížeči.
+   *
+   * Volá se **jen se souhlasem** (`souhlas: true`); backend bez něj nic
+   * neodešle. Smysl: blokátor reklam zabije skript pixelu, ale tenhle
+   * požadavek jde na naši doménu, takže projde — a `eventId` je stejné jako
+   * u pixelu, takže když projdou oba, Meta je spáruje a započítá jednou.
+   *
+   * `keepalive` ze stejného důvodu jako u `krok`: volá se ve chvíli, kdy se
+   * stránka po dokončení přihlášky překresluje.
+   */
+  metaKonverze: (telo: {
+    eventId: string;
+    nazev: "CompleteRegistration" | "Lead";
+    souhlas: boolean;
+    url: string;
+    role: string | null;
+  }) => {
+    void fetch(`${API_URL}/onboarding/meta-konverze`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(telo),
+      credentials: "include",
+      keepalive: true,
+    }).catch(() => {
+      // Ticho ze stejného důvodu jako u `krok`.
+    });
+  },
 };

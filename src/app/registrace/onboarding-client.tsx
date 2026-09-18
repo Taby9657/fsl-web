@@ -57,6 +57,8 @@ import {
   type Souhlasy,
 } from "@/lib/souhlasy";
 import { SouhlasyPole } from "@/components/souhlasy";
+import { metaUdalost } from "@/components/meta-pixel";
+import { maSouhlas } from "@/lib/souhlas-mereni";
 import { toast } from "@/components/ui/toast";
 
 /**
@@ -403,6 +405,53 @@ export function OnboardingClient() {
     if (!navsteva.current) navsteva.current = noveIdNavstevy();
     onboardingApi.krok({ navsteva: navsteva.current, role, krok, bezTymu });
   }, [role, krok, bezTymu, uzMaRoli]);
+
+  /* Meta: stejná místa jako vlastní trychtýř výš, ale **jen dvě události**.
+
+     Víc jich schválně není. Optimalizovat se dá jen na to, čeho je dost —
+     při čtyřech registracích denně by se mezikroky formuláře rozdrobily na
+     signál, ze kterého se Meta nemá jak učit, a zároveň by zaplevelily
+     publika. `Lead` = vybral roli (rozhodl se, že to zkusí), 
+     `CompleteRegistration` = dokončil.
+
+     `metaUdalost` sama nic nepošle, když člověk odmítl souhlas na liště —
+     tady se to proto neřeší podruhé.
+
+     Každá událost jen jednou za průchod: mezi kroky se chodí i zpět
+     a bez téhle pojistky by `Lead` odešel při každém návratu na formulář.
+
+     ⚠️ `CompleteRegistration` odsud je **nespolehlivý** — po dokončení se
+     stránka překresluje a odchozí požadavek pixelu se může přerušit. Přesně
+     kvůli tomu posílá tutéž událost i backend přes Conversions API; obě nesou
+     stejné `eventID`, takže si je Meta spáruje a započítá jednou. */
+  const metaOdeslano = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (uzMaRoli || !role || krok === "role") return;
+    const hotovo = krok === "hotovo";
+    const klic = hotovo ? "hotovo" : "lead";
+    if (metaOdeslano.current.has(klic)) return;
+    metaOdeslano.current.add(klic);
+    if (hotovo) {
+      const eventId = `reg-${navsteva.current}`;
+      metaUdalost(
+        "CompleteRegistration",
+        { content_category: role, status: true },
+        eventId,
+      );
+      // Druhá, spolehlivější cesta té samé události — viz `metaKonverze`.
+      if (maSouhlas()) {
+        onboardingApi.metaKonverze({
+          eventId,
+          nazev: "CompleteRegistration",
+          souhlas: true,
+          url: window.location.href,
+          role,
+        });
+      }
+    } else {
+      metaUdalost("Lead", { content_category: role });
+    }
+  }, [role, krok, uzMaRoli]);
 
   /* Druhá polovina měření: jak dlouho na kroku byl a jak z něj odešel.
 

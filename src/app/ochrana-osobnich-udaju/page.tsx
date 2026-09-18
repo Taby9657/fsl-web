@@ -21,7 +21,7 @@ export default function PrivacyPage() {
     <Page size="narrow">
       <PageTitle
         title="Zásady ochrany osobních údajů"
-        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 16. 9. 2026"
+        subtitle="Floorball Stars Liga (web fslleague.cz a mobilní aplikace FSL) · poslední aktualizace 18. 9. 2026"
       />
       <Prose>
         <h2>1. Správce údajů</h2>
@@ -118,24 +118,53 @@ export default function PrivacyPage() {
           <li>Cloudinary — ukládání fotek a videí,</li>
           <li>Stripe — zpracování online plateb kartou,</li>
           <li>Resend — odesílání e-mailů (obnova hesla, oznámení z ligy),</li>
-          <li>Sentry — sledování chyb aplikace.</li>
+          <li>Sentry — sledování chyb aplikace,</li>
+          <li>
+            Meta Platforms Ireland — měření účinnosti reklam, jen s vaším
+            souhlasem (viz oddíl 7).
+          </li>
         </ul>
 
-        <h2>7. Doba uchování</h2>
+        <h2>7. Cookies a měření návštěvnosti</h2>
+        <p>
+          Web měří návštěvnost dvěma nástroji, které <strong>nepoužívají cookies
+          ani neukládají nic do vašeho prohlížeče</strong> a nepotřebují proto
+          váš souhlas: Vercel Analytics (počty návštěv a odkud přišly)
+          a vlastní měření průchodu přihláškou, které si drží jen náhodné číslo
+          platné po dobu otevřené stránky a neukládá nic z vyplněných polí.
+        </p>
+        <p>
+          Nad rámec toho používáme <strong>Meta Pixel</strong> — měří, kolik lidí
+          přišlo z našich reklam na Facebooku a Instagramu a kolik z nich se
+          přihlásilo do ligy. Ukládá do prohlížeče cookie <code>_fbp</code>
+          a předává společnosti Meta vaši IP adresu, adresu navštívené stránky
+          a informaci o tom, zda jste dokončili přihlášku. Pixel se spouští
+          <strong> až poté, co k tomu dáte souhlas</strong> na liště ve spodní
+          části webu; bez souhlasu se nenačte vůbec a web funguje stejně.
+        </p>
+        <p>
+          Právním základem je váš souhlas (čl. 6 odst. 1 písm. a) GDPR). Souhlas
+          můžete kdykoli odvolat — smazáním dat webu v nastavení prohlížeče se
+          uložená volba zruší a lišta se zeptá znovu. Meta zpracovává tyto údaje
+          jako samostatný správce pro účely měření a cílení reklamy; podrobnosti
+          jsou v jejích zásadách ochrany soukromí.
+        </p>
+
+        <h2>8. Doba uchování</h2>
         <p>
           Údaje uchováváme po dobu aktivního účtu a dále po dobu nezbytnou pro historii
           soutěže. Na požádání účet i osobní údaje smažeme — herní statistiky mohou zůstat v
           anonymizované podobě.
         </p>
 
-        <h2>8. Zabezpečení</h2>
+        <h2>9. Zabezpečení</h2>
         <p>
           Veškerá komunikace probíhá přes HTTPS. Hesla neukládáme v čitelné podobě, ale
           výhradně jako nevratný otisk; přihlásit se lze i přes Google nebo Apple. Přístup
           k citlivým údajům rozhodčích má pouze supervisor ligy.
         </p>
 
-        <h2>9. Vaše práva</h2>
+        <h2>10. Vaše práva</h2>
         <p>
           Máte právo na přístup ke svým údajům, jejich opravu, výmaz, omezení zpracování a na
           přenositelnost. Žádosti posílejte na{" "}
