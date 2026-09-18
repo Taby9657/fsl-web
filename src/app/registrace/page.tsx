@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { sdileni } from "@/lib/og";
+import { SEZONA, rocnikPopis } from "@/lib/sezona";
 import { OnboardingClient } from "./onboarding-client";
 import { adresaKarty, NevimCoVybrat, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
 import { Page } from "@/components/layout/container";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   ...sdileni({
     title: "Přihláška do Floorball Stars Ligy",
     description:
-      "Přihlas tým, sebe jako hráče, nebo se ozvi jako rozhodčí. Registrace do sezóny 2026/27 je otevřená.",
+      "Přihlas tým, sebe jako hráče, nebo se ozvi jako rozhodčí. Přihlášky do 1. ročníku (sezóna 2026/27) jsou otevřené.",
     path: "/registrace",
   }),
 };
@@ -66,8 +67,16 @@ function VyberRoleServerem() {
   return (
     <Page size="narrow" className="text-center">
       {/* Bez podnadpisu. Vysvětloval, co člověk v tu chvíli stejně vidí —
-          čtyři karty s rolemi — a odsouval je níž po obrazovce. */}
-      <PageTitle title="Přihláška do ligy" center />
+          čtyři karty s rolemi — a odsouval je níž po obrazovce.
+
+          Ročník naopak **v nadpisu chybět nesmí**: 18. 9. 2026 přišel dotaz
+          „jaký je to vlastně ročník" a na téhle stránce to nebylo nikde.
+          Jde o jeden 11px řádek nad nadpisem, ne o podnadpis. */}
+      <PageTitle
+        eyebrow={`Přihlášení do ${rocnikPopis()} · sezóna ${SEZONA.nazev}`}
+        title="Přihláška do ligy"
+        center
+      />
       {/* Nápověda stojí **nad** kartami: nerozhodnutý člověk ji má potkat
           dřív, než se začne rozhodovat, ne až když projde všechny čtyři
           a žádná mu nesedla. */}

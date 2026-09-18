@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { SEZONA, den, draftOtevren, prihlaskyOtevrene } from "@/lib/sezona";
+import { SEZONA, den, draftOtevren, prihlaskyOtevrene, rocnikPopis } from "@/lib/sezona";
 import { publicFetch } from "@/lib/api";
 import type { Highlight, Match, TableRow, TeamLite } from "@/lib/types";
 import { fmtDate } from "@/lib/format";
@@ -59,8 +59,12 @@ export default async function HomePage() {
             z iPhonu**, takže rozhoduje, jak to vypadá na šířku 390 px. */}
         <Container className="relative py-10 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
+            {/* Ročník patří do odznaku, ne na vlastní řádek: hero se od
+                17. 9. 2026 vejde na iPhonu nad ohyb a další řádek by to
+                zbořil. Text je delší, výška stejná. Číslo ročníku je
+                natvrdo v `lib/sezona`, název sezóny bere z API. */}
             <span className="inline-flex items-center gap-2 rounded-full border border-go/40 bg-go-soft px-3 py-1 text-[12px] font-semibold label-caps uppercase text-go">
-              Sezóna {season}
+              {rocnikPopis()} · Sezóna {season}
             </span>
             <h1 className="mt-5 text-4xl font-black leading-[1.05] tracking-tight text-wh sm:text-5xl lg:text-6xl">
               Floorball
@@ -168,6 +172,16 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-10 space-y-8">
+              {/* První v pořadí schválně: 18. 9. 2026 přišel do informační
+                  schránky dotaz „jaký je to vlastně ročník" a web na něj
+                  neodpovídal nikde. Kdo se ptá, ptá se dřív než na formát. */}
+              <Pravidlo nadpis={`${rocnikPopis()}: rozjíždíme se`}>
+                Sezóna <strong className="font-semibold text-wh">{SEZONA.nazev}</strong> je{" "}
+                <strong className="font-semibold text-wh">úplně první ročník</strong>{" "}
+                Floorball Stars Ligy. Formát, termíny i ceník níž platí pro něj —
+                a kdo se přihlásí teď, je u toho od začátku.
+              </Pravidlo>
+
               <Pravidlo nadpis="Na hřišti 5 + 1">
                 Pět hráčů do pole a brankář. Střídá se průběžně, takže do
                 zápasu se hlásí <strong className="font-semibold text-wh">8 + 1 až 18 + 2</strong> hráčů

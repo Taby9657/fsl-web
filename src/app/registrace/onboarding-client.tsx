@@ -23,6 +23,7 @@ import {
   type Errors,
 } from "@/lib/validation";
 import type { Team } from "@/lib/types";
+import { SEZONA, rocnikPopis } from "@/lib/sezona";
 import { useAuthStore } from "@/store/auth";
 import {
   adresaKarty,
@@ -849,8 +850,14 @@ export function OnboardingClient() {
     return (
       <Page size="narrow" className="text-center">
         {/* Bez podnadpisu — viz `page.tsx`. `NADPISY.role.popis` zůstává
-            v mapě nadpisů kvůli ostatním krokům, tenhle krok ho nebere. */}
-        <PageTitle title={NADPISY.role.titul} center />
+            v mapě nadpisů kvůli ostatním krokům, tenhle krok ho nebere.
+            Eyebrow s ročníkem musí sedět se serverovou náhradou v `page.tsx`,
+            jinak text při oživení stránky poskočí. */}
+        <PageTitle
+          eyebrow={`Přihlášení do ${rocnikPopis()} · sezóna ${SEZONA.nazev}`}
+          title={NADPISY.role.titul}
+          center
+        />
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}

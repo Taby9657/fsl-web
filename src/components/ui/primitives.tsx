@@ -55,11 +55,21 @@ export function SectionTitle({
 
 export function PageTitle({
   title,
+  eyebrow,
   subtitle,
   action,
   center,
 }: {
   title: ReactNode;
+  /**
+   * Krátký řádek nad nadpisem, verzálkami a v drobném písmu — dnes ho nese
+   * jen „1. ročník · sezóna 2026/27" nad výběrem role.
+   *
+   * **Patří sem jedna řádka, ne věta.** Výběr role se od 17. 9. 2026 pečlivě
+   * drží nad ohybem iPhonu a každý řádek navíc ho o kus posune dolů; dvě
+   * řádky tady stojí karty přesně tolik, co se tehdy pracně ušetřilo.
+   */
+  eyebrow?: ReactNode;
   subtitle?: ReactNode;
   action?: ReactNode;
   /** Nadpis na střed — používá ho výběr role v přihlášce. */
@@ -73,6 +83,11 @@ export function PageTitle({
       )}
     >
       <div>
+        {eyebrow ? (
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-go">
+            {eyebrow}
+          </p>
+        ) : null}
         <h1 className="text-2xl font-bold tracking-tight text-wh sm:text-[28px]">
           {title}
         </h1>

@@ -3,6 +3,7 @@ import { sdileni } from "@/lib/og";
 import Link from "next/link";
 import { Page } from "@/components/layout/container";
 import { Card, CardBody, PageTitle, SectionTitle, LinkButton } from "@/components/ui/primitives";
+import { rocnikPopis } from "@/lib/sezona";
 
 export const metadata: Metadata = {
   title: "Ceník",
@@ -122,7 +123,8 @@ export default function CenikPage() {
     <Page>
       <PageTitle
         title="Ceník"
-        subtitle="Sezóna 2026/27 · 15–20 kol základní části + play-off pro všechny týmy · uvedené ceny jsou konečné a nic se k nim nepřipočítává"
+        eyebrow={`${rocnikPopis()} · sezóna 2026/27`}
+        subtitle="15–20 kol základní části + play-off pro všechny týmy · uvedené ceny jsou konečné a nic se k nim nepřipočítává"
       />
 
       {/* ── Model v jedné větě ── */}
@@ -228,7 +230,7 @@ export default function CenikPage() {
       <div className="mt-10 rounded-xl border border-bd bg-c1/80 p-5 text-center sm:p-6">
         <h2 className="text-[17px] font-bold text-wh">Sedí ti to? Přihlas se</h2>
         <p className="mx-auto mt-2 max-w-lg text-[14px] leading-6 text-mu">
-          Registrace do sezóny 2026/27 je otevřená. Tým přihlašuje jeho vedoucí;
+          Registrace do 1. ročníku (sezóna 2026/27) je otevřená. Tým přihlašuje jeho vedoucí;
           kdo tým nemá, nabídne se v draftu a nic tím neplatí.
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">

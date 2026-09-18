@@ -13,6 +13,14 @@
 
 export const SEZONA = {
   nazev: "2026/27",
+  /**
+   * Pořadí ročníku. 2026/27 je **první** — liga se rozjíždí.
+   *
+   * Doplněno 18. 9. 2026: do informační schránky přišel dotaz „jaký je to
+   * vlastně ročník" a web na to neodpovídal nikde. Číslo stojí tady, aby se
+   * při druhém ročníku měnilo na jednom místě, ne ve čtyřech textech.
+   */
+  rocnik: 1,
   /** Poslední okamžik, kdy jde odeslat přihlášku. */
   konecPrihlasek: new Date("2026-11-01T23:59:59+01:00"),
   /** Rozlosování — po něm vzniká rozpis, tabulka a soupisky. */
@@ -51,6 +59,11 @@ const FORMAT_DNE = new Intl.DateTimeFormat("cs-CZ", {
 export function den(d: Date) {
   // cs-CZ dává „2. 11." — mezera je nezlomitelná, sjednotíme ji na obyčejnou.
   return FORMAT_DNE.format(d).replace(/\u00a0/g, " ").trim();
+}
+
+/** „1. ročník" — pro odznak na titulce, přihlášku i ceník. */
+export function rocnikPopis() {
+  return `${SEZONA.rocnik}. ročník`;
 }
 
 /** Před startem sezóny se místo prázdných seznamů ukazuje `PredSezonou`. */
