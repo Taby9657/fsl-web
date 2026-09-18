@@ -109,13 +109,22 @@ export function SiteHeader() {
             Bez znaku by tak odkaz na titulku zůstal prázdný. Na úzkém
             displeji se zkracuje na „FSL": plný název je ~155 px a hlavička
             se na 360px displeji už jednou přetáhla mimo obrazovku (viz
-            komentář u tlačítka Přihláška níž). */}
+            komentář u tlačítka Přihláška níž).
+
+            **Dvoubarevně, ne celé bíle.** Bílý název stál vedle bílých
+            odkazů Zápasy / Tabulka / Statistiky a četl se jako osmá položka
+            navigace — nic neříkalo, že je to značka. Zlaté „Stars Liga" ho
+            oddělí a je to tentýž lom jako v nadpisu na titulce, takže se to
+            čte jako záměr. Kdo to bude sjednocovat, ať to sjednotí s hero
+            v `app/page.tsx`, ne naopak. */}
         <Link
           href="/"
           className="flex shrink-0 items-center text-[15px] font-bold tracking-tight text-wh"
         >
           <span className="sm:hidden">FSL</span>
-          <span className="hidden sm:inline">Floorball Stars Liga</span>
+          <span className="hidden sm:inline">
+            Floorball <span className="text-go">Stars Liga</span>
+          </span>
         </Link>
 
         <nav className="hidden flex-1 items-center gap-1 xl:flex">
