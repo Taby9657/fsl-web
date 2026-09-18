@@ -504,6 +504,26 @@ export function OnboardingClient() {
       const odkaz = cil.closest("a[href]");
       if (!(odkaz instanceof HTMLAnchorElement)) return;
       odchod = odkaz.pathname.startsWith("/registrace") ? "klik" : "jinam";
+
+      /* Jeden konkrétní odchod se zapisuje zvlášť: „Nevíš, co vybrat? Jak liga
+         funguje". Samotné `jinam` říká jen „odešel jinam na web" — 18. 9. to
+         bylo 31 lidí ze 184 měřených na výběru role — a mezi „šel si přečíst,
+         jak to funguje" a „odešel pryč" je přitom celý rozdíl mezi opravou
+         textu karet a opravou reklamy.
+
+         Posílá se `role: null` a `bezTymu: false`: tohle není krok v cestě
+         rolí, odkaz je jen na obrazovce výběru role, kde role ještě žádná
+         není. Dvojice (`navsteva`, `krok`) je v databázi unikátní, takže
+         opakovaný klik v témž průchodu přibude jen jednou — počítá se
+         **kolik lidí** kliklo, ne kolikrát. */
+      if (odkaz.hash === "#jak-to-funguje") {
+        onboardingApi.krok({
+          navsteva: id,
+          role: null,
+          krok: "jak-funguje",
+          bezTymu: false,
+        });
+      }
     };
 
     const posli = (jak: "klik" | "jinam" | "zavrel") => {
