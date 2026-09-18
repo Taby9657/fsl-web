@@ -6,6 +6,7 @@ import type { Match, Team } from "@/lib/types";
 import { Page } from "@/components/layout/container";
 import { Card, SectionTitle } from "@/components/ui/primitives";
 import { StatBox, StatStrip, TeamBadge } from "@/components/ui/data";
+import { predSezonou } from "@/lib/sezona";
 import { TeamTabs } from "./team-tabs";
 
 export const revalidate = 120;
@@ -13,6 +14,9 @@ export const revalidate = 120;
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  // Detail je do startu sezóny zavřený stejně jako seznam — viz níže.
+  if (predSezonou()) return { title: "Tým nenalezen" };
+
   const { id } = await params;
   const team = await publicFetch<Team>(`/teams/${id}`);
   if (!team) return { title: "Tým nenalezen" };
@@ -23,6 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TeamPage({ params }: Props) {
+  // Seznam týmů je do startu sezóny schovaný (`tymy/page.tsx`); přímý odkaz
+  // na detail by ho obešel i se soupiskou, takže je zavřený taky.
+  if (predSezonou()) notFound();
+
   const { id } = await params;
   const [team, matches] = await Promise.all([
     publicFetch<Team>(`/teams/${id}`, undefined, 120),

@@ -6,7 +6,7 @@ import type { TeamLite } from "@/lib/types";
 import { Page } from "@/components/layout/container";
 import { Card, EmptyState, PageTitle } from "@/components/ui/primitives";
 import { PredSezonou } from "@/components/pred-sezonou";
-import { predSezonou } from "@/lib/sezona";
+import { SEZONA, den, predSezonou } from "@/lib/sezona";
 import { TeamBadge } from "@/components/ui/data";
 
 export const revalidate = 300;
@@ -17,6 +17,25 @@ export const metadata: Metadata = {
 };
 
 export default async function TymyPage() {
+  // Do startu sezóny se seznam účastníků ven nedává (rozhodnuto 18. 9. 2026).
+  // Do té doby se vypisoval hned, jak se někdo přihlásil, takže veřejně svítil
+  // jediný tým i s divizí — návštěvník z reklamy z toho vyčetl, jak je liga
+  // velká. Kdo v soutěži je, se zveřejní až s rozlosováním.
+  //
+  // Je to zámek ve webu, ne v API: endpoint `/teams` zůstává veřejný, takže
+  // kdo ho zná, seznam si vytáhne. Stejné omezení má draft, viz `lib/sezona.ts`.
+  if (predSezonou()) {
+    return (
+      <Page>
+        <PageTitle title="Týmy" subtitle="Kompletní přehled účastníků ligy" />
+        <PredSezonou
+          titul="Seznam účastníků zveřejníme po rozlosování"
+          popis={`Přihlášky běží do ${den(SEZONA.konecPrihlasek)}, rozlosování je ${den(SEZONA.los)} — kdo v lize je, ukážeme až spolu s rozpisem.`}
+        />
+      </Page>
+    );
+  }
+
   const teams = (await publicFetch<TeamLite[]>("/teams")) ?? [];
 
   // Prostý abecední seznam. Seskupení podle divizí tu bylo dřív, ale dokud liga
@@ -31,11 +50,7 @@ export default async function TymyPage() {
       <PageTitle title="Týmy" subtitle="Kompletní přehled účastníků ligy" />
 
       {serazene.length === 0 ? (
-        predSezonou() ? (
-          <PredSezonou titul="Seznam účastníků se plní přihláškami" popis="Zatím tu není nikdo. Tým, který se přihlásí jako první, se tady objeví hned — čekat na rozlosování nemusí." />
-        ) : (
-          <EmptyState icon={<Users size={40} />} title="Zatím žádné týmy" />
-        )
+        <EmptyState icon={<Users size={40} />} title="Zatím žádné týmy" />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {serazene.map((t) => {

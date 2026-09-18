@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { searchApi } from "@/lib/api";
 import { fullName, positionShort, REFEREE_LEVEL_LABEL } from "@/lib/format";
 import { useQueryState } from "@/hooks/use-query-state";
+import { predSezonou } from "@/lib/sezona";
 import { Card, EmptyState, SectionTitle } from "@/components/ui/primitives";
 import { Avatar, SearchInput, TeamBadge, TeamDot } from "@/components/ui/data";
 
@@ -31,9 +32,13 @@ export function SearchClient() {
     queryFn: async () => (await searchApi.search(debounced)).data,
   });
 
+  // Týmy se do startu sezóny nezveřejňují (viz `app/tymy/page.tsx`), takže
+  // se nesmí počítat ani do výsledků — jinak by se při shodě jen na názvu
+  // týmu ukázala prázdná stránka místo „Nic nenalezeno".
+  const tymyVen = !predSezonou();
   const total =
     (query.data?.players?.length ?? 0) +
-    (query.data?.teams?.length ?? 0) +
+    (tymyVen ? query.data?.teams?.length ?? 0 : 0) +
     (query.data?.referees?.length ?? 0);
 
   return (
@@ -58,7 +63,7 @@ export function SearchClient() {
         <EmptyState icon={<Frown size={40} />} title={`Nic nenalezeno pro „${debounced}"`} />
       ) : (
         <div className="space-y-8">
-          {query.data?.teams?.length ? (
+          {tymyVen && query.data?.teams?.length ? (
             <section>
               <SectionTitle>Týmy</SectionTitle>
               <Card className="overflow-hidden">

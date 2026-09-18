@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errMsg, playersApi, teamsApi } from "@/lib/api";
 import { fullName, REG_STATUS_COLOR, REG_STATUS_LABEL } from "@/lib/format";
+import { predSezonou } from "@/lib/sezona";
 import {
   useAuthStore,
   useIsManager,
@@ -154,10 +155,19 @@ export function AccountClient() {
           </p>
         </div>
         {player?.team ? (
-          <Link href={`/tymy/${player.team.id}`} className="flex items-center gap-2.5">
-            <TeamBadge abbr={player.team.abbr} color={player.team.color} size={40} />
-            <span className="hidden text-[13px] text-mu sm:block">{player.team.name}</span>
-          </Link>
+          // Do startu sezóny je detail týmu zavřený, takže odznak nikam
+          // neodkazuje — jinak by si vlastní hráč kliknul na 404.
+          predSezonou() ? (
+            <span className="flex items-center gap-2.5">
+              <TeamBadge abbr={player.team.abbr} color={player.team.color} size={40} />
+              <span className="hidden text-[13px] text-mu sm:block">{player.team.name}</span>
+            </span>
+          ) : (
+            <Link href={`/tymy/${player.team.id}`} className="flex items-center gap-2.5">
+              <TeamBadge abbr={player.team.abbr} color={player.team.color} size={40} />
+              <span className="hidden text-[13px] text-mu sm:block">{player.team.name}</span>
+            </Link>
+          )
         ) : null}
       </Card>
 

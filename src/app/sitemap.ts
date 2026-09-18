@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { publicFetch } from "@/lib/api";
 import type { Match, TeamLite } from "@/lib/types";
+import { predSezonou } from "@/lib/sezona";
 
 const BASE = "https://fslleague.cz";
 
@@ -35,8 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: path === "" ? 1 : 0.7,
   }));
 
+  // Stránky týmů jsou do startu sezóny zavřené (404), do sitemapy tedy
+  // nepatří — jinak by je Google procházel a jména týmů zůstala v indexu.
   const [teams, matches] = await Promise.all([
-    publicFetch<TeamLite[]>("/teams", undefined, 3600),
+    predSezonou()
+      ? Promise.resolve([] as TeamLite[])
+      : publicFetch<TeamLite[]>("/teams", undefined, 3600),
     publicFetch<Match[]>("/matches", { limit: 200 }, 3600),
   ]);
 
