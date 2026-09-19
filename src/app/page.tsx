@@ -201,18 +201,25 @@ export default async function HomePage() {
                 — bez osmi v poli a gólmana se zápas nezahájí.
               </Pravidlo>
 
-              <Pravidlo nadpis="Tři třetiny po 15 minutách">
-                Základní část a předkolo se hrají na{" "}
-                <strong className="font-semibold text-wh">hrubý čas</strong> — hodiny se při
-                přerušení nezastavují a zápas má předvídatelnou délku.{" "}
-                <strong className="font-semibold text-wh">Od čtvrtfinále na čistý čas</strong>,
-                tedy se zastavováním. Čím dál se jde, tím víc se hraje o výsledek.
+              {/* Změna z 19. 9. 2026 (rozhodnutí zadavatele): čistý čas ve
+                  VŠECH zápasech, dřív byl hrubý a čistý až od čtvrtfinále.
+                  Je to jediná věc na téhle stránce, kterou konkurenční
+                  amatérské ligy zpravidla nemají — proto je z ní tučně
+                  vytažená. Zápas tím v hale trvá zhruba o polovinu déle;
+                  ceník se kvůli tomu vědomě nemění. */}
+              <Pravidlo nadpis="Tři třetiny po 15 minutách čistého času">
+                Hodiny se při každém přerušení zastavují — a to{" "}
+                <strong className="font-semibold text-wh">ve všech zápasech</strong>, od
+                prvního kola základní části po finále. Odehraje se tedy celých{" "}
+                <strong className="font-semibold text-wh">45 minut hry</strong>, ne
+                pětačtyřicet minut, ze kterých část spolknou vhazování a přerušení.
               </Pravidlo>
 
               <Pravidlo nadpis="Základní část: 15 až 20 kol">
                 Kolik přesně, se ukáže podle počtu přihlášených týmů — proto je
-                to rozsah, ne číslo. Hraje se od listopadu do března, pondělí až
-                čtvrtek mezi 18:00 a 22:00, v Praze.
+                to rozsah, ne číslo.{" "}
+                <strong className="font-semibold text-wh">Jeden zápas týdně</strong>, od
+                listopadu do března, pondělí až čtvrtek mezi 18:00 a 22:00, v Praze.
               </Pravidlo>
 
               <Pravidlo nadpis="Do play-off jde každý tým">
