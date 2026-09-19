@@ -27,7 +27,7 @@ import { SEZONA, rocnikPopis } from "@/lib/sezona";
 import { useAuthStore } from "@/store/auth";
 import {
   adresaKarty,
-  NevimCoVybrat,
+  JakSeHraje,
   ObsahKarty,
   ROLES,
   TRIDY_KARTY,
@@ -516,6 +516,10 @@ export function OnboardingClient() {
          není. Dvojice (`navsteva`, `krok`) je v databázi unikátní, takže
          opakovaný klik v témž průchodu přibude jen jednou — počítá se
          **kolik lidí** kliklo, ne kolikrát. */
+      /* Od 19. 9. 2026 na výběru role žádný takový odkaz není — nahradil ho
+         blok `JakSeHraje` s formátem. Měření tu zůstává schválně: odpovědělo
+         na svou otázku (5 kliků z 217) a kdyby se odkaz vrátil, počítá dál.
+         Do té doby bude `odkazy["jak-funguje"]` ve statusu nula. */
       if (odkaz.hash === "#jak-to-funguje") {
         onboardingApi.krok({
           navsteva: id,
@@ -881,8 +885,8 @@ export function OnboardingClient() {
         {obnoveno ? (
           <ObnovenoBanner vek={obnoveno} onZnovu={zacniZnovu} />
         ) : null}
-        {/* Nápověda nad kartami — viz `page.tsx`. */}
-        <NevimCoVybrat className="mb-5" />
+        {/* Formát soutěže nad kartami — viz `role-karty.tsx`. */}
+        <JakSeHraje className="mb-5" />
         <div className="space-y-3">
           {/* Karta je odkaz, ne tlačítko. Serverová verze v `page.tsx` vykresluje
               tytéž karty se stejným `href`, takže klik funguje i v tom prvním

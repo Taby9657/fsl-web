@@ -1,6 +1,3 @@
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
-
 /**
  * Karty s rolemi a jejich vnitřek — **záměrně mimo `onboarding-client.tsx`**.
  *
@@ -140,31 +137,45 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
 }
 
 /**
- * „Nevíš, co vybrat?" — odkaz pro nerozhodnuté.
+ * Formát soutěže nad kartami — **odpověď, ne odkaz na odpověď**.
  *
- * Kdo přijde z reklamy, často neví, do které ze čtyř cest patří, a bez
- * odpovědi stránku zavře.
+ * Tohle místo si prošlo třemi verzemi a každá padla z jiného důvodu:
  *
- * **Bylo to rozbalovací `<details>` a 17. 9. 2026 to padlo:** na telefonu
- * nebylo z ničeho poznat, že se to má rozbalit — vypadalo to jako pátý,
- * jen jinak zabalený blok, a zavřené to navíc leželo pod ohybem. Odpověď,
- * kterou nikdo neotevře, není odpověď.
+ * 1. **Rozbalovací `<details>`** (do 17. 9. 2026) — na telefonu nebylo poznat,
+ *    že se to má rozbalit, a zavřené to leželo pod ohybem.
+ * 2. **Odkaz „Nevíš, co vybrat? Jak liga funguje"** (17.–19. 9. 2026) —
+ *    vypadal jako odkaz a fungoval, jen ho skoro nikdo nepoužil. Klik se od
+ *    18. 9. schválně měřil a **za 24 hodin na něj kliklo 5 lidí z 217** na
+ *    téhle obrazovce (2,3 %). Ze 27 lidí, kteří odešli jinam na web, jich
+ *    tudy odešlo pět. **O doplňující informace zájem není.**
+ * 3. **Teď to, na co se ptají, rovnou tady.** Kdo neví, co vybrat, nepotřebuje
+ *    cestu k vysvětlení — potřebuje vysvětlení.
  *
- * Teď je to **obyčejný odkaz na sekci „Jak liga funguje" na titulce**,
- * kde je formát soutěže vysvětlený celý a odkud se tlačítkem dole vrací
- * sem na výběr role. Vypadá jako odkaz (zlatý, podtržený, se šipkou), takže je z jednoho
- * pohledu jasné, co udělá. Je vysoký 44 px kvůli prstu na telefonu.
+ * Proč zrovna tyhle údaje: za 24 h si 82 % lidí obrazovku četlo přes deset
+ * sekund (medián 25 s) a stejně odešlo, zatímco do tří sekund odešlo jen
+ * 5 %. Doprava je kvalitní a obsah nestačí. **Formát je to jediné, co
+ * z nerozhodnutého člověka může udělat rozhodnutého** — hlavně jeden zápas
+ * týdně (časový závazek) a čistý čas (v amatérských ligách výjimka).
+ *
+ * **Cena tu schválně není.** Stojí v reklamě i na titulce a je to vědomá
+ * brzda; přidat ji sem je samostatné rozhodnutí, ne součást téhle změny.
+ *
+ * Drží se to nízké schválně: karty byly 17. 9. seškrtány na 121 px právě
+ * proto, aby se jich na 390 × 664 vešly nad ohyb tři. **Kdo sem přidá
+ * třetí řádek, jednu kartu pod ohyb shodí.**
  */
-export function NevimCoVybrat({ className = "" }: { className?: string }) {
+export function JakSeHraje({ className = "" }: { className?: string }) {
   return (
-    <div className={`text-center ${className}`}>
-      <Link
-        href="/#jak-to-funguje"
-        className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 text-[14px] font-semibold text-go underline underline-offset-4 transition-colors hover:text-wh"
-      >
-        Nevíš, co vybrat? Jak liga funguje
-        <ArrowRight size={16} className="shrink-0" />
-      </Link>
+    <div
+      className={`rounded-lg border border-bd bg-c1/30 px-4 py-3 text-center ${className}`}
+    >
+      <p className="text-[14px] font-semibold leading-6 text-wh">
+        Jeden zápas týdně · 3 × 15 minut čistého času
+      </p>
+      <p className="mt-1 text-[13px] leading-5 text-mu">
+        5 + 1 · 15–20 kol od listopadu do března · play-off pro všechny týmy ·
+        Praha, pondělí až čtvrtek večer
+      </p>
     </div>
   );
 }

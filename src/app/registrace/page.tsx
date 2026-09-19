@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { sdileni } from "@/lib/og";
 import { SEZONA, rocnikPopis } from "@/lib/sezona";
 import { OnboardingClient } from "./onboarding-client";
-import { adresaKarty, NevimCoVybrat, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
+import { adresaKarty, JakSeHraje, ObsahKarty, ROLES, TRIDY_KARTY } from "./role-karty";
 import { Page } from "@/components/layout/container";
 import { PageTitle } from "@/components/ui/primitives";
 import { TerminyPasek } from "@/components/terminy-pasek";
@@ -80,7 +80,7 @@ function VyberRoleServerem() {
       {/* Nápověda stojí **nad** kartami: nerozhodnutý člověk ji má potkat
           dřív, než se začne rozhodovat, ne až když projde všechny čtyři
           a žádná mu nesedla. */}
-      <NevimCoVybrat className="mb-5" />
+      <JakSeHraje className="mb-5" />
       <div className="space-y-3">
         {ROLES.map((r) => (
           <a
