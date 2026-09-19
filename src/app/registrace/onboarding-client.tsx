@@ -516,10 +516,11 @@ export function OnboardingClient() {
          není. Dvojice (`navsteva`, `krok`) je v databázi unikátní, takže
          opakovaný klik v témž průchodu přibude jen jednou — počítá se
          **kolik lidí** kliklo, ne kolikrát. */
-      /* Od 19. 9. 2026 na výběru role žádný takový odkaz není — nahradil ho
-         blok `JakSeHraje` s formátem. Měření tu zůstává schválně: odpovědělo
-         na svou otázku (5 kliků z 217) a kdyby se odkaz vrátil, počítá dál.
-         Do té doby bude `odkazy["jak-funguje"]` ve statusu nula. */
+      /* Od 19. 9. 2026 sem neklikají přes textový odkaz, ale přes celý
+         rámeček `JakSeHraje` s formátem. Měření zůstává stejné, ale
+         **číslo znamená něco jiného**: dřív „kliklo na odkaz s nápisem
+         Jak liga funguje" (5 z 217), teď „vidělo formát a chtělo vědět
+         víc". Se staršími dny se `odkazy["jak-funguje"]` neporovnává. */
       if (odkaz.hash === "#jak-to-funguje") {
         onboardingApi.krok({
           navsteva: id,

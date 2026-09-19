@@ -1,3 +1,6 @@
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+
 /**
  * Karty s rolemi a jejich vnitřek — **záměrně mimo `onboarding-client.tsx`**.
  *
@@ -137,19 +140,21 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
 }
 
 /**
- * Formát soutěže nad kartami — **odpověď, ne odkaz na odpověď**.
+ * Formát soutěže nad kartami — **odpověď, která zároveň vede k delší odpovědi**.
  *
- * Tohle místo si prošlo třemi verzemi a každá padla z jiného důvodu:
+ * Tohle místo si prošlo čtyřmi verzemi:
  *
  * 1. **Rozbalovací `<details>`** (do 17. 9. 2026) — na telefonu nebylo poznat,
  *    že se to má rozbalit, a zavřené to leželo pod ohybem.
  * 2. **Odkaz „Nevíš, co vybrat? Jak liga funguje"** (17.–19. 9. 2026) —
  *    vypadal jako odkaz a fungoval, jen ho skoro nikdo nepoužil. Klik se od
  *    18. 9. schválně měřil a **za 24 hodin na něj kliklo 5 lidí z 217** na
- *    téhle obrazovce (2,3 %). Ze 27 lidí, kteří odešli jinam na web, jich
- *    tudy odešlo pět. **O doplňující informace zájem není.**
- * 3. **Teď to, na co se ptají, rovnou tady.** Kdo neví, co vybrat, nepotřebuje
- *    cestu k vysvětlení — potřebuje vysvětlení.
+ *    téhle obrazovce (2,3 %). **Samotný odkaz na odpověď nestačí** — kdo neví,
+ *    co vybrat, nechce cestu k vysvětlení, chce vysvětlení.
+ * 3. **Rámeček s formátem, bez odkazu** (19. 9. 2026, pár hodin).
+ * 4. **Teď obojí:** odpověď je vidět rovnou a **celý rámeček je odkaz** do
+ *    sekce „Jak liga funguje" na titulce, kde je formát rozepsaný celý.
+ *    Nic se tím neskrývá — kdo nechce vědět víc, čte dál karty.
  *
  * Proč zrovna tyhle údaje: za 24 h si 82 % lidí obrazovku četlo přes deset
  * sekund (medián 25 s) a stejně odešlo, zatímco do tří sekund odešlo jen
@@ -160,23 +165,48 @@ export function ObsahKarty({ r }: { r: KartaRole }) {
  * **Cena tu schválně není.** Stojí v reklamě i na titulce a je to vědomá
  * brzda; přidat ji sem je samostatné rozhodnutí, ne součást téhle změny.
  *
+ * ## Že je to odkaz, musí být poznat
+ *
+ * Verze 1 padla právě na tom, že to jako ovládací prvek nevypadalo. Proto:
+ * **zlatá šipka na konci tučného řádku** (tam, kam padne oko první),
+ * zvýraznění rámečku i pozadí při přejetí a `group-hover` na šipce.
+ * Výška se tím nezměnila — šipka sedí do řádku, který tam už byl.
+ *
+ * Cílová plocha je celý rámeček, tedy hluboko přes 44 px; `min-h-11`
+ * proto není potřeba.
+ *
+ * ## Měření
+ *
+ * Odkaz míří na `/#jak-to-funguje`, takže ho zas chytá zápis kroku
+ * `jak-funguje` v `onboarding-client.tsx` a ve statusu je vidět jako
+ * `odkazy["jak-funguje"]`. **Číslo ale od 19. 9. znamená něco jiného** —
+ * dřív „kliklo na odkaz s nápisem Jak liga funguje", teď „chtělo vědět víc
+ * k formátu, který už vidělo". **Se staršími dny se neporovnává.**
+ *
  * Drží se to nízké schválně: karty byly 17. 9. seškrtány na 121 px právě
  * proto, aby se jich na 390 × 664 vešly nad ohyb tři. **Kdo sem přidá
  * třetí řádek, jednu kartu pod ohyb shodí.**
  */
 export function JakSeHraje({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={`rounded-lg border border-bd bg-c1/30 px-4 py-3 text-center ${className}`}
+    <Link
+      href="/#jak-to-funguje"
+      aria-label="Jak liga funguje — celý formát soutěže"
+      className={`group block rounded-lg border border-bd bg-c1/30 px-4 py-3 text-center transition-colors hover:border-go/60 hover:bg-c1/60 ${className}`}
     >
       <p className="text-[14px] font-semibold leading-6 text-wh">
         Jeden zápas týdně · 3 × 15 minut čistého času
+        <ArrowRight
+          size={15}
+          aria-hidden
+          className="ml-1.5 inline-block shrink-0 align-[-2px] text-go transition-transform group-hover:translate-x-0.5"
+        />
       </p>
       <p className="mt-1 text-[13px] leading-5 text-mu">
         5 + 1 · 15–20 kol od listopadu do března · play-off pro všechny týmy ·
         Praha, pondělí až čtvrtek večer
       </p>
-    </div>
+    </Link>
   );
 }
 
