@@ -102,6 +102,8 @@ export function AdminPlayersClient() {
     setSlot(/brank|^gk$|^g$/i.test(post ?? "") ? "GOALKEEPER" : "FIELD");
   }
 
+  const vybranyTym = (tymy.data ?? []).find((t) => t.id === teamId);
+
   async function zarad() {
     if (!zarazuji) return;
     if (!teamId) {
@@ -110,7 +112,7 @@ export function AdminPlayersClient() {
     }
     setBusy(true);
     try {
-      await supervisorApi.setPlayerTeam(zarazuji.id, {
+      const r = await supervisorApi.setPlayerTeam(zarazuji.id, {
         teamId,
         jersey: dres.trim() === "" ? undefined : Number(dres),
         slot,
@@ -118,7 +120,16 @@ export function AdminPlayersClient() {
       await q.refetch();
       const jmeno = `${zarazuji.firstName} ${zarazuji.lastName}`;
       setZarazuji(null);
-      toast.success("Zařazeno", `${jmeno} je na soupisce a ví o tom.`);
+      // U otevřeného týmu je zařazení zároveň vstup do soutěže — částka,
+      // která hráči spadla do košíku, musí být vidět i tomu, kdo zařazoval.
+      toast.success(
+        "Zařazeno",
+        (r.data as unknown as { vstupniBalik?: { amount: number } }).vstupniBalik
+          ? `${jmeno} je na soupisce. V košíku mu čeká Virtuální vedoucí za `
+            + `${(r.data as unknown as { vstupniBalik: { amount: number } }).vstupniBalik.amount} Kč`
+            + " a e-mail o tom už dostal."
+          : `${jmeno} je na soupisce a e-mail o tom dostal.`,
+      );
     } catch (e) {
       toast.error("Nešlo zařadit", errMsg(e));
     } finally {
@@ -399,7 +410,15 @@ export function AdminPlayersClient() {
           <p className="text-[12px] leading-5 text-di">
             Hráč se zapíše jako kmenový: nastaví se mu tým, přibude na soupisku
             sezóny a zmizí z nabídky volných hráčů. On i vedoucí týmu dostanou
-            oznámení.
+            oznámení a hráči navíc odejde e-mail, že je v týmu.
+            {vybranyTym?.isOpen ? (
+              <>
+                {" "}
+                Je to otevřený tým, takže mu zároveň do košíku přibude balík
+                Virtuální vedoucí (800 Kč, nebo 500 Kč, když už má zaplacenou
+                licenci) — částku najde i v tom e-mailu.
+              </>
+            ) : null}
           </p>
         </div>
       </Modal>
