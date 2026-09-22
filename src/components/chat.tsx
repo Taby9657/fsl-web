@@ -17,6 +17,20 @@ import { toast } from "@/components/ui/toast";
  * totéž.
  */
 export function AvatarChat({ autor, size = 36 }: { autor: ChatAuthor; size?: number }) {
+  // Panda má pevný avatar ze značky — nebere se z profilu a nejde nahradit.
+  // Kresba je detailní, takže pod 32 px z ní zbude skvrna; tam se místo ní
+  // ukáže iniciála.
+  if (autor.panda && size >= 32) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src="/panda.png"
+        alt="Panda"
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   if (autor.photoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element

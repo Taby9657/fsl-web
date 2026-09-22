@@ -2,15 +2,18 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { ArrowLeft, Clock, PenLine } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { useState } from "react";
 import { chatApi, errMsg } from "@/lib/api";
-import type { ChatConversation } from "@/lib/types";
+import type { ChatAuthor, ChatConversation } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { Container } from "@/components/layout/container";
 import { Button } from "@/components/ui/primitives";
 import { AvatarChat, Vlakno } from "@/components/chat";
 import { toast } from "@/components/ui/toast";
+
+/** Panda do míst, kde není zpráva — tlačítko a hlavička formuláře. */
+const PANDA: ChatAuthor = { id: null, jmeno: "Panda", panda: true, photoUrl: null };
 
 const CAS = new Intl.DateTimeFormat("cs-CZ", { hour: "numeric", minute: "2-digit" });
 const DATUM = new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" });
@@ -161,7 +164,7 @@ export function ZpravyClient() {
                   setVybranaId(null);
                 }}
               >
-                <PenLine size={15} /> Napsat lize
+                <AvatarChat autor={PANDA} size={32} /> Napiš Pandě
               </Button>
             </div>
           )}
@@ -212,7 +215,12 @@ export function ZpravyClient() {
 }
 
 /**
- * Napsat lize.
+ * Napiš Pandě.
+ *
+ * **Adresát je Panda, ne formulář na ligu.** Člověk píše jí, ona odpoví na
+ * to, co má v pravomoci, a zbytek předá supervisorovi — dokud třídění (E2)
+ * neběží, předává všechno. Termín („ozve se ti nejpozději ve středu")
+ * skládá backend v pražském čase.
  *
  * Ukazuje se, dokud vlákno neexistuje — jakmile hráč jednou napíše, má ho
  * v seznamu a píše do něj jako do každé jiné konverzace. Termín („ozve se ti
@@ -243,13 +251,17 @@ function NapsatLize({ onZpet, onHotovo }: { onZpet: () => void; onHotovo: () => 
         >
           <ArrowLeft size={18} />
         </button>
-        <p className="font-semibold text-wh">Napsat lize</p>
+        <AvatarChat autor={PANDA} size={36} />
+        <div className="min-w-0">
+          <p className="font-semibold text-wh">Panda</p>
+          <p className="text-[11px] text-mu">první linka ligy</p>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col justify-center px-5 py-6">
         <p className="text-sm text-mu">
-          Cokoli kolem soutěže, plateb nebo termínů. Odpoví ti člověk z ligy — obratem
-          se dozvíš, dokdy.
+          Napiš, s čím potřebuješ pomoct — soutěž, platby, termíny. Předám to lize
+          a hned ti řeknu, dokdy se ti ozve.
         </p>
         <form
           className="mt-4"
@@ -260,7 +272,7 @@ function NapsatLize({ onZpet, onHotovo }: { onZpet: () => void; onHotovo: () => 
           }}
         >
           <label htmlFor="lize" className="sr-only">
-            Zpráva pro ligu
+            Zpráva pro Pandu
           </label>
           <textarea
             id="lize"
