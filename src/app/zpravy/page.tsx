@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ZpravyPage() {
   return (
-    <AuthGuard require="player">
+    <AuthGuard require="user">
       <ZpravyClient />
     </AuthGuard>
   );

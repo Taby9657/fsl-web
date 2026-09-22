@@ -224,6 +224,7 @@ export function SiteHeader() {
                       Můj tým
                     </MenuLink>
                   ) : null}
+                  {user.player || isSupervisor ? (
                   <MenuLink
                     href="/zpravy"
                     icon={<MessageSquare size={16} />}
@@ -231,6 +232,7 @@ export function SiteHeader() {
                   >
                     Zprávy
                   </MenuLink>
+                  ) : null}
                   <MenuLink href="/muj-ucet" icon={<User size={16} />} onClick={() => setMenu(false)}>
                     Můj účet
                   </MenuLink>

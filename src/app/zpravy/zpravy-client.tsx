@@ -24,7 +24,11 @@ export function ZpravyClient() {
   const mujId = user?.player?.id ?? null;
   const jeSupervisor = Boolean(user?.isSupervisor || user?.player?.isSupervisor);
 
-  const [filtr, setFiltr] = useState<"vse" | "ceka">("vse");
+  // Supervisor bez hráčského profilu nemá vlastní konverzace — ať rovnou
+  // vidí to, kvůli čemu sem chodí.
+  const [filtr, setFiltr] = useState<"vse" | "ceka">(
+    jeSupervisor && !mujId ? "ceka" : "vse",
+  );
   const [otevrena, setOtevrena] = useState<ChatConversation | null>(null);
 
   const konverzace = useQuery({
