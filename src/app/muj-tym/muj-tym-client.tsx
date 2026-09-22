@@ -61,6 +61,12 @@ export function MujTymClient() {
 
   const muj = ucast.data?.seznam.find((p) => p.id === mujId);
 
+  // Losovat smí vedoucí toho týmu, nebo liga. U otevřeného týmu vedoucí
+  // není, takže tlačítko vidí jen supervisor — backend to kontroluje znovu.
+  const smiLosovat = Boolean(
+    user?.isSupervisor || user?.manager?.some((m) => m.teamId === teamId),
+  );
+
   return (
     <Page>
       <PageTitle title="Můj tým" />
@@ -151,6 +157,8 @@ export function MujTymClient() {
               </ul>
             </div>
           )}
+
+          <Zapisovatel matchId={zapas.id} teamId={teamId} smiLosovat={smiLosovat} />
         </Card>
       )}
 
@@ -180,5 +188,83 @@ function TymovyChat({ teamId, mujId }: { teamId: string; mujId: string | null })
         <p className="px-5 py-4 text-sm text-mu">Načítám…</p>
       )}
     </Card>
+  );
+}
+
+/**
+ * Zapisovatel — kdo píše zápis a jak se k tomu došlo.
+ *
+ * Historie losů je vidět schválně. Vedoucí může losovat znovu (někdo
+ * nedorazí, někdo zapisoval minule), ale **každý pokus zůstane napsaný** —
+ * jinak by se z losu stal výběr.
+ */
+function Zapisovatel({
+  matchId,
+  teamId,
+  smiLosovat,
+}: {
+  matchId: string;
+  teamId: string;
+  smiLosovat: boolean;
+}) {
+  const qc = useQueryClient();
+
+  const data = useQuery({
+    queryKey: ["mujtym", "zapisovatel", matchId, teamId],
+    queryFn: async () => (await ucastApi.zapisovatel(matchId, teamId)).data,
+  });
+
+  const los = useMutation({
+    mutationFn: async () => (await ucastApi.losuj(matchId, { teamId })).data,
+    onSuccess: (d) => {
+      toast.success(`Zapisuje ${d.zapisuje.jmeno}`);
+      qc.invalidateQueries({ queryKey: ["mujtym", "zapisovatel", matchId, teamId] });
+      qc.invalidateQueries({ queryKey: ["mujtym", "chat", teamId] });
+    },
+    onError: (e) => toast.error(errMsg(e, "Losování se nepovedlo.")),
+  });
+
+  const zapisuje = data.data?.zapisuje ?? null;
+  const pokusu = data.data?.historie.length ?? 0;
+
+  return (
+    <div className="mt-5 border-t border-bd pt-4">
+      <SectionTitle>Zapisovatel</SectionTitle>
+
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        {zapisuje ? (
+          <>
+            <AvatarChat autor={zapisuje} size={32} />
+            <span className="flex-1 text-sm">{zapisuje.jmeno}</span>
+          </>
+        ) : (
+          <span className="flex-1 text-sm text-mu">
+            {data.isLoading ? "Načítám…" : "Zatím není určený."}
+          </span>
+        )}
+
+        {smiLosovat && (
+          <Button
+            size="sm"
+            variant={zapisuje ? "ghost" : "purple"}
+            loading={los.isPending}
+            onClick={() => los.mutate()}
+          >
+            {zapisuje ? "Losovat znovu" : "Vylosovat"}
+          </Button>
+        )}
+      </div>
+
+      {pokusu > 1 && (
+        <p className="mt-2 text-xs text-mu">
+          Los č. {pokusu}. Předtím vyšel{" "}
+          {data.data?.historie[pokusu - 2]?.hrac?.jmeno ?? "někdo jiný"}
+          {data.data?.historie[pokusu - 2]?.replaceReason
+            ? ` — ${data.data.historie[pokusu - 2].replaceReason}`
+            : ""}
+          .
+        </p>
+      )}
+    </div>
   );
 }

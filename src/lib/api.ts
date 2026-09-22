@@ -39,6 +39,7 @@ import type {
   ChatConversation,
   ChatMessage,
   MatchSignups,
+  Scorekeeper,
   TeamConversation,
 } from "./types";
 
@@ -623,6 +624,14 @@ export const ucastApi = {
     ),
   signups: (matchId: string, teamId?: string) =>
     api.get<MatchSignups>(`/matches/${matchId}/signups`, { params: { teamId } }),
+  zapisovatel: (matchId: string, teamId?: string) =>
+    api.get<Scorekeeper>(`/matches/${matchId}/scorekeeper`, { params: { teamId } }),
+  /** Los. `reason` se zapíše předchozímu vylosovanému, ne novému. */
+  losuj: (matchId: string, body: { teamId?: string; excludePlayerIds?: string[]; reason?: string }) =>
+    api.post<{ drawNo: number; zapisuje: { id: string; jmeno: string }; text: string }>(
+      `/matches/${matchId}/scorekeeper/draw`,
+      body,
+    ),
 };
 
 export const requestsApi = {

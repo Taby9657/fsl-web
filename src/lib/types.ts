@@ -712,3 +712,21 @@ export interface MatchSignups {
   sejdeSe: boolean;
   seznam: (ChatAuthor & { slot: "GOALKEEPER" | "FIELD"; stav: UcastStav })[];
 }
+
+/** Jeden pokus o určení zapisovatele. Historie jde ven celá — viz backend. */
+export interface ScorekeeperDraw {
+  drawNo: number;
+  source: "ROTATION" | "DRAW" | "MANUAL";
+  hrac: ChatAuthor | null;
+  kandidatu: number;
+  assignedAt: string;
+  replacedAt: string | null;
+  replaceReason: string | null;
+}
+
+export interface Scorekeeper {
+  matchId: string;
+  teamId: string;
+  zapisuje: ChatAuthor | null;
+  historie: ScorekeeperDraw[];
+}
