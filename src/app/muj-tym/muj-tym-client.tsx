@@ -2,15 +2,15 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
-import { AlertTriangle, Send } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { chatApi, errMsg, matchesApi, ucastApi } from "@/lib/api";
 import { fmtDateTime } from "@/lib/format";
-import type { ChatAuthor, ChatMessage, Match } from "@/lib/types";
+import type { Match } from "@/lib/types";
 import { useAuthStore } from "@/store/auth";
 import { Page } from "@/components/layout/container";
 import { Button, Card, EmptyState, PageTitle, SectionTitle } from "@/components/ui/primitives";
 import { SkeletonCards } from "@/components/ui/feedback";
+import { AvatarChat, Vlakno } from "@/components/chat";
 import { toast } from "@/components/ui/toast";
 
 /**
@@ -159,134 +159,26 @@ export function MujTymClient() {
   );
 }
 
-/** Kolečko autora: fotka z profilu, jinak iniciály v barvě z backendu. */
-function AvatarChat({ autor, size = 40 }: { autor: ChatAuthor; size?: number }) {
-  if (autor.photoUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={autor.photoUrl}
-        alt=""
-        width={size}
-        height={size}
-        className="shrink-0 rounded-full object-cover"
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold"
-      style={{
-        width: size,
-        height: size,
-        fontSize: Math.round(size * 0.38),
-        background: autor.barva ?? "#2A2A33",
-        color: autor.barvaTextu ?? "#FFFFFF",
-      }}
-      aria-hidden
-    >
-      {autor.panda ? "P" : (autor.iniciely ?? "?")}
-    </span>
-  );
-}
-
 function TymovyChat({ teamId, mujId }: { teamId: string; mujId: string | null }) {
-  const qc = useQueryClient();
-  const [text, setText] = useState("");
-  const konec = useRef<HTMLDivElement>(null);
-
   const konverzace = useQuery({
     queryKey: ["mujtym", "chat", teamId],
     queryFn: async () => (await chatApi.team(teamId)).data,
   });
 
-  const id = konverzace.data?.id;
-
-  const zpravy = useQuery({
-    queryKey: ["mujtym", "zpravy", id],
-    enabled: !!id,
-    refetchInterval: 10_000,
-    queryFn: async () => (await chatApi.messages(id!)).data,
-  });
-
-  useEffect(() => {
-    if (id) chatApi.read(id).catch(() => {});
-    konec.current?.scrollIntoView({ block: "end" });
-  }, [id, zpravy.data?.length]);
-
-  const poslat = useMutation({
-    mutationFn: async (body: string) => (await chatApi.send(id!, body)).data,
-    onSuccess: () => {
-      setText("");
-      qc.invalidateQueries({ queryKey: ["mujtym", "zpravy", id] });
-    },
-    onError: (e) => toast.error(errMsg(e, "Zprávu se nepovedlo odeslat.")),
-  });
-
   return (
-    <Card className="mt-6 flex max-h-[32rem] flex-col p-0">
+    <Card className="mt-6 flex flex-col p-0">
       <div className="border-b border-bd px-5 py-3">
         <SectionTitle className="!mb-0">Týmový chat</SectionTitle>
       </div>
-
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-        {zpravy.isLoading && <p className="text-sm text-mu">Načítám…</p>}
-        {zpravy.data?.length === 0 && (
-          <p className="text-sm text-mu">
-            Zatím tu nikdo nic nenapsal. Začni třeba tím, kdo veze míčky.
-          </p>
-        )}
-        {zpravy.data?.map((m: ChatMessage) => (
-          <div key={m.id} className="flex gap-3">
-            <AvatarChat autor={m.autor} size={36} />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-sm font-semibold">{m.autor.jmeno}</span>
-                {m.autor.panda && (
-                  <span className="rounded bg-pu px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
-                    LIGA
-                  </span>
-                )}
-                <span className="text-xs text-mu">{fmtDateTime(m.createdAt)}</span>
-              </div>
-              <p
-                className={clsx(
-                  "mt-0.5 whitespace-pre-line break-words text-sm",
-                  m.smazano ? "italic text-mu" : "text-wh",
-                  m.autor.id === mujId && "font-medium",
-                )}
-              >
-                {m.smazano ? "Zpráva byla smazána" : m.body}
-              </p>
-            </div>
-          </div>
-        ))}
-        <div ref={konec} />
-      </div>
-
-      <form
-        className="flex items-center gap-2 border-t border-bd px-4 py-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const t = text.trim();
-          if (t && id) poslat.mutate(t);
-        }}
-      >
-        <label htmlFor="zprava" className="sr-only">
-          Napsat zprávu
-        </label>
-        <input
-          id="zprava"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Napsat zprávu…"
-          className="min-h-[44px] flex-1 rounded-xl border border-bd bg-c2 px-3 text-sm text-wh outline-none focus:border-bd-strong"
+      {konverzace.data ? (
+        <Vlakno
+          conversationId={konverzace.data.id}
+          mujId={mujId}
+          prazdne="Zatím tu nikdo nic nenapsal. Začni třeba tím, kdo veze míčky."
         />
-        <Button type="submit" disabled={!text.trim() || poslat.isPending} aria-label="Odeslat">
-          <Send size={16} />
-        </Button>
-      </form>
+      ) : (
+        <p className="px-5 py-4 text-sm text-mu">Načítám…</p>
+      )}
     </Card>
   );
 }

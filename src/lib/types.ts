@@ -677,6 +677,9 @@ export interface ChatConversation {
   id: string;
   kind: ChatKind;
   teamId: string | null;
+  /** Název skládá backend — vlákno s ligou se jmenuje jinak hráči a jinak supervisorovi. */
+  nazev: string;
+  protejsek: ChatAuthor | null;
   /** Čeká na odpověď ligy. Shodí to až odpověď supervisora. */
   cekaNaLigu: boolean;
   dueAt: string | null;

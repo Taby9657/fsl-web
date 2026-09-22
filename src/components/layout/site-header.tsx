@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import {
   Users,
+  MessageSquare,
   Bell,
   ChevronDown,
   LogOut,
@@ -223,6 +224,13 @@ export function SiteHeader() {
                       Můj tým
                     </MenuLink>
                   ) : null}
+                  <MenuLink
+                    href="/zpravy"
+                    icon={<MessageSquare size={16} />}
+                    onClick={() => setMenu(false)}
+                  >
+                    Zprávy
+                  </MenuLink>
                   <MenuLink href="/muj-ucet" icon={<User size={16} />} onClick={() => setMenu(false)}>
                     Můj účet
                   </MenuLink>
