@@ -630,3 +630,82 @@ export interface LeagueTeams {
   season: string;
   teams: PlacedTeam[];
 }
+
+
+/* ==================== CHAT A PANDA ==================== */
+
+/**
+ * Jak se autor ukáže v chatu.
+ *
+ * **Fotka se drží u hráče, ne u zprávy** — backend ji proto posílá u autora
+ * a ne uvnitř zprávy. Změna profilovky se tím projeví i u starých zpráv.
+ * `iniciely` a `barva` počítá backend z id, aby web i pozdější appka
+ * ukazovaly totéž.
+ */
+export interface ChatAuthor {
+  id: string | null;
+  jmeno: string;
+  /** Panda nemá hráčský profil a má vlastní pevný avatar. */
+  panda: boolean;
+  photoUrl: string | null;
+  iniciely?: string;
+  barva?: string;
+  barvaTextu?: string;
+}
+
+export type ChatKind = "TEAM" | "DIRECT" | "PANDA" | "SUPPORT";
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  kind: "TEXT" | "SYSTEM" | "CARD";
+  /** PROVOZNI se vypnout nedá — sestava, platba, uzávěrka. */
+  class: "PROVOZNI" | "SPOLECENSKA";
+  body: string | null;
+  smazano: boolean;
+  upraveno: boolean;
+  payload?: unknown;
+  replyToId?: string | null;
+  createdAt: string;
+  odSupervisora: boolean;
+  autor: ChatAuthor;
+  prilohy: { id: string; url: string; thumbUrl: string; width: number; height: number }[];
+  reakce: { emoji: string; playerId: string }[];
+}
+
+export interface ChatConversation {
+  id: string;
+  kind: ChatKind;
+  teamId: string | null;
+  /** Čeká na odpověď ligy. Shodí to až odpověď supervisora. */
+  cekaNaLigu: boolean;
+  dueAt: string | null;
+  lastMessageAt: string;
+  neprectene: number;
+  nahled: string | null;
+}
+
+export interface TeamConversation {
+  id: string;
+  kind: ChatKind;
+  clenove: ChatAuthor[];
+  spravujeClenstvi: boolean;
+}
+
+export type UcastStav = "HRAJU" | "NEMUZU" | "MLCI";
+
+/** Stav sestavy jednoho týmu na zápas — „7/9 a chybí brankář". */
+export interface MatchSignups {
+  matchId: string;
+  teamId: string;
+  datum: string;
+  uzaverka: string;
+  uzavreno: boolean;
+  pocet: number;
+  potreba: number;
+  stav: string;
+  brankari: number;
+  chybiBrankar: boolean;
+  sejdeSe: boolean;
+  seznam: (ChatAuthor & { slot: "GOALKEEPER" | "FIELD"; stav: UcastStav })[];
+}

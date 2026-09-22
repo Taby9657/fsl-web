@@ -36,6 +36,10 @@ import type {
   TeamLite,
   TeamPlacement,
   TeamPayment,
+  ChatConversation,
+  ChatMessage,
+  MatchSignups,
+  TeamConversation,
 } from "./types";
 
 export const API_URL =
@@ -582,6 +586,45 @@ export const supervisorApi = {
 };
 
 /* ==================== ŽÁDOSTI (běžní uživatelé) ==================== */
+/* ==================== CHAT A PANDA ==================== */
+
+/**
+ * Chat. Všechno za přihlášením a vázané na hráčský profil — psát v lize
+ * znamená být v ní hráčem.
+ *
+ * Zatím se čte pollingem (`refetchInterval`), SSE přijde později. Kdo to
+ * mění, ať nezapomene, že `people` vrací `canMessage`: o tom, jestli smím
+ * někoho oslovit, rozhoduje backend, ne UI.
+ */
+export const chatApi = {
+  conversations: (filter?: "waiting") =>
+    api.get<ChatConversation[]>("/chat/conversations", { params: { filter } }),
+  messages: (id: string, before?: string) =>
+    api.get<ChatMessage[]>(`/chat/conversations/${id}/messages`, { params: { before } }),
+  send: (id: string, body: string) =>
+    api.post<ChatMessage>(`/chat/conversations/${id}/messages`, { body }),
+  read: (id: string) => api.post(`/chat/conversations/${id}/read`),
+  /** Konverzace týmu. Zakládá se líně a cestou doplní lidi ze soupisky. */
+  team: (teamId: string) => api.get<TeamConversation>(`/chat/team/${teamId}`),
+  people: (q: string) => api.get(`/chat/people`, { params: { q } }),
+  direct: (playerId: string, body?: string) =>
+    api.post<{ zadost: boolean; id: string }>(`/chat/direct/${playerId}`, { body }),
+  /** Napsat lize. První linka je Panda, závazné je až vyjádření ligy. */
+  lize: (body: string) =>
+    api.post<{ conversationId: string; dueAt: string }>("/support/message", { body }),
+};
+
+/** Hraju / Nemůžu. */
+export const ucastApi = {
+  signup: (matchId: string, playing: boolean) =>
+    api.post<{ playing: boolean; teamId: string; uzaverka: string }>(
+      `/matches/${matchId}/signup`,
+      { playing },
+    ),
+  signups: (matchId: string, teamId?: string) =>
+    api.get<MatchSignups>(`/matches/${matchId}/signups`, { params: { teamId } }),
+};
+
 export const requestsApi = {
   /**
    * Zpráva supervisorovi. Funguje i bez přihlášení — pak je `email`

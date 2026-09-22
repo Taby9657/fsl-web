@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import {
+  Users,
   Bell,
   ChevronDown,
   LogOut,
@@ -213,6 +214,15 @@ export function SiteHeader() {
                     </p>
                     <p className="truncate text-[11px] text-mu">{user.email}</p>
                   </div>
+                  {user.player?.teamId ? (
+                    <MenuLink
+                      href="/muj-tym"
+                      icon={<Users size={16} />}
+                      onClick={() => setMenu(false)}
+                    >
+                      Můj tým
+                    </MenuLink>
+                  ) : null}
                   <MenuLink href="/muj-ucet" icon={<User size={16} />} onClick={() => setMenu(false)}>
                     Můj účet
                   </MenuLink>
