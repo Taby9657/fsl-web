@@ -416,7 +416,9 @@ export function AdminPlayersClient() {
                 {" "}
                 Je to otevřený tým, takže mu zároveň do košíku přibude balík
                 Virtuální vedoucí (800 Kč, nebo 500 Kč, když už má zaplacenou
-                licenci) — částku najde i v tom e-mailu.
+                licenci) — částku najde i v tom e-mailu. Když do 72 hodin
+                nezaplatí, systém mu místo sám uvolní a napíše mu o tom;
+                po zaplacení ho jde zařadit znovu.
               </>
             ) : null}
           </p>
